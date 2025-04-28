@@ -50,10 +50,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22.14.0
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22.14.0'          
+          check-latest: true            
           cache: 'npm'
           cache-dependency-path: './Frontend/package-lock.json'
 
