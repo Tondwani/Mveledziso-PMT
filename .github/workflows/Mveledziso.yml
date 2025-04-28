@@ -1,3 +1,4 @@
+
 name: CI - Mveledziso
 
 on:
@@ -11,9 +12,10 @@ on:
       - main
   schedule:
     - cron: "0 0 * * *" # Runs daily at midnight
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
+
   backend:
     name: Build & Test Backend
     runs-on: ubuntu-latest
@@ -28,7 +30,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.202'
+          dotnet-version: '9.0.202' 
 
       - name: Restore dependencies
         run: dotnet restore
@@ -39,11 +41,13 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
+
   frontend:
     name: Build & Lint Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
+
         working-directory: ./Frontend
 
     steps:
@@ -53,16 +57,21 @@ jobs:
       - name: Setup Node.js 22.14.0
         uses: actions/setup-node@v4
         with:
-          node-version: '22.14.0'          
-          check-latest: true            
-          cache: 'npm'
-          cache-dependency-path: './Frontend/package-lock.json'
+          node-version: '22.14.0' 
+
+          cache: 'npm'            
+
+          cache-dependency-path: 'Frontend/package-lock.json' 
+
 
       - name: Install dependencies
+
         run: npm install
 
       - name: Build project
+
         run: npm run build
 
       - name: Run linting
+
         run: npm run lint
