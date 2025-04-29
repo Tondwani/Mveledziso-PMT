@@ -41,25 +41,16 @@ jobs:
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
 
-  frontend:
+  build_and_deploy:
     name: Build Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./Frontend
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.17.1'  
-          cache: 'npm'
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Build project
+      - name: Build Project
         run: npm run build
