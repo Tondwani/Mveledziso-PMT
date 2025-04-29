@@ -19,10 +19,13 @@ namespace Mveledziso.Domain.Entities
 
         public virtual ICollection<Project> Projects { get; set; }
 
+        public virtual ICollection<UserTeam> Members { get; set; }
+
         public Team()
         {
             Id = Guid.NewGuid();
             Projects = new HashSet<Project>();
+            Members = new HashSet<UserTeam>();
         }
     }
 }

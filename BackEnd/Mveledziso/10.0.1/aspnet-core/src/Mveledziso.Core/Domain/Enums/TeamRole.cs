@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace Mveledziso.Domain.Enums
 {
-    public enum PriorityLevel
+ public enum TeamRole
     {
-        Low,
-        Medium,
-        High,
-        Urgent
+        Member,
+        ProjectManager,
+        TeamLead,
+        Leader,
+        Viewer,
+        Admin
     }
 }
