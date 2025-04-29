@@ -41,23 +41,32 @@ jobs:
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
 
-  build_and_deploy:
-    name: Build Frontend
-    runs-on: ubuntu-latest
+frontend:
+  name: Build & Lint Frontend
+  runs-on: ubuntu-latest
+  defaults:
+    run:
+      working-directory: ./Frontend
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.17.1'
+    - name: List files in Frontend directory
+      run: ls -al
 
-      - name: Install Dependencies
-        run: npm install
-        working-directory: ./Frontend
+    - name: Setup Node.js 22.14.0
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.14.0'
+        cache: 'npm'
+        cache-dependency-path: 'package-lock.json'
 
-      - name: Build Project
-        run: npm run build
-        working-directory: ./Frontend
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build project
+      run: npm run build
+
+    - name: Run linting
+      run: npm run lint
