@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mveledziso.EntityFrameworkCore;
 
@@ -11,9 +12,11 @@ using Mveledziso.EntityFrameworkCore;
 namespace Mveledziso.Migrations
 {
     [DbContext(typeof(MveledzisoDbContext))]
-    partial class MveledzisoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250429124458_EnhancedDataModel")]
+    partial class EnhancedDataModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

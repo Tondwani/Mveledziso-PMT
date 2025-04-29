@@ -24,7 +24,7 @@ namespace Mveledziso.Domain.Entities
         public UserTeam()
         {
             Id = Guid.NewGuid();
-            Role = TeamRole.Member; 
+            Role = TeamRole.Member;
         }
     }
 }

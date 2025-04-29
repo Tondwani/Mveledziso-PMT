@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mveledziso.Domain.Enums
 {
- public enum TeamRole
+    public enum TeamRole
     {
         Member,
         ProjectManager,
