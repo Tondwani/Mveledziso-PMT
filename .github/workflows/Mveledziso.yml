@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Frontend
+        working-directory: .FrontEnd/Frontend
 
     steps:
       - name: Checkout repository
@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: '22.14.0'
           cache: 'npm'
-          cache-dependency-path: ./Frontend/package-lock.json
+          cache-dependency-path: .FrontEnd/Frontend/package-lock.json
 
       - name: Install dependencies
         run: npm install
