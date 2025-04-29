@@ -29,10 +29,13 @@ namespace Mveledziso.Domain.Entities
 
         public virtual ICollection<ProjectDuty> Duties { get; set; }
 
+        public bool IsCollaborationEnabled { get; set; }
+
         public Project()
         {
             Id = Guid.NewGuid();
             Duties = new HashSet<ProjectDuty>();
+            IsCollaborationEnabled = true;
         }
     }
 }

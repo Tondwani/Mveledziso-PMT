@@ -23,6 +23,12 @@ namespace Mveledziso.Domain.Entities
 
         public DateTime? Deadline { get; set; }
 
+        public int CompletionPercentage { get; set; }
+
+        public DateTime? ActualStartDate { get; set; }
+
+        public DateTime? ActualEndDate { get; set; }
+
         public Guid ProjectId { get; set; }
 
         [ForeignKey("ProjectId")]
@@ -39,6 +45,7 @@ namespace Mveledziso.Domain.Entities
             Priority = PriorityLevel.Medium;
             UserDuties = new HashSet<UserDuty>();
             Documents = new HashSet<Document>();
+            CompletionPercentage = 0;
         }
     }
 }

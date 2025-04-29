@@ -17,9 +17,15 @@ namespace Mveledziso.Domain.Entities
         [ForeignKey("ProjectId")]
         public virtual Project Project { get; set; }
 
+        public virtual ICollection<TimelinePhase> Phases { get; set; }
+
+        public virtual ICollection<Milestone> Milestones { get; set; }
+
         public Timeline()
         {
             Id = Guid.NewGuid();
+            Milestones = new HashSet<Milestone>();
+            Phases = new HashSet<TimelinePhase>();
         }
     }
 }
