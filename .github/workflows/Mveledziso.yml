@@ -46,21 +46,28 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: .FrontEnd/Frontend
+        working-directory: ./Frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: List files in Frontend directory
-        run: ls -al
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -al
 
-      - name: Setup Node.js 22.14.0
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22.14.0'
+          node-version: '18'
           cache: 'npm'
-          cache-dependency-path: .FrontEnd/Frontend/package-lock.json
+          cache-dependency-path: ./Frontend/package-lock.json
+
+      - name: Display Node.js and npm versions
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
 
       - name: Install dependencies
         run: npm install
