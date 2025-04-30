@@ -17,4 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Mveledziso.Core\Mveledziso.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
 </Project>
