@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mveledziso.EntityFrameworkCore;
 
@@ -11,9 +12,11 @@ using Mveledziso.EntityFrameworkCore;
 namespace Mveledziso.Migrations
 {
     [DbContext(typeof(MveledzisoDbContext))]
-    partial class MveledzisoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250429074523_domain Modellling migration")]
+    partial class domainModelllingmigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1583,93 +1586,6 @@ namespace Mveledziso.Migrations
                     b.ToTable("AbpUsers");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.ActivityLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Details")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EntityType", "EntityId");
-
-                    b.ToTable("ActivityLogs");
-                });
-
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Comment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("DeleterUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("LastModifierUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EntityType", "EntityId");
-
-                    b.ToTable("Comments");
-                });
-
             modelBuilder.Entity("Mveledziso.Domain.Entities.Document", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1702,98 +1618,6 @@ namespace Mveledziso.Migrations
                     b.ToTable("Documents");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Milestone", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("DeleterUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("LastModifierUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("TimelineId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TimelineId");
-
-                    b.ToTable("Milestones");
-                });
-
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("EntityType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notifications");
-                });
-
             modelBuilder.Entity("Mveledziso.Domain.Entities.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1818,9 +1642,6 @@ namespace Mveledziso.Migrations
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsCollaborationEnabled")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1854,15 +1675,6 @@ namespace Mveledziso.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ActualEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ActualStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CompletionPercentage")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
@@ -1992,54 +1804,6 @@ namespace Mveledziso.Migrations
                     b.ToTable("Timelines");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.TimelinePhase", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("DeleterUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("LastModifierUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("TimelineId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TimelineId");
-
-                    b.ToTable("TimelinePhases");
-                });
-
             modelBuilder.Entity("Mveledziso.Domain.Entities.UserDuty", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2065,36 +1829,6 @@ namespace Mveledziso.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserDuties");
-                });
-
-            modelBuilder.Entity("Mveledziso.Domain.Entities.UserTeam", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("CreatorUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserTeams");
                 });
 
             modelBuilder.Entity("Mveledziso.MultiTenancy.Tenant", b =>
@@ -2390,17 +2124,6 @@ namespace Mveledziso.Migrations
                     b.Navigation("ProjectDuty");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Milestone", b =>
-                {
-                    b.HasOne("Mveledziso.Domain.Entities.Timeline", "Timeline")
-                        .WithMany("Milestones")
-                        .HasForeignKey("TimelineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Timeline");
-                });
-
             modelBuilder.Entity("Mveledziso.Domain.Entities.Project", b =>
                 {
                     b.HasOne("Mveledziso.Domain.Entities.Team", "Team")
@@ -2434,17 +2157,6 @@ namespace Mveledziso.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.TimelinePhase", b =>
-                {
-                    b.HasOne("Mveledziso.Domain.Entities.Timeline", "Timeline")
-                        .WithMany("Phases")
-                        .HasForeignKey("TimelineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Timeline");
-                });
-
             modelBuilder.Entity("Mveledziso.Domain.Entities.UserDuty", b =>
                 {
                     b.HasOne("Mveledziso.Domain.Entities.ProjectDuty", "ProjectDuty")
@@ -2454,17 +2166,6 @@ namespace Mveledziso.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectDuty");
-                });
-
-            modelBuilder.Entity("Mveledziso.Domain.Entities.UserTeam", b =>
-                {
-                    b.HasOne("Mveledziso.Domain.Entities.Team", "Team")
-                        .WithMany("Members")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("Mveledziso.MultiTenancy.Tenant", b =>
@@ -2581,16 +2282,7 @@ namespace Mveledziso.Migrations
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Team", b =>
                 {
-                    b.Navigation("Members");
-
                     b.Navigation("Projects");
-                });
-
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Timeline", b =>
-                {
-                    b.Navigation("Milestones");
-
-                    b.Navigation("Phases");
                 });
 #pragma warning restore 612, 618
         }
