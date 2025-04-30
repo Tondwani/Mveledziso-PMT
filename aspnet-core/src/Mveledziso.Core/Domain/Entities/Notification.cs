@@ -17,7 +17,7 @@ namespace Mveledziso.Domain.Entities
         [StringLength(200)]
         public string Message { get; set; }
 
-        public NotificationType Type { get; set; }
+         public NotificationType Type { get; set; }
 
         public bool IsRead { get; set; }
 
