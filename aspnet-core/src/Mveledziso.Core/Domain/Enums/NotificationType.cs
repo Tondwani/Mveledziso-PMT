@@ -8,11 +8,11 @@ namespace Mveledziso.Domain.Enums
 {
     public enum NotificationType
     {
-        TaskAssigned,
-        TaskUpdated,
-        CommentAdded,
-        DeadlineApproaching,
-        MemberAdded,
-        DocumentUploaded
+        TaskAssigned = 0,
+        TaskUpdated = 1,
+        CommentAdded = 2,
+        DeadlineApproaching = 3,
+        MemberAdded = 4,
+        DocumentUploaded = 5
     }
 }

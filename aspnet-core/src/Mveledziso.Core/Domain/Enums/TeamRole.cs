@@ -8,11 +8,11 @@ namespace Mveledziso.Domain.Enums
 {
     public enum TeamRole
     {
-        Member,
-        ProjectManager,
-        TeamLead,
-        Leader,
-        Viewer,
-        Admin
+        Member= 0,
+        ProjectManager = 1,
+        TeamLead = 2,
+        Leader = 3,
+        Viewer =4,
+        Admin = 5
     }
 }
