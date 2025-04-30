@@ -13,6 +13,7 @@ namespace Mveledziso.Services.TimelineSrervice.Dto
     [AutoMap(typeof(Timeline))]
     public class UpdateTimelineDto : EntityDto<Guid>
     {
+        public string Name { get; set; }
         [Required]
         public Guid ProjectId { get; set; }
     }
