@@ -13,6 +13,7 @@ namespace Mveledziso.Services.TimelineSrervice.Dto
     [AutoMapFrom(typeof(Timeline))]
     public class TimelineDto : EntityDto<Guid>, IHasModificationTime
     {
+        public string Name { get; set; }
         public Guid ProjectId { get; set; }
         public DateTime CreationTime { get; set; }
         public long? CreatorUserId { get; set; }

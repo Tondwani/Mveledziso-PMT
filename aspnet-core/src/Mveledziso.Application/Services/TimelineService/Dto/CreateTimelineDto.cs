@@ -12,6 +12,7 @@ namespace Mveledziso.Services.TimelineSrervice.Dto
     [AutoMapTo(typeof(Timeline))]
     public class CreateTimelineDto
     {
+        public string Name { get; set; }
         [Required]
         public Guid ProjectId { get; set; }
     }

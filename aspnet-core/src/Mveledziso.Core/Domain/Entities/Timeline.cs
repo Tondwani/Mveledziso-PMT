@@ -13,6 +13,7 @@ namespace Mveledziso.Domain.Entities
     public class Timeline : FullAuditedEntity<Guid>
     {
         public Guid ProjectId { get; set; }
+        public string Name { get; set; }
 
         [ForeignKey("ProjectId")]
         public virtual Project Project { get; set; }
