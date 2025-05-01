@@ -7,14 +7,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mveledziso.Services.CommentService.Dto
+namespace Mveledziso.Services.ActivitylogService.Dto
 {
-    [AutoMapTo(typeof(Comment))]
-    public class CreateCommentDto
+    [AutoMapTo(typeof(ActivityLog))]
+    public class CreateActivityLogDto
     {
         [Required]
+        [StringLength(200)]
+        public string Action { get; set; }
+
         [StringLength(500)]
-        public string Content { get; set; }
+        public string Details { get; set; }
 
         [Required]
         public string EntityType { get; set; }

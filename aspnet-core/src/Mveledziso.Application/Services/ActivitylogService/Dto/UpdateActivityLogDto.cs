@@ -7,13 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mveledziso.Services.CommentService.Dto
+namespace Mveledziso.Services.ActivitylogService.Dto
 {
-    [AutoMapTo(typeof(Comment))]
-    public class UpdateCommentDto
+    [AutoMapTo(typeof(ActivityLog))]
+    public class UpdateActivityLogDto
     {
-        [Required]
         [StringLength(500)]
-        public string Content { get; set; }
+        public string Details { get; set; }
     }
 }
