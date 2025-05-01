@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 namespace Mveledziso.Services.TimelinePhaseService.Dto
 {
     [AutoMapTo(typeof(TimelinePhase))]
-   
     public class CreateTimelinePhaseDto
     {
         [Required]
