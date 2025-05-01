@@ -69,6 +69,8 @@ namespace Mveledziso.Web.Host.Startup
             // Swagger - Enable this line and the related lines in Configure method to enable swagger UI
             ConfigureSwagger(services);
 
+            //services.AddSwaggerGen(options => options.DescribeAllEnumsAsStrings());
+
             // Configure Abp and Dependency Injection
             services.AddAbpWithoutCreatingServiceProvider<MveledzisoWebHostModule>(
                 // Configure Log4Net logging
