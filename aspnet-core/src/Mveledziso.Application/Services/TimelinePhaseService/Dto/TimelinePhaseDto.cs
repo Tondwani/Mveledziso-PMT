@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mveledziso.Services.TimelinePhaseService.Dto
 {
+    [AutoMapFrom(typeof(TimelinePhase))]
     public class TimelinePhaseDto
     {
         public Guid Id { get; set; }
