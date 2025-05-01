@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Mveledziso.Services.ProjectService.Dto
 {
-    public class GetProjectsInput : PagedResultRequestDto
+    public class GetProjectsInput : PagedAndSortedResultRequestDto
     {
-        public string Filter { get; set; }
+        public string? Filter { get; set; }
         public Guid? TeamId { get; set; }
     }
 }
