@@ -10,3 +10,6 @@ aspnet-core/src/Mveledziso.Migrator/Logs/Logs.txt
 aspnet-core/build/outputs/
 aspnet-core/docker/mvc/Mvc-Logs/
 
+FrontEnd/.next/
+FrontEnd/node_modules/
+
