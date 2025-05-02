@@ -30,11 +30,13 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react"
-import '@/app/globals.css';  
+import '@/app/globals.css'; 
+import { useRouter } from 'next/navigation' 
 
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const router = useRouter();
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -192,9 +194,13 @@ export default function Home() {
             Streamline workflows, clarify responsibilities, and simplify collaboration with our intelligent project
             management system. No more confusion, just efficient teamwork.
           </p>
-          <button className="cta-button">
-            Get Started <ArrowRight className="ml-2 h-4 w-4" />
-          </button>
+          <button
+          className="cta-button"
+          onClick={() => router.push('/login')}
+          >
+          Get Started <ArrowRight className="ml-2 h-4 w-4" />
+        </button>
+
         </div> 
         
 
