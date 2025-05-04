@@ -1,0 +1,25 @@
+
+.tab-button.ant-btn-text {
+    padding: 12px 0; 
+    margin-right: 16px; 
+    border-bottom: 2px solid transparent; 
+    transition: all 0.3s ease;
+    border-radius: 0; 
+    color: rgba(0, 0, 0, 0.65); 
+  }
+  
+  .tab-button.ant-btn-text:hover {
+    color: #1890ff; 
+    border-color: #1890ff; 
+  }
+  
+  .tab-button.ant-btn-primary {
+    color: #1890ff; 
+    border-color: #1890ff; 
+    font-weight: bold;
+  }
+  
+  .site-layout .ant-layout-content {
+    /* Further refine content area styling if needed */
+  }
+  
