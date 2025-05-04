@@ -7,6 +7,7 @@ import {
   CalendarOutlined,
   TeamOutlined,
   FlagOutlined,
+  QuestionCircleOutlined,
   FolderOpenOutlined,
   HistoryOutlined,
 } from "@ant-design/icons";
@@ -28,42 +29,47 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     {
       key: "/dashboard",
       icon: <DashboardOutlined />,
-      label: <Link href="/dashboard">Mveledziso</Link>,
+      label: <Link href="/UserMenu/dashboard">Mveledziso</Link>,
     },
     {
       key: "/projects",
       icon: <FolderOpenOutlined />,
-      label: <Link href="/projects">Projects</Link>,
+      label: <Link href="/UserMenu/projects">Projects</Link>,
     },
     {
-      key: "/duties",
+      key: "/Duties",
       icon: <FileTextOutlined />,
-      label: <Link href="/duties">Duties</Link>,
+      label: <Link href="/UserMenu/Duties">Duties</Link>,
     },
     {
       key: "/milestones",
       icon: <FlagOutlined />,
-      label: <Link href="/milestones">Milestones</Link>,
+      label: <Link href="/UserMenu/milestones">Milestones</Link>,
     },
     {
       key: "/timelines",
       icon: <CalendarOutlined />,
-      label: <Link href="/timelines">Timelines</Link>,
+      label: <Link href="/UserMenu/timelines">Timelines</Link>,
     },
      {
       key: "/documents",
       icon: <FileTextOutlined />,
-      label: <Link href="/documents">Documents</Link>,
+      label: <Link href="/UserMenu/documents">Documents</Link>,
     },
     {
       key: "/teams",
       icon: <TeamOutlined />,
-      label: <Link href="/teams">Teams / Users</Link>,
+      label: <Link href="/UserMenu/teams">Teams / Users</Link>,
     },
     {
       key: "/activity-log",
       icon: <HistoryOutlined />,
-      label: <Link href="/activity-log">Activity Log</Link>,
+      label: <Link href="/UserMenu/activity-log">Activity Log</Link>,
+    },
+    {
+      key: "/help",
+      icon:  <QuestionCircleOutlined />,
+      label: <Link href="/UserMenu/help">Help</Link>,
     },
   ];
 
