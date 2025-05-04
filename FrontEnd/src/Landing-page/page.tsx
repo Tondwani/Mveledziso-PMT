@@ -380,7 +380,7 @@ export default function Home() {
           <div className="footer-contact">
             <h3>Contact Us</h3>
             <p>Email: info@mveledziso.com</p>
-            <p>Phone: +27 123 456 789</p>
+            <p>Phone: +27 76 229 0023</p>
           </div>
         </div>
         <div className="copyright">
