@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+// import Link from 'next/link';
 import { Eye, EyeOff, AtSign, Lock, User } from "lucide-react"
 
 export default function SignUp() {
@@ -61,11 +62,11 @@ export default function SignUp() {
 
       <div className="form-footer">
         By signing up, you agree to our{" "}
-        <a href="#" className="link">
+        <a href="/terms-of-service" className="link">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="#" className="link">
+        <a href="/privacy-policy" className="link">
           Privacy Policy
         </a>
       </div>
