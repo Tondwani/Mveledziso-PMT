@@ -22,7 +22,7 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
   const [state, dispatch] = useReducer(SessionReducer, INITIAL_STATE);
   const instance = getAxiosInstance();
 
-  const checkAdminStatus = async (token: string): Promise<boolean> => {
+  const checkAdminStatus = useCallback(async (token: string): Promise<boolean> => {
     try {
       const response = await instance.get<{ result: string[] }>(
         "/api/services/app/User/GetPermissions",
@@ -36,7 +36,7 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
     } catch {
       return false;
     }
-  };
+  }, [instance]);
 
   const handleClearSession = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -84,13 +84,13 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
       dispatch(getSessionError(message));
       handleClearSession();
     }
-  }, [handleClearSession, instance]);
+  }, [handleClearSession, instance, checkAdminStatus]);
 
   useEffect(() => {
     if (localStorage.getItem(TOKEN_KEY)) {
       handleGetSession();
     }
-  }, []);
+  }, [handleGetSession]);
 
   return (
     <SessionStateContext.Provider value={state}>
