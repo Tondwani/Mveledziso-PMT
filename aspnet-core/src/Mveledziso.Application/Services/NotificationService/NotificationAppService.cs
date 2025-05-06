@@ -16,12 +16,12 @@ namespace Mveledziso.Services.NotificationService
 {
     public class NotificationAppService : ApplicationService, INotificationAppService
     {
-        private readonly IRepository<Notification, Guid> _notificationRepository;
+        private readonly IRepository<AppNotification, Guid> _notificationRepository;
         private readonly IRepository<User, long> _userRepository;
         private readonly IAbpSession _abpSession;
 
         public NotificationAppService(
-            IRepository<Notification, Guid> notificationRepository,
+            IRepository<AppNotification, Guid> notificationRepository,
             IRepository<User, long> userRepository,
             IAbpSession abpSession)
         {
@@ -39,7 +39,7 @@ namespace Mveledziso.Services.NotificationService
                 throw new UserFriendlyException("Recipient user not found!");
             }
 
-            var notification = new Notification
+            var notification = new AppNotification
             {
                 Message = input.Message,
                 Type = input.Type,

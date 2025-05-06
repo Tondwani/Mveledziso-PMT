@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mveledziso.Migrations
 {
     [DbContext(typeof(MveledzisoDbContext))]
-    [Migration("20250430191928_Add_Name_To_Timeline")]
-    partial class Add_Name_To_Timeline
+    [Migration("20250506215929_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("mveledziso")
                 .HasAnnotation("ProductVersion", "9.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -66,7 +67,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpEditions");
+                    b.ToTable("AbpEditions", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Application.Features.FeatureSetting", b =>
@@ -103,7 +104,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpFeatures");
+                    b.ToTable("AbpFeatures", "mveledziso");
 
                     b.HasDiscriminator().HasValue("FeatureSetting");
 
@@ -183,7 +184,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpAuditLogs");
+                    b.ToTable("AbpAuditLogs", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.PermissionSetting", b =>
@@ -220,7 +221,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpPermissions");
+                    b.ToTable("AbpPermissions", "mveledziso");
 
                     b.HasDiscriminator().HasValue("PermissionSetting");
 
@@ -260,7 +261,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "ClaimType");
 
-                    b.ToTable("AbpRoleClaims");
+                    b.ToTable("AbpRoleClaims", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserAccount", b =>
@@ -321,7 +322,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserName");
 
-                    b.ToTable("AbpUserAccounts");
+                    b.ToTable("AbpUserAccounts", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserClaim", b =>
@@ -357,7 +358,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "ClaimType");
 
-                    b.ToTable("AbpUserClaims");
+                    b.ToTable("AbpUserClaims", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserLogin", b =>
@@ -395,7 +396,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "LoginProvider", "ProviderKey");
 
-                    b.ToTable("AbpUserLogins");
+                    b.ToTable("AbpUserLogins", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserLoginAttempt", b =>
@@ -448,7 +449,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenancyName", "UserNameOrEmailAddress", "Result");
 
-                    b.ToTable("AbpUserLoginAttempts");
+                    b.ToTable("AbpUserLoginAttempts", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserOrganizationUnit", b =>
@@ -483,7 +484,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserOrganizationUnits");
+                    b.ToTable("AbpUserOrganizationUnits", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserRole", b =>
@@ -517,7 +518,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserRoles");
+                    b.ToTable("AbpUserRoles", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserToken", b =>
@@ -555,7 +556,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserTokens");
+                    b.ToTable("AbpUserTokens", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.BackgroundJobs.BackgroundJobInfo", b =>
@@ -601,7 +602,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("IsAbandoned", "NextTryTime");
 
-                    b.ToTable("AbpBackgroundJobs");
+                    b.ToTable("AbpBackgroundJobs", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Configuration.Setting", b =>
@@ -645,7 +646,7 @@ namespace Mveledziso.Migrations
                     b.HasIndex("TenantId", "Name", "UserId")
                         .IsUnique();
 
-                    b.ToTable("AbpSettings");
+                    b.ToTable("AbpSettings", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicEntityProperty", b =>
@@ -673,7 +674,7 @@ namespace Mveledziso.Migrations
                     b.HasIndex("EntityFullName", "DynamicPropertyId", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("AbpDynamicEntityProperties");
+                    b.ToTable("AbpDynamicEntityProperties", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicEntityPropertyValue", b =>
@@ -701,7 +702,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("DynamicEntityPropertyId");
 
-                    b.ToTable("AbpDynamicEntityPropertyValues");
+                    b.ToTable("AbpDynamicEntityPropertyValues", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicProperty", b =>
@@ -733,7 +734,7 @@ namespace Mveledziso.Migrations
                     b.HasIndex("PropertyName", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("AbpDynamicProperties");
+                    b.ToTable("AbpDynamicProperties", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicPropertyValue", b =>
@@ -758,7 +759,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("DynamicPropertyId");
 
-                    b.ToTable("AbpDynamicPropertyValues");
+                    b.ToTable("AbpDynamicPropertyValues", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityChange", b =>
@@ -795,7 +796,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("EntityTypeFullName", "EntityId");
 
-                    b.ToTable("AbpEntityChanges");
+                    b.ToTable("AbpEntityChanges", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityChangeSet", b =>
@@ -848,7 +849,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpEntityChangeSets");
+                    b.ToTable("AbpEntityChangeSets", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityPropertyChange", b =>
@@ -891,7 +892,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("EntityChangeId");
 
-                    b.ToTable("AbpEntityPropertyChanges");
+                    b.ToTable("AbpEntityPropertyChanges", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Localization.ApplicationLanguage", b =>
@@ -947,7 +948,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpLanguages");
+                    b.ToTable("AbpLanguages", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Localization.ApplicationLanguageText", b =>
@@ -997,7 +998,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "Source", "LanguageName", "Key");
 
-                    b.ToTable("AbpLanguageTexts");
+                    b.ToTable("AbpLanguageTexts", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Notifications.NotificationInfo", b =>
@@ -1058,7 +1059,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpNotifications");
+                    b.ToTable("AbpNotifications", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Notifications.NotificationSubscriptionInfo", b =>
@@ -1105,7 +1106,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "NotificationName", "EntityTypeName", "EntityId", "UserId");
 
-                    b.ToTable("AbpNotificationSubscriptions");
+                    b.ToTable("AbpNotificationSubscriptions", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Notifications.TenantNotificationInfo", b =>
@@ -1155,7 +1156,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("AbpTenantNotifications");
+                    b.ToTable("AbpTenantNotifications", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Notifications.UserNotificationInfo", b =>
@@ -1187,7 +1188,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("UserId", "State", "CreationTime");
 
-                    b.ToTable("AbpUserNotifications");
+                    b.ToTable("AbpUserNotifications", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Organizations.OrganizationUnit", b =>
@@ -1241,7 +1242,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "Code");
 
-                    b.ToTable("AbpOrganizationUnits");
+                    b.ToTable("AbpOrganizationUnits", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Organizations.OrganizationUnitRole", b =>
@@ -1276,7 +1277,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "RoleId");
 
-                    b.ToTable("AbpOrganizationUnitRoles");
+                    b.ToTable("AbpOrganizationUnitRoles", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookEvent", b =>
@@ -1306,7 +1307,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpWebhookEvents");
+                    b.ToTable("AbpWebhookEvents", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookSendAttempt", b =>
@@ -1340,7 +1341,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("WebhookEventId");
 
-                    b.ToTable("AbpWebhookSendAttempts");
+                    b.ToTable("AbpWebhookSendAttempts", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookSubscriptionInfo", b =>
@@ -1377,7 +1378,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpWebhookSubscriptions");
+                    b.ToTable("AbpWebhookSubscriptions", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Authorization.Roles.Role", b =>
@@ -1452,7 +1453,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "NormalizedName");
 
-                    b.ToTable("AbpRoles");
+                    b.ToTable("AbpRoles", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Authorization.Users.User", b =>
@@ -1580,7 +1581,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "NormalizedUserName");
 
-                    b.ToTable("AbpUsers");
+                    b.ToTable("AbpUsers", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.ActivityLog", b =>
@@ -1619,7 +1620,47 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("ActivityLogs");
+                    b.ToTable("ActivityLogs", "mveledziso");
+                });
+
+            modelBuilder.Entity("Mveledziso.Domain.Entities.AppNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AppNotifications", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Comment", b =>
@@ -1667,7 +1708,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Document", b =>
@@ -1699,7 +1740,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("ProjectDutyId");
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Milestone", b =>
@@ -1751,10 +1792,10 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TimelineId");
 
-                    b.ToTable("Milestones");
+                    b.ToTable("Milestones", "mveledziso");
                 });
 
-            modelBuilder.Entity("Mveledziso.Domain.Entities.Notification", b =>
+            modelBuilder.Entity("Mveledziso.Domain.Entities.Person", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1766,32 +1807,51 @@ namespace Mveledziso.Migrations
                     b.Property<long?>("CreatorUserId")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uuid");
+                    b.Property<long?>("DeleterUserId")
+                        .HasColumnType("bigint");
 
-                    b.Property<string>("EntityType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsRead")
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<long?>("LastModifierUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PersonType")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Persons", "mveledziso");
+
+                    b.HasDiscriminator<string>("PersonType").HasValue("Person");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Project", b =>
@@ -1836,6 +1896,9 @@ namespace Mveledziso.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid>("ProjectManagerId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -1844,9 +1907,11 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProjectManagerId");
+
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.ProjectDuty", b =>
@@ -1910,7 +1975,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectDuties");
+                    b.ToTable("ProjectDuties", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Team", b =>
@@ -1951,7 +2016,7 @@ namespace Mveledziso.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teams");
+                    b.ToTable("Teams", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.Timeline", b =>
@@ -1992,7 +2057,7 @@ namespace Mveledziso.Migrations
                     b.HasIndex("ProjectId")
                         .IsUnique();
 
-                    b.ToTable("Timelines");
+                    b.ToTable("Timelines", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.TimelinePhase", b =>
@@ -2040,7 +2105,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TimelineId");
 
-                    b.ToTable("TimelinePhases");
+                    b.ToTable("TimelinePhases", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.UserDuty", b =>
@@ -2058,16 +2123,16 @@ namespace Mveledziso.Migrations
                     b.Property<Guid>("ProjectDutyId")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid>("TeamMemberId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectDutyId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TeamMemberId");
 
-                    b.ToTable("UserDuties");
+                    b.ToTable("UserDuties", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.UserTeam", b =>
@@ -2088,16 +2153,16 @@ namespace Mveledziso.Migrations
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid>("TeamMemberId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TeamMemberId");
 
-                    b.ToTable("UserTeams");
+                    b.ToTable("UserTeams", "mveledziso");
                 });
 
             modelBuilder.Entity("Mveledziso.MultiTenancy.Tenant", b =>
@@ -2161,7 +2226,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenancyName");
 
-                    b.ToTable("AbpTenants");
+                    b.ToTable("AbpTenants", "mveledziso");
                 });
 
             modelBuilder.Entity("Abp.Application.Features.EditionFeatureSetting", b =>
@@ -2173,7 +2238,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("EditionId", "Name");
 
-                    b.ToTable("AbpFeatures");
+                    b.ToTable("AbpFeatures", "mveledziso");
 
                     b.HasDiscriminator().HasValue("EditionFeatureSetting");
                 });
@@ -2184,7 +2249,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpFeatures");
+                    b.ToTable("AbpFeatures", "mveledziso");
 
                     b.HasDiscriminator().HasValue("TenantFeatureSetting");
                 });
@@ -2198,7 +2263,7 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AbpPermissions");
+                    b.ToTable("AbpPermissions", "mveledziso");
 
                     b.HasDiscriminator().HasValue("RolePermissionSetting");
                 });
@@ -2212,9 +2277,33 @@ namespace Mveledziso.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AbpPermissions");
+                    b.ToTable("AbpPermissions", "mveledziso");
 
                     b.HasDiscriminator().HasValue("UserPermissionSetting");
+                });
+
+            modelBuilder.Entity("Mveledziso.Domain.Entities.ProjectManager", b =>
+                {
+                    b.HasBaseType("Mveledziso.Domain.Entities.Person");
+
+                    b.ToTable("Persons", "mveledziso");
+
+                    b.HasDiscriminator().HasValue("ProjectManager");
+                });
+
+            modelBuilder.Entity("Mveledziso.Domain.Entities.TeamMember", b =>
+                {
+                    b.HasBaseType("Mveledziso.Domain.Entities.Person");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Skills")
+                        .HasColumnType("text");
+
+                    b.ToTable("Persons", "mveledziso");
+
+                    b.HasDiscriminator().HasValue("TeamMember");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Roles.RoleClaim", b =>
@@ -2404,13 +2493,30 @@ namespace Mveledziso.Migrations
                     b.Navigation("Timeline");
                 });
 
+            modelBuilder.Entity("Mveledziso.Domain.Entities.Person", b =>
+                {
+                    b.HasOne("Mveledziso.Authorization.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Mveledziso.Domain.Entities.Person", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Mveledziso.Domain.Entities.Project", b =>
                 {
+                    b.HasOne("Mveledziso.Domain.Entities.ProjectManager", "ProjectManager")
+                        .WithMany("ManagedProjects")
+                        .HasForeignKey("ProjectManagerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Mveledziso.Domain.Entities.Team", "Team")
                         .WithMany("Projects")
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ProjectManager");
 
                     b.Navigation("Team");
                 });
@@ -2456,7 +2562,15 @@ namespace Mveledziso.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Mveledziso.Domain.Entities.TeamMember", "TeamMember")
+                        .WithMany("AssignedDuties")
+                        .HasForeignKey("TeamMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("ProjectDuty");
+
+                    b.Navigation("TeamMember");
                 });
 
             modelBuilder.Entity("Mveledziso.Domain.Entities.UserTeam", b =>
@@ -2467,7 +2581,15 @@ namespace Mveledziso.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Mveledziso.Domain.Entities.TeamMember", "TeamMember")
+                        .WithMany("Teams")
+                        .HasForeignKey("TeamMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Team");
+
+                    b.Navigation("TeamMember");
                 });
 
             modelBuilder.Entity("Mveledziso.MultiTenancy.Tenant", b =>
@@ -2594,6 +2716,18 @@ namespace Mveledziso.Migrations
                     b.Navigation("Milestones");
 
                     b.Navigation("Phases");
+                });
+
+            modelBuilder.Entity("Mveledziso.Domain.Entities.ProjectManager", b =>
+                {
+                    b.Navigation("ManagedProjects");
+                });
+
+            modelBuilder.Entity("Mveledziso.Domain.Entities.TeamMember", b =>
+                {
+                    b.Navigation("AssignedDuties");
+
+                    b.Navigation("Teams");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,16 +1,18 @@
 ﻿using Mveledziso.Domain.Enums;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
-namespace Mveledziso.Services.UserTeam.Dto
+namespace Mveledziso.Services.UserTeamService.Dto
 {
     public class CreateUserTeamDto
     {
-        public long UserId { get; set; }
+        [Required]
+        public Guid TeamMemberId { get; set; }
+
+        [Required]
         public Guid TeamId { get; set; }
+
+        [Required]
         public TeamRole Role { get; set; }
     }
 }

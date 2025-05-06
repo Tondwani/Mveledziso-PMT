@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mveledziso.Services.UserTeam.Dto
+namespace Mveledziso.Services.UserTeamService.Dto
 {
     public class UserTeamListDto : PagedAndSortedResultRequestDto
     {
-        public Guid? TeamId { get; set; } 
-        public long? UserId { get; set; } 
+        public Guid? TeamId { get; set; }
+        public Guid? TeamMemberId { get; set; }
     }
 }

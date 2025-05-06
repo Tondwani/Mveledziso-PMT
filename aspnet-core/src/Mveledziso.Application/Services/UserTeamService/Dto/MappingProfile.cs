@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
-using Mveledziso.Services.UserTeam.Dto;
-
+using Mveledziso.Domain.Entities;
 using Mveledziso.Authorization.Users;
 
 namespace Mveledziso.Services.UserTeamService.Dto
@@ -10,7 +9,7 @@ namespace Mveledziso.Services.UserTeamService.Dto
         public UserTeamMapping()
         {
             CreateMap<Domain.Entities.UserTeam, UserTeamDto>();
-            CreateMap<CreateUserTeamDto, User>();
+            CreateMap<CreateUserTeamDto, Domain.Entities.UserTeam>();
             CreateMap<UpdateUserTeamDto, Domain.Entities.UserTeam>();
         }
     }
