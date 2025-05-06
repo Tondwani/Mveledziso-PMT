@@ -1,119 +1,147 @@
-import React, { useContext, useReducer, useEffect, useCallback } from "react";
-import { getAxiosInstance } from "../../utils/axiosInstance";
-import {
-  INITIAL_STATE,
-  SessionStateContext,
-  SessionActionContext,
-  SessionData,
-} from "./context";
-import { SessionReducer } from "./reducer";
-import {
-  getSessionPending,
-  getSessionSuccess,
-  getSessionError,
-  clearSession,
-} from "./action";
+"use client";
+import { useContext, useReducer, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
+import { getAxiosInstance } from "../../utils/axiosInstance";
+import { INITIAL_STATE, AuthStateContext, AuthActionContext, IRegisterUser } from "./context";
+import { AuthReducer } from "./reducer";
+import {
+  loginPending,
+  loginSuccess,
+  loginError,
+  logoutSuccess,
+  getCurrentLoginInfoPending,
+  getCurrentLoginInfoSuccess,
+  getCurrentLoginInfoError,
+  registerPending,
+  registerSuccess,
+  registerError,
+} from "./action";
 
-const SESSION_ENDPOINT = "/api/services/app/Session/GetCurrentLoginInformations";
-const TOKEN_KEY = "auth_token";
+// Define type for ABP API error response
+interface AbpErrorResponse {
+  error?: {
+    message?: string;
+    details?: string;
+    code?: number;
+  };
+}
 
-export const SessionProvider = ({ children }: { children: React.ReactNode }) => {
-  const [state, dispatch] = useReducer(SessionReducer, INITIAL_STATE);
-  const instance = getAxiosInstance();
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 
-  const checkAdminStatus = useCallback(async (token: string): Promise<boolean> => {
+  const getCurrentLoginInfo = useCallback(async () => {
+    dispatch(getCurrentLoginInfoPending());
+    
     try {
-      const response = await instance.get<{ result: string[] }>(
-        "/api/services/app/User/GetPermissions",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return response.data.result.includes("Pages.Administration");
+      const response = await getAxiosInstance().get(`/api/services/app/Session/GetCurrentLoginInformations`);
+      dispatch(getCurrentLoginInfoSuccess(response.data.result.user));
     } catch {
-      return false;
+      dispatch(getCurrentLoginInfoError());
+      // If getting current user fails, assume token is invalid and logout
+      logout();
     }
-  }, [instance]);
-
-  const handleClearSession = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    dispatch(clearSession());
   }, []);
 
-  const handleGetSession = useCallback(async () => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      handleClearSession();
-      return;
+  // Initialize auth state on mount
+  useEffect(() => {
+    const token = sessionStorage.getItem("auth_token");
+    if (token) {
+      getCurrentLoginInfo();
     }
+  }, [getCurrentLoginInfo]);
 
-    dispatch(getSessionPending());
+  const login = async (userNameOrEmail: string, password: string) => {
+    dispatch(loginPending());
+    
     try {
-      const response = await instance.get<{ result: SessionData }>(SESSION_ENDPOINT, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Abp.TenantId": localStorage.getItem("abp_tenant_id") || "",
-        },
+      const response = await getAxiosInstance().post(`/api/TokenAuth/Authenticate`, {
+        userNameOrEmailAddress: userNameOrEmail,
+        password,
+        rememberClient: true
       });
 
-      const isAdmin = await checkAdminStatus(token);
-      const originalData = response.data.result;
-
-      const sessionData: SessionData = {
-        ...originalData,
-        user: {
-          ...(originalData.user ?? {
-            id: 0,
-            name: "",
-            surname: "",
-            userName: "",
-            emailAddress: "",
-          }),
-          role: isAdmin ? "Admin" : "User",
-        },
-      };
-
-      dispatch(getSessionSuccess(sessionData));
-    } catch (err: unknown) {
-      const axiosError = err as AxiosError<{ error: { message: string } }>;
-      const message = axiosError.response?.data?.error?.message || "Session fetch failed";
-      console.error("Session error:", message);
-      dispatch(getSessionError(message));
-      handleClearSession();
+      const token = response.data.result.accessToken;
+      sessionStorage.setItem("auth_token", token);
+      getAxiosInstance().defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      
+      dispatch(loginSuccess(token));
+      await getCurrentLoginInfo();
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      let errorMessage = "Login failed";
+      
+      if (
+        axiosError.response && 
+        axiosError.response.data
+      ) {
+        const responseData = axiosError.response.data as AbpErrorResponse;
+        if (responseData.error && responseData.error.message) {
+          errorMessage = responseData.error.message;
+        }
+      }
+      
+      dispatch(loginError(errorMessage));
+      throw new Error(errorMessage);
     }
-  }, [handleClearSession, instance, checkAdminStatus]);
+  };
 
-  useEffect(() => {
-    if (localStorage.getItem(TOKEN_KEY)) {
-      handleGetSession();
+  const logout = () => {
+    sessionStorage.removeItem("auth_token");
+    delete getAxiosInstance().defaults.headers.common["Authorization"];
+    dispatch(logoutSuccess());
+  };
+
+  const register = async (userData: IRegisterUser): Promise<void> => {
+    dispatch(registerPending());
+    
+    try {
+      await getAxiosInstance().post('/api/services/app/User/Register', {
+        ...userData,
+        isActive: true
+      });
+      
+      dispatch(registerSuccess());
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      let errorMessage = "Registration failed";
+      
+      if (
+        axiosError.response && 
+        axiosError.response.data
+      ) {
+        const responseData = axiosError.response.data as AbpErrorResponse;
+        if (responseData.error && responseData.error.message) {
+          errorMessage = responseData.error.message;
+        }
+      }
+      
+      dispatch(registerError(errorMessage));
+      throw new Error(errorMessage);
     }
-  }, [handleGetSession]);
+  };
 
   return (
-    <SessionStateContext.Provider value={state}>
-      <SessionActionContext.Provider
-        value={{
-          getCurrentLoginInfo: handleGetSession,
-          clearSession: handleClearSession,
-        }}
-      >
+    <AuthStateContext.Provider value={state}>
+      <AuthActionContext.Provider value={{ login, logout, getCurrentLoginInfo, register }}>
         {children}
-      </SessionActionContext.Provider>
-    </SessionStateContext.Provider>
+      </AuthActionContext.Provider>
+    </AuthStateContext.Provider>
   );
 };
 
-// Custom hook
-export const useSession = () => {
-  const state = useContext(SessionStateContext);
-  const actions = useContext(SessionActionContext);
-
-  if (!state || !actions) {
-    throw new Error("useSession must be used within a SessionProvider");
+// Custom hooks for easy access to context
+export const useAuthState = () => {
+  const context = useContext(AuthStateContext);
+  if (!context) {
+    throw new Error("useAuthState must be used within an AuthProvider");
   }
+  return context;
+};
 
-  return { ...state, ...actions };
+export const useAuthActions = () => {
+  const context = useContext(AuthActionContext);
+  if (!context) {
+    throw new Error("useAuthActions must be used within an AuthProvider");
+  }
+  return context;
 };

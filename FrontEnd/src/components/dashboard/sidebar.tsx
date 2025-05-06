@@ -20,9 +20,10 @@ const { Sider } = Layout;
 
 interface SidebarProps {
   collapsed: boolean;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   const pathname = usePathname();
 
   const menuItems: MenuProps["items"] = [
@@ -51,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       icon: <CalendarOutlined />,
       label: <Link href="/UserMenu/timelines">Timelines</Link>,
     },
-     {
+    {
       key: "/documents",
       icon: <FileTextOutlined />,
       label: <Link href="/UserMenu/documents">Documents</Link>,
@@ -68,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     },
     {
       key: "/help",
-      icon:  <QuestionCircleOutlined />,
+      icon: <QuestionCircleOutlined />,
       label: <Link href="/UserMenu/help">Help</Link>,
     },
   ];
@@ -90,14 +91,25 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         bottom: 0,
         zIndex: 100,
       }}
+      onCollapse={(collapsed) => onCollapse?.(collapsed)}
+      trigger={null}
     >
-      <div className="logo" style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6 }}>
-      </div>
+      <div 
+        className="logo" 
+        style={{ 
+          height: 32, 
+          margin: 16, 
+          background: 'rgba(255, 255, 255, 0.2)', 
+          borderRadius: 6,
+          display: collapsed ? 'none' : 'block'
+        }}
+      />
       <Menu
         theme="dark"
         mode="inline"
         selectedKeys={[pathname]}
         items={menuItems}
+        inlineCollapsed={collapsed}
       />
     </Sider>
   );

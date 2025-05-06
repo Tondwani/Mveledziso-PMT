@@ -1,10 +1,18 @@
 import axios from "axios";
- 
-export const getAxiosInstance = () =>
-  axios.create({
-    baseURL: `${'https://mveledziso-pmt.onrender.com/swagger/index.html'}`,
-    headers: {
-      "Content-Type": "application/json",
-    timeout: 30000,  
-    },
-  });
+
+// Create a singleton axios instance
+const axiosInstance = axios.create({
+  baseURL: 'https://localhost:44311',
+  headers: {
+    "Content-Type": "application/json",
+  },
+  timeout: 30000,
+});
+
+// Initialize auth token from session storage
+const token = typeof window !== 'undefined' ? sessionStorage.getItem("auth_token") : null;
+if (token) {
+  axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+}
+
+export const getAxiosInstance = () => axiosInstance;
