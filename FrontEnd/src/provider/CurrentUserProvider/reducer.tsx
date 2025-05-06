@@ -1,33 +1,85 @@
+"use client";
 import { handleActions } from "redux-actions";
-import { INITIAL_STATE, ISessionStateContext, SessionData } from "./context";
-import { SessionActionEnum } from "./action";
+import { INITIAL_STATE, IAuthStateContext, ICurrentUser } from "./context";
+import { AuthActionEnums } from "./action";
 
-type SessionActionPayload =
-  | undefined // for CLEAR_SESSION
-  | SessionData // for GET_SESSION_SUCCESS
-  | string;     // for GET_SESSION_ERROR (error message)
+// Define payload types for each action
+type LoginSuccessPayload = string; 
+type LoginErrorPayload = string; 
+type GetCurrentLoginInfoSuccessPayload = ICurrentUser; 
+type RegisterErrorPayload = string; // errorMessage
 
-export const SessionReducer = handleActions<ISessionStateContext, SessionActionPayload>(
+export const AuthReducer = handleActions<
+  IAuthStateContext, 
+  | undefined // For actions without payload
+  | LoginSuccessPayload
+  | LoginErrorPayload
+  | GetCurrentLoginInfoSuccessPayload
+  | RegisterErrorPayload
+>(
   {
-    [SessionActionEnum.GET_SESSION_PENDING]: (state) => ({
+    // Login handlers
+    [AuthActionEnums.loginPending]: (state) => ({
       ...state,
       isPending: true,
       isSuccess: false,
       isError: false,
+      errorMessage: undefined
     }),
-    [SessionActionEnum.GET_SESSION_SUCCESS]: (state, action) => ({
+    [AuthActionEnums.loginSuccess]: (state, { payload }) => ({
       ...state,
       isPending: false,
       isSuccess: true,
-      data: action.payload as SessionData,
+      accessToken: payload as LoginSuccessPayload
     }),
-    [SessionActionEnum.GET_SESSION_ERROR]: (state, action) => ({
+    [AuthActionEnums.loginError]: (state, { payload }) => ({
       ...state,
       isPending: false,
       isError: true,
-      error: action.payload as string,
+      errorMessage: payload as LoginErrorPayload
     }),
-    [SessionActionEnum.CLEAR_SESSION]: () => INITIAL_STATE,
+
+    // Logout handler
+    [AuthActionEnums.logoutSuccess]: () => INITIAL_STATE,
+
+    // Current user info handlers
+    [AuthActionEnums.getCurrentLoginInfoPending]: (state) => ({
+      ...state,
+      isPending: true,
+      isSuccess: false,
+      isError: false
+    }),
+    [AuthActionEnums.getCurrentLoginInfoSuccess]: (state, { payload }) => ({
+      ...state,
+      isPending: false,
+      isSuccess: true,
+      currentUser: payload as GetCurrentLoginInfoSuccessPayload
+    }),
+    [AuthActionEnums.getCurrentLoginInfoError]: (state) => ({
+      ...state,
+      isPending: false,
+      isError: true
+    }),
+
+    // Registration handlers
+    [AuthActionEnums.registerPending]: (state) => ({
+      ...state,
+      isPending: true,
+      isSuccess: false,
+      isError: false,
+      errorMessage: undefined
+    }),
+    [AuthActionEnums.registerSuccess]: (state) => ({
+      ...state,
+      isPending: false,
+      isSuccess: true
+    }),
+    [AuthActionEnums.registerError]: (state, { payload }) => ({
+      ...state,
+      isPending: false,
+      isError: true,
+      errorMessage: payload as RegisterErrorPayload
+    }),
   },
   INITIAL_STATE
 );
