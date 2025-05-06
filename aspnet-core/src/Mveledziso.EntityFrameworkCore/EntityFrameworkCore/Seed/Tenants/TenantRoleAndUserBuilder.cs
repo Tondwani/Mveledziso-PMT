@@ -39,6 +39,19 @@ public class TenantRoleAndUserBuilder
             _context.SaveChanges();
         }
 
+        //// User role
+        //var userRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.User);
+        //if (userRole == null)
+        //{
+        //    userRole = _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.User, StaticRoleNames.Tenants.User)
+        //    {
+        //        IsStatic = false,
+        //        IsDefault = true // Makes it the default role for new users
+        //    }).Entity;
+        //    _context.SaveChanges();
+        //}
+
+
         // Grant all permissions to admin role
 
         var grantedPermissions = _context.Permissions.IgnoreQueryFilters()
