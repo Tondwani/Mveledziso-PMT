@@ -9,7 +9,7 @@ namespace Mveledziso.Services.UserDutiesService.Dto
 {
     public class GetUserDutyInput : PagedResultRequestDto
     {
-        public long? UserId { get; set; }
+        public Guid? TeamMemberId { get; set; }
         public Guid? ProjectDutyId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }

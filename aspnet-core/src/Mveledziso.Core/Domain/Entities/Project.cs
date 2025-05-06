@@ -22,10 +22,15 @@ namespace Mveledziso.Domain.Entities
 
         public Guid TeamId { get; set; }
 
+        public Guid ProjectManagerId { get; set; }
+
         public virtual Timeline Timeline { get; set; }
 
         [ForeignKey("TeamId")]
         public virtual Team Team { get; set; }
+
+        [ForeignKey("ProjectManagerId")]
+        public virtual ProjectManager ProjectManager { get; set; }
 
         public virtual ICollection<ProjectDuty> Duties { get; set; }
 

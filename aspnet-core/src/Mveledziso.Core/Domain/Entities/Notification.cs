@@ -10,8 +10,8 @@ using Mveledziso.Domain.Enums;
 
 namespace Mveledziso.Domain.Entities
 {
-    [Table("Notifications")]
-    public class Notification : CreationAuditedEntity<Guid>
+    [Table("AppNotifications")]
+    public class AppNotification : CreationAuditedEntity<Guid>
     {
         [Required]
         [StringLength(200)]
@@ -28,11 +28,10 @@ namespace Mveledziso.Domain.Entities
 
         public Guid EntityId { get; set; }
 
-        public Notification()
+        public AppNotification()
         {
             Id = Guid.NewGuid();
             IsRead = false;
         }
     }
-
 }

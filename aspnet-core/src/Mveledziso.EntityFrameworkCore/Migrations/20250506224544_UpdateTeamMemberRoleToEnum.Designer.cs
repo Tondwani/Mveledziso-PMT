@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mveledziso.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mveledziso.Migrations
 {
     [DbContext(typeof(MveledzisoDbContext))]
-    partial class MveledzisoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250506224544_UpdateTeamMemberRoleToEnum")]
+    partial class UpdateTeamMemberRoleToEnum
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2294,6 +2297,9 @@ namespace Mveledziso.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Skills")
+                        .HasColumnType("text");
 
                     b.ToTable("Persons", "mveledziso");
 

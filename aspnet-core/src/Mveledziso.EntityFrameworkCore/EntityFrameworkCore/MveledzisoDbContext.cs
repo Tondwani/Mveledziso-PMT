@@ -13,6 +13,9 @@ namespace Mveledziso.EntityFrameworkCore;
 public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, MveledzisoDbContext>
 {
     /* Define a DbSet for each entity of the application */
+    public virtual DbSet<Person> Persons { get; set; }
+    public virtual DbSet<ProjectManager> ProjectManagers { get; set; }
+    public virtual DbSet<TeamMember> TeamMembers { get; set; }
     public virtual DbSet<Project> Projects { get; set; }
     public virtual DbSet<ProjectDuty> ProjectDuties { get; set; }
     public virtual DbSet<Team> Teams { get; set; }
@@ -23,7 +26,7 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
     public virtual DbSet<Milestone> Milestones { get; set; }
     public virtual DbSet<TimelinePhase> TimelinePhases { get; set; }
     public virtual DbSet<Comment> Comments { get; set; }
-    public virtual DbSet<Notification> Notifications { get; set; }
+    public virtual DbSet<AppNotification> AppNotifications { get; set; }
     public virtual DbSet<ActivityLog> ActivityLogs { get; set; }
 
     public MveledzisoDbContext(DbContextOptions<MveledzisoDbContext> options)
@@ -35,7 +38,8 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
     {
         base.OnModelCreating(modelBuilder);
 
-        base.OnModelCreating(modelBuilder);
+        // Set default schema for all entities
+        modelBuilder.HasDefaultSchema("mveledziso");
 
         // Force all DateTime and DateTime? to be treated as UTC
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -50,8 +54,34 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             }
         }
 
-            // Project - Team (many-to-one)
-            modelBuilder.Entity<Project>()
+        // Configure Person inheritance using TPH (Table-Per-Hierarchy)
+        modelBuilder.Entity<Person>()
+            .ToTable("Persons")
+            .HasDiscriminator<string>("PersonType")
+            .HasValue<ProjectManager>("ProjectManager")
+            .HasValue<TeamMember>("TeamMember");
+
+        // Configure TeamMember Role as enum
+        modelBuilder.Entity<TeamMember>()
+            .Property(e => e.Role)
+            .HasConversion<int>();
+
+        // Person - User relationship
+        modelBuilder.Entity<Person>()
+            .HasOne<User>()
+            .WithOne()
+            .HasForeignKey<Person>(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Project - ProjectManager (many-to-one)
+        modelBuilder.Entity<Project>()
+            .HasOne(p => p.ProjectManager)
+            .WithMany(pm => pm.ManagedProjects)
+            .HasForeignKey(p => p.ProjectManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Project - Team (many-to-one)
+        modelBuilder.Entity<Project>()
             .HasOne(p => p.Team)
             .WithMany(t => t.Projects)
             .HasForeignKey(p => p.TeamId)
@@ -69,6 +99,13 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             .HasOne(ud => ud.ProjectDuty)
             .WithMany(d => d.UserDuties)
             .HasForeignKey(ud => ud.ProjectDutyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // UserDuty - TeamMember relationship
+        modelBuilder.Entity<UserDuty>()
+            .HasOne(ud => ud.TeamMember)
+            .WithMany(tm => tm.AssignedDuties)
+            .HasForeignKey(ud => ud.TeamMemberId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Document - ProjectDuty relationship
@@ -106,6 +143,12 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             .HasForeignKey(ut => ut.TeamId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // UserTeam - TeamMember (many-to-one)
+        modelBuilder.Entity<UserTeam>()
+            .HasOne(ut => ut.TeamMember)
+            .WithMany(tm => tm.Teams)
+            .HasForeignKey(ut => ut.TeamMemberId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Create indexes for better performance
         modelBuilder.Entity<ProjectDuty>()
@@ -115,7 +158,7 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             .HasIndex(ud => ud.ProjectDutyId);
 
         modelBuilder.Entity<UserDuty>()
-            .HasIndex(ud => ud.UserId);
+            .HasIndex(ud => ud.TeamMemberId);
 
         modelBuilder.Entity<Document>()
             .HasIndex(d => d.ProjectDutyId);
@@ -124,7 +167,7 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             .HasIndex(ut => ut.TeamId);
 
         modelBuilder.Entity<UserTeam>()
-            .HasIndex(ut => ut.UserId);
+            .HasIndex(ut => ut.TeamMemberId);
 
         modelBuilder.Entity<Milestone>()
             .HasIndex(m => m.TimelineId);
@@ -135,7 +178,7 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
         modelBuilder.Entity<Comment>()
             .HasIndex(c => new { c.EntityType, c.EntityId });
 
-        modelBuilder.Entity<Notification>()
+        modelBuilder.Entity<AppNotification>()
             .HasIndex(n => n.UserId);
 
         modelBuilder.Entity<ActivityLog>()
@@ -143,18 +186,18 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
 
         // Required fields
         modelBuilder.Entity<UserDuty>()
-            .Property(ud => ud.UserId)
+            .Property(ud => ud.TeamMemberId)
             .IsRequired();
 
         modelBuilder.Entity<UserTeam>()
-            .Property(ut => ut.UserId)
+            .Property(ut => ut.TeamMemberId)
             .IsRequired();
 
         modelBuilder.Entity<Comment>()
             .Property(c => c.UserId)
             .IsRequired();
 
-        modelBuilder.Entity<Notification>()
+        modelBuilder.Entity<AppNotification>()
             .Property(n => n.UserId)
             .IsRequired();
 
@@ -172,7 +215,7 @@ public class MveledzisoDbContext : AbpZeroDbContext<Tenant, Role, User, Mveledzi
             .Property(c => c.EntityId)
             .IsRequired();
 
-        modelBuilder.Entity<Notification>()
+        modelBuilder.Entity<AppNotification>()
             .Property(n => n.EntityType)
             .HasMaxLength(50);
 
