@@ -1,5 +1,5 @@
 "use client";
-import { ICurrentUser } from "./context";
+import { ICurrentUser, ITeamMember, IProjectManager } from "./context";
 import { createAction } from "redux-actions";
 
 export enum AuthActionEnums {
@@ -14,13 +14,17 @@ export enum AuthActionEnums {
   getCurrentLoginInfoSuccess = "GET_CURRENT_LOGIN_INFO_SUCCESS",
   getCurrentLoginInfoError = "GET_CURRENT_LOGIN_INFO_ERROR",
   
-  registerPending = "REGISTER_PENDING",
-  registerSuccess = "REGISTER_SUCCESS",
-  registerError = "REGISTER_ERROR",
+  createTeamMemberPending = "CREATE_TEAM_MEMBER_PENDING",
+  createTeamMemberSuccess = "CREATE_TEAM_MEMBER_SUCCESS",
+  createTeamMemberError = "CREATE_TEAM_MEMBER_ERROR",
+
+  createProjectManagerPending = "CREATE_PROJECT_MANAGER_PENDING",
+  createProjectManagerSuccess = "CREATE_PROJECT_MANAGER_SUCCESS",
+  createProjectManagerError = "CREATE_PROJECT_MANAGER_ERROR",
 }
 
 // Login actions
-export const loginPending = createAction(
+export const loginPending = createAction<undefined>(
   AuthActionEnums.loginPending
 );
 
@@ -33,12 +37,12 @@ export const loginError = createAction<string>(
 );
 
 // Logout action
-export const logoutSuccess = createAction(
+export const logoutSuccess = createAction<undefined>(
   AuthActionEnums.logoutSuccess
 );
 
 // Current user info actions
-export const getCurrentLoginInfoPending = createAction(
+export const getCurrentLoginInfoPending = createAction<undefined>(
   AuthActionEnums.getCurrentLoginInfoPending
 );
 
@@ -46,19 +50,32 @@ export const getCurrentLoginInfoSuccess = createAction<ICurrentUser>(
   AuthActionEnums.getCurrentLoginInfoSuccess
 );
 
-export const getCurrentLoginInfoError = createAction(
+export const getCurrentLoginInfoError = createAction<undefined>(
   AuthActionEnums.getCurrentLoginInfoError
 );
 
-// Registration actions
-export const registerPending = createAction(
-  AuthActionEnums.registerPending
+// Team Member actions
+export const createTeamMemberPending = createAction<undefined>(
+  AuthActionEnums.createTeamMemberPending
 );
 
-export const registerSuccess = createAction(
-  AuthActionEnums.registerSuccess
+export const createTeamMemberSuccess = createAction<ITeamMember>(
+  AuthActionEnums.createTeamMemberSuccess
 );
 
-export const registerError = createAction<string>(
-  AuthActionEnums.registerError
+export const createTeamMemberError = createAction<string>(
+  AuthActionEnums.createTeamMemberError
+);
+
+// Project Manager actions
+export const createProjectManagerPending = createAction<undefined>(
+  AuthActionEnums.createProjectManagerPending
+);
+
+export const createProjectManagerSuccess = createAction<IProjectManager>(
+  AuthActionEnums.createProjectManagerSuccess
+);
+
+export const createProjectManagerError = createAction<string>(
+  AuthActionEnums.createProjectManagerError
 );

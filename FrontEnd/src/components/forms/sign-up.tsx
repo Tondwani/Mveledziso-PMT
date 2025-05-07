@@ -5,18 +5,19 @@ import { Eye, EyeOff, AtSign, Lock, User, Shield, Users } from "lucide-react"
 import { useAuthActions, useAuthState } from "../../provider/CurrentUserProvider"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
+import styles from './form.module.css'
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false)
+  const [isTeamMember, setIsTeamMember] = useState(true)
   const [userData, setUserData] = useState({
-    userName: "",
-    name: "",
-    surname: "",
-    emailAddress: "",
+    firstName: "",
+    lastName: "",
+    email: "",
     password: "",
-    roleNames: ["User"] // Default role
+    userName: "",
   })
-  const { register } = useAuthActions()
+  const { createTeamMember, createProjectManager } = useAuthActions()
   const { isPending, isError, errorMessage } = useAuthState()
   const router = useRouter()
 
@@ -25,43 +26,46 @@ export default function SignUp() {
     setUserData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleRoleChange = (role: string) => {
-    setUserData(prev => ({
-      ...prev,
-      roleNames: [role] // Only one role allowed in this implementation
-    }))
+  const handleRoleToggle = () => {
+    setIsTeamMember(!isTeamMember)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Improved name handling logic
-    let name = userData.name.trim();
-    let surname = '';
-    
-    if (name.includes(' ')) {
-      const nameParts = name.split(' ');
-      name = nameParts[0];
-      surname = nameParts.slice(1).join(' ');
-    } else {
-      surname = ' '; // Space to ensure API accepts it
-    }
-    
     try {
+      const baseData = {
+        firstName: userData.firstName.trim(),
+        lastName: userData.lastName.trim(),
+        email: userData.email,
+        password: userData.password,
+        userName: userData.userName,
+      }
+
+      console.log('Signup attempt:', { 
+        isTeamMember, 
+        baseData: { ...baseData, password: '[REDACTED]' } 
+      });
+
+      const signupPromise = isTeamMember 
+        ? createTeamMember(baseData)
+        : createProjectManager(baseData);
+
       await toast.promise(
-        register({
-          ...userData,
-          name,
-          surname,
-          userName: userData.emailAddress 
-        }),
+        signupPromise,
         {
-          loading: 'Creating your account...',
-          success: () => {
-            router.push("/login");
-            return 'Account created successfully! Please log in.';
+          loading: `Creating ${isTeamMember ? 'Team Member' : 'Project Manager'} account...`,
+          success: (result) => {
+            console.log('Signup success:', result);
+            setTimeout(() => {
+              router.push("/login");
+            }, 1500);
+            return `${isTeamMember ? 'Team Member' : 'Project Manager'} account created successfully! Redirecting to login...`;
           },
-          error: (err: Error) => err.message || 'Registration failed. Please try again.'
+          error: (err: Error) => {
+            console.error('Signup error:', err);
+            return err.message || 'Registration failed. Please try again.';
+          }
         }
       );
     } catch (error) {
@@ -70,47 +74,81 @@ export default function SignUp() {
   }
 
   return (
-    <div className="form-container">
-      <div className="form-header">
+    <div className={styles["form-container"]}>
+      <div className={styles["form-header"]}>
         <h2>Create an Account</h2>
         <p>Join us to start managing your projects</p>
       </div>
 
       {isError && (
-        <div className="error-message">
+        <div className={styles["error-message"]}>
           {errorMessage}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="name">Full Name</label>
-          <div className="input-container">
-            <div className="input-icon">
+        <div className={styles["form-group"]}>
+          <label htmlFor="firstName">First Name</label>
+          <div className={styles["input-container"]}>
+            <div className={styles["input-icon"]}>
               <User size={18} />
             </div>
             <input 
-              id="name" 
-              name="name"
-              value={userData.name}
+              id="firstName" 
+              name="firstName"
+              value={userData.firstName}
               onChange={handleChange}
-              placeholder="user name" 
+              placeholder="First name" 
               required 
             />
           </div>
         </div>
 
-        <div className="form-group">
+        <div className={styles["form-group"]}>
+          <label htmlFor="lastName">Last Name</label>
+          <div className={styles["input-container"]}>
+            <div className={styles["input-icon"]}>
+              <User size={18} />
+            </div>
+            <input 
+              id="lastName" 
+              name="lastName"
+              value={userData.lastName}
+              onChange={handleChange}
+              placeholder="Last name" 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className={styles["form-group"]}>
+          <label htmlFor="userName">Username</label>
+          <div className={styles["input-container"]}>
+            <div className={styles["input-icon"]}>
+              <User size={18} />
+            </div>
+            <input 
+              id="userName" 
+              name="userName"
+              value={userData.userName}
+              onChange={handleChange}
+              placeholder="Username" 
+              required 
+            />
+          </div>
+        </div>
+
+        <div className={styles["form-group"]}>
           <label htmlFor="email">Email</label>
-          <div className="input-container">
-            <div className="input-icon">
+          <div className={styles["input-container"]}>
+            <div className={styles["input-icon"]}>
               <AtSign size={18} />
             </div>
             <input 
               id="email" 
-              name="emailAddress"
+              name="email"
               type="email" 
-              value={userData.emailAddress}
+              value={userData.email}
               onChange={handleChange}
               placeholder="name@gmail.com" 
               required 
@@ -118,10 +156,10 @@ export default function SignUp() {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className={styles["form-group"]}>
           <label htmlFor="password">Password</label>
-          <div className="input-container">
-            <div className="input-icon">
+          <div className={styles["input-container"]}>
+            <div className={styles["input-icon"]}>
               <Lock size={18} />
             </div>
             <input 
@@ -135,7 +173,7 @@ export default function SignUp() {
             />
             <button 
               type="button" 
-              className="password-toggle" 
+              className={styles["password-toggle"]} 
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -143,159 +181,45 @@ export default function SignUp() {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className={styles["form-group"]}>
           <label>Account Type</label>
-          <div className="role-selection">
+          <div className={styles["role-selection"]}>
             <button
               type="button"
-              className={`role-button ${userData.roleNames.includes('User') ? 'active' : ''}`}
-              onClick={() => handleRoleChange('User')}
+              className={`${styles["role-button"]} ${isTeamMember ? styles.active : ''}`}
+              onClick={handleRoleToggle}
             >
-              <Users size={16} />
-              <span>User</span>
+              <Users size={12} />
+              <span>Team Member</span>
+              <p className={styles["role-description"]}></p>
             </button>
             <button
               type="button"
-              className={`role-button ${userData.roleNames.includes('Admin') ? 'active' : ''}`}
-              onClick={() => handleRoleChange('Admin')}
+              className={`${styles["role-button"]} ${!isTeamMember ? styles.active : ''}`}
+              onClick={handleRoleToggle}
             >
-              <Shield size={16} />
-              <span>Admin</span>
+              <Shield size={12} />
+              <span>Project Manager</span>
+              <p className={styles["role-description"]}></p>
             </button>
           </div>
         </div>
 
         <button 
           type="submit" 
-          className="submit-button"
+          className={styles["submit-button"]}
           disabled={isPending}
         >
           {isPending ? 'Creating Account...' : 'Create Account'}
         </button>
       </form>
 
-      <div className="form-footer">
-        By signing up, you agree to our{" "}
-        <a href="/terms-of-service" className="link">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="/privacy-policy" className="link">
-          Privacy Policy
+      <div className={styles["form-footer"]}>
+        Already have an account?{" "}
+        <a href="/login" className={styles.link}>
+          Sign in
         </a>
       </div>
-
-      <style jsx>{`
-        .form-container {
-          max-width: 400px;
-          margin: 0 auto;
-          padding: 2rem;
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .form-header {
-          text-align: center;
-          margin-bottom: 1.5rem;
-        }
-        .form-header h2 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-        }
-        .form-header p {
-          color: #6b7280;
-        }
-        .form-group {
-          margin-bottom: 1.25rem;
-        }
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-        }
-        .input-container {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-        .input-icon {
-          position: absolute;
-          left: 0.75rem;
-          color: #9ca3af;
-        }
-        input {
-          width: 100%;
-          padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          font-size: 0.875rem;
-        }
-        .password-toggle {
-          position: absolute;
-          right: 0.75rem;
-          background: none;
-          border: none;
-          color: #9ca3af;
-          cursor: pointer;
-        }
-        .role-selection {
-          display: flex;
-          gap: 0.5rem;
-          margin-top: 0.5rem;
-        }
-        .role-button {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 0.5rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          background: white;
-          cursor: pointer;
-          font-size: 0.875rem;
-        }
-        .role-button.active {
-          border-color: #3b82f6;
-          background-color: #eff6ff;
-          color: #3b82f6;
-        }
-        .submit-button {
-          width: 100%;
-          padding: 0.75rem;
-          background-color: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 0.375rem;
-          font-weight: 500;
-          cursor: pointer;
-          margin-top: 1rem;
-        }
-        .submit-button:disabled {
-          background-color: #93c5fd;
-          cursor: not-allowed;
-        }
-        .form-footer {
-          margin-top: 1.5rem;
-          text-align: center;
-          font-size: 0.875rem;
-          color: #6b7280;
-        }
-        .link {
-          color: #3b82f6;
-          text-decoration: underline;
-        }
-        .error-message {
-          padding: 0.75rem;
-          margin-bottom: 1rem;
-          background-color: #fee2e2;
-          color: #dc2626;
-          border-radius: 0.375rem;
-          font-size: 0.875rem;
-        }
-      `}</style>
     </div>
   )
 }
