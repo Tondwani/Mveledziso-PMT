@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   BarChart3,
   Calendar,
@@ -33,10 +33,20 @@ import {
 import '@/app/globals.css'; 
 import { useRouter } from 'next/navigation' 
 
+// Define the type for icon positions
+interface IconPosition {
+  x: number;
+  y: number;
+  size: number;
+  rotate: number;
+  icon: number;
+  opacity: number;
+}
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const router = useRouter();
+  const [iconPositions, setIconPositions] = useState<IconPosition[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -118,7 +128,7 @@ export default function Home() {
 
   // Generate random positions for background icons
   const generateIconPositions = () => {
-    const positions = []
+    const positions: IconPosition[] = []
     const iconCount = 80 // More icons for visual interest
 
     for (let i = 0; i < iconCount; i++) {
@@ -135,7 +145,10 @@ export default function Home() {
     return positions
   }
 
-  const iconPositions = generateIconPositions()
+  // Generate positions only on the client side
+  useEffect(() => {
+    setIconPositions(generateIconPositions());
+  }, []);
 
   return (
     <div className="container">

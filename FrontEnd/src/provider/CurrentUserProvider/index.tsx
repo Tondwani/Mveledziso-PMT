@@ -2,7 +2,7 @@
 import { useContext, useReducer, useEffect, useCallback } from "react";
 import { AxiosError } from "axios";
 import { getAxiosInstance } from "../../utils/axiosInstance";
-import { INITIAL_STATE, AuthStateContext, AuthActionContext, IRegisterUser } from "./context";
+import { INITIAL_STATE, AuthStateContext, AuthActionContext, ICreateTeamMember, ICreateProjectManager, ITeamMember, IProjectManager, ICurrentUser } from "./context";
 import { AuthReducer } from "./reducer";
 import {
   loginPending,
@@ -12,9 +12,12 @@ import {
   getCurrentLoginInfoPending,
   getCurrentLoginInfoSuccess,
   getCurrentLoginInfoError,
-  registerPending,
-  registerSuccess,
-  registerError,
+  createTeamMemberPending,
+  createTeamMemberSuccess,
+  createTeamMemberError,
+  createProjectManagerPending,
+  createProjectManagerSuccess,
+  createProjectManagerError,
 } from "./action";
 
 // Define type for ABP API error response
@@ -26,17 +29,28 @@ interface AbpErrorResponse {
   };
 }
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 
   const getCurrentLoginInfo = useCallback(async () => {
-    dispatch(getCurrentLoginInfoPending());
+    dispatch(getCurrentLoginInfoPending(undefined));
     
     try {
+      console.log('Fetching current user info...');
       const response = await getAxiosInstance().get(`/api/services/app/Session/GetCurrentLoginInformations`);
-      dispatch(getCurrentLoginInfoSuccess(response.data.result.user));
-    } catch {
-      dispatch(getCurrentLoginInfoError());
+      console.log('Current user API response:', response.data);
+      const userData = response.data.result.user;
+      console.log('Raw user data:', userData);
+      
+      const user: ICurrentUser = {
+        ...userData,
+        roles: userData.roles || [] 
+      };
+      console.log('Processed user with roles:', user);
+      dispatch(getCurrentLoginInfoSuccess(user));
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      dispatch(getCurrentLoginInfoError(undefined));
       // If getting current user fails, assume token is invalid and logout
       logout();
     }
@@ -48,10 +62,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (token) {
       getCurrentLoginInfo();
     }
-  }, [getCurrentLoginInfo]);
+  }, []);
 
   const login = async (userNameOrEmail: string, password: string) => {
-    dispatch(loginPending());
+    dispatch(loginPending(undefined));
     
     try {
       const response = await getAxiosInstance().post(`/api/TokenAuth/Authenticate`, {
@@ -70,12 +84,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const axiosError = error as AxiosError;
       let errorMessage = "Login failed";
       
-      if (
-        axiosError.response && 
-        axiosError.response.data
-      ) {
+      if (axiosError.response?.data) {
         const responseData = axiosError.response.data as AbpErrorResponse;
-        if (responseData.error && responseData.error.message) {
+        if (responseData.error?.message) {
           errorMessage = responseData.error.message;
         }
       }
@@ -88,41 +99,120 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     sessionStorage.removeItem("auth_token");
     delete getAxiosInstance().defaults.headers.common["Authorization"];
-    dispatch(logoutSuccess());
+    dispatch(logoutSuccess(undefined));
   };
 
-  const register = async (userData: IRegisterUser): Promise<void> => {
-    dispatch(registerPending());
-    
+  const createTeamMember = useCallback(async (data: ICreateTeamMember) => {
     try {
-      await getAxiosInstance().post('/api/services/app/User/Register', {
-        ...userData,
-        isActive: true
-      });
+      dispatch(createTeamMemberPending(undefined));
       
-      dispatch(registerSuccess());
+      console.log('Creating team member account...');
+
+      // Create request payload without role - backend will use default Member role (0)
+      const payload = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        userName: data.userName || data.email,
+        password: data.password
+      };
+
+      // Use the TeamMember endpoint
+      const registerResponse = await getAxiosInstance().post("/api/services/app/TeamMember/Create", payload);
+
+      console.log('TeamMember creation response:', registerResponse.data);
+
+      if (!registerResponse.data.success) {
+        throw new Error(registerResponse.data.error?.message || "Failed to create team member");
+      }
+
+      const teamMember = {
+        ...registerResponse.data.result,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        role: 0 // Default Member role
+      } as ITeamMember;
+
+      dispatch(createTeamMemberSuccess(teamMember));
+      return teamMember;
     } catch (error) {
       const axiosError = error as AxiosError;
-      let errorMessage = "Registration failed";
+      let errorMessage = "Failed to create team member";
       
-      if (
-        axiosError.response && 
-        axiosError.response.data
-      ) {
+      console.error('Error creating team member:', error);
+      
+      if (axiosError.response?.data) {
         const responseData = axiosError.response.data as AbpErrorResponse;
-        if (responseData.error && responseData.error.message) {
+        if (responseData.error?.message) {
           errorMessage = responseData.error.message;
         }
       }
       
-      dispatch(registerError(errorMessage));
+      dispatch(createTeamMemberError(errorMessage));
       throw new Error(errorMessage);
     }
-  };
+  }, []);
+
+  const createProjectManager = useCallback(async (data: ICreateProjectManager) => {
+    try {
+      dispatch(createProjectManagerPending(undefined));
+      
+      console.log('Creating project manager account...');
+      
+      // Use the ProjectManager/Create endpoint
+      const registerResponse = await getAxiosInstance().post("/api/services/app/ProjectManager/Create", {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        userName: data.userName || data.email,
+        password: data.password
+      });
+
+      console.log('ProjectManager creation response:', registerResponse.data);
+
+      if (!registerResponse.data.success) {
+        throw new Error(registerResponse.data.error?.message || "Failed to create project manager");
+      }
+
+      const projectManager = {
+        ...registerResponse.data.result,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email
+      } as IProjectManager;
+
+      dispatch(createProjectManagerSuccess(projectManager));
+      return projectManager;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      let errorMessage = "Failed to create project manager";
+      
+      console.error('Error creating project manager:', error);
+      
+      if (axiosError.response?.data) {
+        const responseData = axiosError.response.data as AbpErrorResponse;
+        if (responseData.error?.message) {
+          errorMessage = responseData.error.message;
+        }
+      }
+      
+      dispatch(createProjectManagerError(errorMessage));
+      throw new Error(errorMessage);
+    }
+  }, []);
 
   return (
     <AuthStateContext.Provider value={state}>
-      <AuthActionContext.Provider value={{ login, logout, getCurrentLoginInfo, register }}>
+      <AuthActionContext.Provider
+        value={{
+          login,
+          logout,
+          getCurrentLoginInfo,
+          createTeamMember,
+          createProjectManager,
+        }}
+      >
         {children}
       </AuthActionContext.Provider>
     </AuthStateContext.Provider>

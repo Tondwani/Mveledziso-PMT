@@ -1,22 +1,17 @@
 "use client";
 import { handleActions } from "redux-actions";
-import { INITIAL_STATE, IAuthStateContext, ICurrentUser } from "./context";
+import { INITIAL_STATE, IAuthState, ICurrentUser, ITeamMember, IProjectManager } from "./context";
 import { AuthActionEnums } from "./action";
 
 // Define payload types for each action
-type LoginSuccessPayload = string; 
-type LoginErrorPayload = string; 
-type GetCurrentLoginInfoSuccessPayload = ICurrentUser; 
-type RegisterErrorPayload = string; // errorMessage
+type ActionPayload = 
+  | string  
+  | ICurrentUser  
+  | ITeamMember   
+  | IProjectManager 
+  | undefined;     
 
-export const AuthReducer = handleActions<
-  IAuthStateContext, 
-  | undefined // For actions without payload
-  | LoginSuccessPayload
-  | LoginErrorPayload
-  | GetCurrentLoginInfoSuccessPayload
-  | RegisterErrorPayload
->(
+export const AuthReducer = handleActions<IAuthState, ActionPayload>(
   {
     // Login handlers
     [AuthActionEnums.loginPending]: (state) => ({
@@ -30,13 +25,13 @@ export const AuthReducer = handleActions<
       ...state,
       isPending: false,
       isSuccess: true,
-      accessToken: payload as LoginSuccessPayload
+      accessToken: payload as string
     }),
     [AuthActionEnums.loginError]: (state, { payload }) => ({
       ...state,
       isPending: false,
       isError: true,
-      errorMessage: payload as LoginErrorPayload
+      errorMessage: payload as string
     }),
 
     // Logout handler
@@ -53,7 +48,7 @@ export const AuthReducer = handleActions<
       ...state,
       isPending: false,
       isSuccess: true,
-      currentUser: payload as GetCurrentLoginInfoSuccessPayload
+      currentUser: payload as ICurrentUser
     }),
     [AuthActionEnums.getCurrentLoginInfoError]: (state) => ({
       ...state,
@@ -61,24 +56,46 @@ export const AuthReducer = handleActions<
       isError: true
     }),
 
-    // Registration handlers
-    [AuthActionEnums.registerPending]: (state) => ({
+    // Team Member reducers
+    [AuthActionEnums.createTeamMemberPending]: (state) => ({
       ...state,
       isPending: true,
       isSuccess: false,
       isError: false,
-      errorMessage: undefined
+      errorMessage: undefined,
     }),
-    [AuthActionEnums.registerSuccess]: (state) => ({
+    [AuthActionEnums.createTeamMemberSuccess]: (state, { payload }) => ({
       ...state,
       isPending: false,
-      isSuccess: true
+      isSuccess: true,
+      teamMember: payload as ITeamMember,
     }),
-    [AuthActionEnums.registerError]: (state, { payload }) => ({
+    [AuthActionEnums.createTeamMemberError]: (state, { payload }) => ({
       ...state,
       isPending: false,
       isError: true,
-      errorMessage: payload as RegisterErrorPayload
+      errorMessage: payload as string,
+    }),
+
+    // Project Manager reducers
+    [AuthActionEnums.createProjectManagerPending]: (state) => ({
+      ...state,
+      isPending: true,
+      isSuccess: false,
+      isError: false,
+      errorMessage: undefined,
+    }),
+    [AuthActionEnums.createProjectManagerSuccess]: (state, { payload }) => ({
+      ...state,
+      isPending: false,
+      isSuccess: true,
+      projectManager: payload as IProjectManager,
+    }),
+    [AuthActionEnums.createProjectManagerError]: (state, { payload }) => ({
+      ...state,
+      isPending: false,
+      isError: true,
+      errorMessage: payload as string,
     }),
   },
   INITIAL_STATE
