@@ -150,7 +150,7 @@ export default function SignUp() {
               type="email" 
               value={userData.email}
               onChange={handleChange}
-              placeholder="name@gmail.com" 
+              placeholder="Username@gmail.com" 
               required 
             />
           </div>

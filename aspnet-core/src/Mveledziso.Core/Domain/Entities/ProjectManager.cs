@@ -13,5 +13,6 @@ namespace Mveledziso.Domain.Entities
 
         // Collection of projects managed by this project manager
         public virtual ICollection<Project> ManagedProjects { get; set; }
+
     }
 } 

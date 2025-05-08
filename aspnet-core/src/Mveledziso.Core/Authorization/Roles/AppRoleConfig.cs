@@ -24,5 +24,19 @@ public static class AppRoleConfig
                 MultiTenancySides.Tenant
             )
         );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
+                StaticRoleNames.Tenants.TeamMember,
+                MultiTenancySides.Tenant
+            )
+        );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
+                StaticRoleNames.Tenants.ProjectManager,
+                MultiTenancySides.Tenant
+            )
+        );
     }
 }

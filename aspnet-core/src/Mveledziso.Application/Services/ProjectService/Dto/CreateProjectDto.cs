@@ -26,5 +26,8 @@ namespace Mveledziso.Services.ProjectService.Dto
 
         [Required]
         public Guid TeamId { get; set; }
+
+        [Required]
+        public Guid ProjectManagerId { get; set; }
     }
 }

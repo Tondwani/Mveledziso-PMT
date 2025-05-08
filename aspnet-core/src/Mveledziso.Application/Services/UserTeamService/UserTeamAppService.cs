@@ -38,7 +38,7 @@ namespace Mveledziso.Services.UserTeamService
 
         public async Task<UserTeamDto> CreateAsync(CreateUserTeamDto input)
         {
-            var teamMember = await _teamMemberRepository.GetAsync(input.TeamMemberId);
+            var teamMember = await _teamMemberRepository.FirstOrDefaultAsync(tm => tm.UserId == input.TeamMemberId);
             if (teamMember == null)
             {
                 throw new Abp.UI.UserFriendlyException(L("TeamMemberNotFound"));
@@ -52,7 +52,7 @@ namespace Mveledziso.Services.UserTeamService
 
             var userTeam = new Domain.Entities.UserTeam
             {
-                TeamMemberId = input.TeamMemberId,
+                TeamMemberId = teamMember.Id,
                 TeamId = input.TeamId,
                 Role = input.Role
             };

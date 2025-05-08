@@ -7,7 +7,7 @@ namespace Mveledziso.Services.UserTeamService.Dto
     public class CreateUserTeamDto
     {
         [Required]
-        public Guid TeamMemberId { get; set; }
+        public long TeamMemberId { get; set; }
 
         [Required]
         public Guid TeamId { get; set; }

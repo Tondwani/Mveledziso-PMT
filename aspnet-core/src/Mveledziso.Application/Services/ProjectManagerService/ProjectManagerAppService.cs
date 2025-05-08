@@ -1,10 +1,9 @@
 using Abp.Application.Services;
 using Abp.Application.Services.Dto;
-using Abp.Authorization;
 using Abp.Domain.Repositories;
 using Abp.Extensions;
 using Abp.Linq.Extensions;
-using Mveledziso.Authorization;
+using Mveledziso.Authorization.Roles;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.ProjectManagerService.Dto;
 using Microsoft.EntityFrameworkCore;
@@ -16,93 +15,71 @@ using Mveledziso.Authorization.Users;
 using Abp.UI;
 using Mveledziso.MultiTenancy;
 using Abp.Runtime.Session;
+using Mveledziso.Roles;
+using Mveledziso.Roles.Dto;
 
 namespace Mveledziso.Services.ProjectManagerService
 {
-    [AbpAuthorize(PermissionNames.Pages_Users)]
-    public class ProjectManagerAppService : AsyncCrudAppService<
-        ProjectManager,             // The ProjectManager entity
-        ProjectManagerDto,          // DTO for ProjectManager
-        Guid,                      // Primary key type
-        GetProjectManagersInput,   // Used for paging/sorting
-        CreateProjectManagerDto,   // Used for creating
-        UpdateProjectManagerDto>,  // Used for updating
+    public class ProjectManagerAppService : 
+        AsyncCrudAppService<ProjectManager, ProjectManagerDto, Guid, GetProjectManagersInput, CreateProjectManagerDto, UpdateProjectManagerDto>,
         IProjectManagerAppService
     {
         private readonly IRepository<Project, Guid> _projectRepository;
         private readonly UserManager _userManager;
         private readonly TenantManager _tenantManager;
         private readonly IAbpSession _abpSession;
+        private readonly RoleAppService _roleAppService;
 
         public ProjectManagerAppService(
             IRepository<ProjectManager, Guid> repository,
             IRepository<Project, Guid> projectRepository,
             UserManager userManager,
             TenantManager tenantManager,
-            IAbpSession abpSession)
+            IAbpSession abpSession,
+            RoleAppService roleAppService)
             : base(repository)
         {
             _projectRepository = projectRepository;
             _userManager = userManager;
             _tenantManager = tenantManager;
             _abpSession = abpSession;
+            _roleAppService = roleAppService;
+                
             LocalizationSourceName = MveledzisoConsts.LocalizationSourceName;
         }
 
         public override async Task<ProjectManagerDto> CreateAsync(CreateProjectManagerDto input)
         {
-            CheckCreatePermission();
-
-            // Generate username if not provided
-            string userName = input.UserName;
-            if (string.IsNullOrWhiteSpace(userName))
+            try 
             {
-                userName = input.Email;
-            }
+                // Ensure role exists
+                var projectManagerRole = await EnsureRoleExistsAsync(
+                    StaticRoleNames.Tenants.ProjectManager,
+                    "Project Manager",
+                    "Role for managing projects and teams"
+                );
 
-            // Check if email is already registered
-            if (await _userManager.FindByEmailAsync(input.Email) != null)
-            {
-                throw new UserFriendlyException(L("EmailAddressAlreadyRegistered"));
-            }
+                // Create user
+                var user = await CreateUserAsync(
+                    input.FirstName,
+                    input.LastName,
+                    input.Email,
+                    input.Password,
+                    input.UserName
+                );
 
-            try
-            {
-                // Create User directly instead of using UserRegistrationManager
-                // to avoid tenant restriction
-                var user = new User
+                // Add user to role
+                await _userManager.AddToRoleAsync(user, projectManagerRole.Name);
+
+                // Create ProjectManager entity
+                var projectManager = new ProjectManager
                 {
-                    TenantId = _abpSession.TenantId,
-                    Name = input.FirstName,
-                    Surname = input.LastName,
-                    EmailAddress = input.Email,
-                    IsActive = true,
-                    UserName = userName,
-                    IsEmailConfirmed = true
+                    FirstName = input.FirstName,
+                    LastName = input.LastName,
+                    Email = input.Email,
+                    Password = input.Password,
+                    UserId = user.Id
                 };
-
-                user.SetNormalizedNames();
-                
-                // We'll use CurrentUnitOfWork which is already available in AsyncCrudAppService
-                await _userManager.InitializeOptionsAsync(_abpSession.TenantId);
-                var result = await _userManager.CreateAsync(user, input.Password);
-                
-                if (!result.Succeeded)
-                {
-                    throw new UserFriendlyException("User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
-
-                // Add user to default roles
-                var defaultRoles = await _userManager.GetRolesAsync(user);
-                await _userManager.SetRolesAsync(user, defaultRoles.ToArray());
-
-                // Create ProjectManager entity the proper way
-                var projectManager = new ProjectManager();
-                projectManager.FirstName = input.FirstName;
-                projectManager.LastName = input.LastName;
-                projectManager.Email = input.Email;
-                projectManager.Password = input.Password;
-                projectManager.UserId = user.Id;
 
                 await Repository.InsertAsync(projectManager);
                 await CurrentUnitOfWork.SaveChangesAsync();
@@ -111,36 +88,8 @@ namespace Mveledziso.Services.ProjectManagerService
             }
             catch (Exception ex)
             {
-                string errorDetails = ex.Message;
-                
-                // Add inner exception details if available
-                if (ex.InnerException != null)
-                {
-                    errorDetails += " Inner exception: " + ex.InnerException.Message;
-                    
-                    // Drill down to the deepest inner exception
-                    var innerEx = ex.InnerException;
-                    while (innerEx.InnerException != null)
-                    {
-                        innerEx = innerEx.InnerException;
-                        errorDetails += " -> " + innerEx.Message;
-                    }
-                }
-                
-                throw new UserFriendlyException("Error creating project manager: " + errorDetails);
+                throw new UserFriendlyException("Error creating project manager: " + GetExceptionDetails(ex));
             }
-        }
-
-        public override async Task<ProjectManagerDto> UpdateAsync(UpdateProjectManagerDto input)
-        {
-            CheckUpdatePermission();
-
-            var projectManager = await Repository.GetAsync(input.Id);
-
-            ObjectMapper.Map(input, projectManager);
-            await Repository.UpdateAsync(projectManager);
-
-            return await GetAsync(input);
         }
 
         protected override IQueryable<ProjectManager> CreateFilteredQuery(GetProjectManagersInput input)
@@ -181,5 +130,91 @@ namespace Mveledziso.Services.ProjectManagerService
 
             return projectManager;
         }
+
+        #region Helper Methods
+        
+        private async Task<User> CreateUserAsync(string firstName, string lastName, string email, string password, string userName)
+        {
+            // Generate username if not provided
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                userName = email;
+            }
+
+            // Check if email is already registered
+            if (await _userManager.FindByEmailAsync(email) != null)
+            {
+                throw new UserFriendlyException(L("EmailAddressAlreadyRegistered"));
+            }
+
+            // Create User
+            var user = new User
+            {
+                TenantId = _abpSession.TenantId,
+                Name = firstName,
+                Surname = lastName,
+                EmailAddress = email,
+                IsActive = true,
+                UserName = userName,
+                IsEmailConfirmed = true
+            };
+
+            user.SetNormalizedNames();
+            
+            await _userManager.InitializeOptionsAsync(_abpSession.TenantId);
+            var result = await _userManager.CreateAsync(user, password);
+            
+            if (!result.Succeeded)
+            {
+                throw new UserFriendlyException("User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            return user;
+        }
+
+        private async Task<RoleListDto> EnsureRoleExistsAsync(string roleName, string displayName, string description)
+        {
+            var roles = await _roleAppService.GetRolesAsync(new GetRolesInput());
+            var role = roles.Items.FirstOrDefault(r => r.Name == roleName);
+
+            if (role == null)
+            {
+                // Create the role if it doesn't exist
+                var createRoleDto = new CreateRoleDto
+                {
+                    Name = roleName,
+                    DisplayName = displayName,
+                    Description = description,
+                    GrantedPermissions = new List<string>()
+                };
+
+                var createdRole = await _roleAppService.CreateAsync(createRoleDto);
+                role = new RoleListDto 
+                { 
+                    Name = createdRole.Name,
+                    DisplayName = createdRole.DisplayName
+                };
+            }
+
+            return role;
+        }
+
+        private string GetExceptionDetails(Exception ex)
+        {
+            string errorDetails = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorDetails += " Inner exception: " + ex.InnerException.Message;
+                var innerEx = ex.InnerException;
+                while (innerEx.InnerException != null)
+                {
+                    innerEx = innerEx.InnerException;
+                    errorDetails += " -> " + innerEx.Message;
+                }
+            }
+            return errorDetails;
+        }
+        
+        #endregion
     }
 } 

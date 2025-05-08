@@ -10,5 +10,7 @@ public static class StaticRoleNames
     public static class Tenants
     {
         public const string Admin = "Admin";
+        public const string TeamMember = "TeamMember";
+        public const string ProjectManager = "ProjectManager";
     }
 }
