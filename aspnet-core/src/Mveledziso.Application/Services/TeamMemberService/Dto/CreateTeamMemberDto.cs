@@ -3,6 +3,7 @@ using Mveledziso.Domain.Entities;
 using Mveledziso.Domain.Enums;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 
 namespace Mveledziso.Services.TeamMemberService.Dto
 {
@@ -28,7 +29,10 @@ namespace Mveledziso.Services.TeamMemberService.Dto
         [StringLength(50)]
         public string UserName { get; set; }
 
-        [Required]
-        public TeamRole Role { get; set; }
+        /// <summary>
+        /// Team member role - defaults to Member (0) if not provided
+        /// </summary>
+        [DefaultValue(TeamRole.Member)]
+        public TeamRole? Role { get; set; }
     }
 } 

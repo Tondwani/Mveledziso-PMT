@@ -38,11 +38,13 @@ namespace Mveledziso.Services.ProjectService
             }
 
             var project = ObjectMapper.Map<Project>(input);
+            project.Id = Guid.NewGuid();
 
             // Initialize timeline with required relationship
             project.Timeline = new Timeline
             {
                 ProjectId = project.Id,
+                Name = $"{project.Name} Timeline",
                 Phases = new List<TimelinePhase>(),
                 Milestones = new List<Milestone>()
             };

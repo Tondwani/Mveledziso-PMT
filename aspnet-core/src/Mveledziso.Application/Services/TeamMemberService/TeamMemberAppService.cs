@@ -1,10 +1,9 @@
 using Abp.Application.Services;
 using Abp.Application.Services.Dto;
-using Abp.Authorization;
 using Abp.Domain.Repositories;
 using Abp.Extensions;
 using Abp.Linq.Extensions;
-using Mveledziso.Authorization;
+using Mveledziso.Authorization.Roles;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.TeamMemberService.Dto;
 using Microsoft.EntityFrameworkCore;
@@ -14,88 +13,64 @@ using System.Linq;
 using System.Threading.Tasks;
 using Mveledziso.Authorization.Users;
 using Abp.UI;
-using Microsoft.AspNetCore.Authorization;
 using Mveledziso.MultiTenancy;
 using Abp.Runtime.Session;
+using Mveledziso.Roles;
+using Mveledziso.Roles.Dto;
+using Mveledziso.Domain.Enums;
 
 namespace Mveledziso.Services.TeamMemberService
 {
-    [AbpAuthorize(PermissionNames.Pages_Users)]
-    public class TeamMemberAppService : AsyncCrudAppService<
-        TeamMember,               // The TeamMember entity
-        TeamMemberDto,            // DTO for TeamMember
-        Guid,                     // Primary key type
-        GetTeamMembersInput,     // Used for paging/sorting
-        CreateTeamMemberDto,      // Used for creating
-        UpdateTeamMemberDto>,     // Used for updating
+    public class TeamMemberAppService : 
+        AsyncCrudAppService<TeamMember, TeamMemberDto, Guid, GetTeamMembersInput, CreateTeamMemberDto, UpdateTeamMemberDto>,
         ITeamMemberAppService
     {
         private readonly IRepository<UserTeam, Guid> _userTeamRepository;
         private readonly UserManager _userManager;
         private readonly TenantManager _tenantManager;
         private readonly IAbpSession _abpSession;
+        private readonly RoleAppService _roleAppService;
 
         public TeamMemberAppService(
             IRepository<TeamMember, Guid> repository,
             IRepository<UserTeam, Guid> userTeamRepository,
             UserManager userManager,
             TenantManager tenantManager,
-            IAbpSession abpSession)
+            IAbpSession abpSession,
+            RoleAppService roleAppService)
             : base(repository)
         {
             _userTeamRepository = userTeamRepository;
             _userManager = userManager;
             _tenantManager = tenantManager;
             _abpSession = abpSession;
+            _roleAppService = roleAppService;
+            
             LocalizationSourceName = MveledzisoConsts.LocalizationSourceName;
         }
 
         public override async Task<TeamMemberDto> CreateAsync(CreateTeamMemberDto input)
         {
-            CheckCreatePermission();
-
-            // Generate username if not provided
-            string userName = input.UserName;
-            if (string.IsNullOrWhiteSpace(userName))
-            {
-                userName = input.Email;
-            }
-
-            // Check if email is already registered
-            if (await _userManager.FindByEmailAsync(input.Email) != null)
-            {
-                throw new UserFriendlyException(L("EmailAddressAlreadyRegistered"));
-            }
-
             try
             {
-                // Create User directly instead of using UserRegistrationManager
-                // to avoid tenant restriction
-                var user = new User
-                {
-                    TenantId = _abpSession.TenantId,
-                    Name = input.FirstName,
-                    Surname = input.LastName,
-                    EmailAddress = input.Email,
-                    IsActive = true,
-                    UserName = userName,
-                    IsEmailConfirmed = true
-                };
+                // Ensure role exists
+                var teamMemberRole = await EnsureRoleExistsAsync(
+                    StaticRoleNames.Tenants.TeamMember,
+                    "Team Member",
+                    "Role for team members who participate in projects"
+                );
 
-                user.SetNormalizedNames();
-                
-                // We'll use CurrentUnitOfWork which is already available in AsyncCrudAppService
-                await _userManager.InitializeOptionsAsync(_abpSession.TenantId);
-                var result = await _userManager.CreateAsync(user, input.Password);
-                
-                if (!result.Succeeded)
-                {
-                    throw new UserFriendlyException("User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
+                // Create user
+                var user = await CreateUserAsync(
+                    input.FirstName,
+                    input.LastName,
+                    input.Email,
+                    input.Password,
+                    input.UserName
+                );
 
-                // Add user to default roles
-                var defaultRoles = await _userManager.GetRolesAsync(user);
-                await _userManager.SetRolesAsync(user, defaultRoles.ToArray());
+                // Add user to role
+                await _userManager.AddToRoleAsync(user, teamMemberRole.Name);
 
                 // Create TeamMember entity
                 var teamMember = new TeamMember
@@ -105,7 +80,7 @@ namespace Mveledziso.Services.TeamMemberService
                     Email = input.Email,
                     Password = input.Password,
                     UserId = user.Id,
-                    Role = input.Role
+                    Role = input.Role ?? TeamRole.Member // Use provided role or default to Member
                 };
 
                 await Repository.InsertAsync(teamMember);
@@ -115,30 +90,12 @@ namespace Mveledziso.Services.TeamMemberService
             }
             catch (Exception ex)
             {
-                string errorDetails = ex.Message;
-                
-                // Add inner exception details if available
-                if (ex.InnerException != null)
-                {
-                    errorDetails += " Inner exception: " + ex.InnerException.Message;
-                    
-                    // Drill down to the deepest inner exception
-                    var innerEx = ex.InnerException;
-                    while (innerEx.InnerException != null)
-                    {
-                        innerEx = innerEx.InnerException;
-                        errorDetails += " -> " + innerEx.Message;
-                    }
-                }
-                
-                throw new UserFriendlyException("Error creating team member: " + errorDetails);
+                throw new UserFriendlyException("Error creating team member: " + GetExceptionDetails(ex));
             }
         }
 
         public override async Task<TeamMemberDto> UpdateAsync(UpdateTeamMemberDto input)
         {
-            CheckUpdatePermission();
-
             var teamMember = await Repository.GetAsync(input.Id);
 
             ObjectMapper.Map(input, teamMember);
@@ -171,5 +128,91 @@ namespace Mveledziso.Services.TeamMemberService
                 ObjectMapper.Map<List<TeamMemberDto>>(teamMembers)
             );
         }
+
+        #region Helper Methods
+        
+        private async Task<User> CreateUserAsync(string firstName, string lastName, string email, string password, string userName)
+        {
+            // Generate username if not provided
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                userName = email;
+            }
+
+            // Check if email is already registered
+            if (await _userManager.FindByEmailAsync(email) != null)
+            {
+                throw new UserFriendlyException(L("EmailAddressAlreadyRegistered"));
+            }
+
+            // Create User
+            var user = new User
+            {
+                TenantId = _abpSession.TenantId,
+                Name = firstName,
+                Surname = lastName,
+                EmailAddress = email,
+                IsActive = true,
+                UserName = userName,
+                IsEmailConfirmed = true
+            };
+
+            user.SetNormalizedNames();
+            
+            await _userManager.InitializeOptionsAsync(_abpSession.TenantId);
+            var result = await _userManager.CreateAsync(user, password);
+            
+            if (!result.Succeeded)
+            {
+                throw new UserFriendlyException("User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            return user;
+        }
+
+        private async Task<RoleListDto> EnsureRoleExistsAsync(string roleName, string displayName, string description)
+        {
+            var roles = await _roleAppService.GetRolesAsync(new GetRolesInput());
+            var role = roles.Items.FirstOrDefault(r => r.Name == roleName);
+
+            if (role == null)
+            {
+                // Create the role if it doesn't exist
+                var createRoleDto = new CreateRoleDto
+                {
+                    Name = roleName,
+                    DisplayName = displayName,
+                    Description = description,
+                    GrantedPermissions = new List<string>()
+                };
+
+                var createdRole = await _roleAppService.CreateAsync(createRoleDto);
+                role = new RoleListDto 
+                { 
+                    Name = createdRole.Name,
+                    DisplayName = createdRole.DisplayName
+                };
+            }
+
+            return role;
+        }
+
+        private string GetExceptionDetails(Exception ex)
+        {
+            string errorDetails = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorDetails += " Inner exception: " + ex.InnerException.Message;
+                var innerEx = ex.InnerException;
+                while (innerEx.InnerException != null)
+                {
+                    innerEx = innerEx.InnerException;
+                    errorDetails += " -> " + innerEx.Message;
+                }
+            }
+            return errorDetails;
+        }
+        
+        #endregion
     }
 } 

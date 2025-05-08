@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 namespace Mveledziso.Services.TeamMemberService
 {
     public interface ITeamMemberAppService : IAsyncCrudAppService<
-        TeamMemberDto,           // DTO for the TeamMember
-        Guid,                    // Primary key type
-        GetTeamMembersInput,    // Used for paging/sorting
-        CreateTeamMemberDto,     // Used for creating
-        UpdateTeamMemberDto>     // Used for updating
+        TeamMemberDto,           
+        Guid,                    
+        GetTeamMembersInput,    
+        CreateTeamMemberDto,     
+        UpdateTeamMemberDto>     
     {
         Task<ListResultDto<TeamMemberDto>> GetTeamMembersByTeamAsync(EntityDto<Guid> input);
     }

@@ -26,6 +26,7 @@ export default function Login() {
       // Check user roles for routing
       const roles = currentUser.roles || [];
       const isProjectManager = roles.includes("ProjectManager");
+      // const isTeamMember = roles.includes("TeamMember");
       const redirectPath = isProjectManager ? "/AdminMenu" : "/UserMenu";
       
       console.log(`Routing to ${redirectPath} based on roles:`, roles);
