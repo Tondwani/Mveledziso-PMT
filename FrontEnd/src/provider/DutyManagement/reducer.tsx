@@ -4,35 +4,41 @@ import { UserDutyActionEnum } from "./action";
 
 interface IUserDutyAction {
   type: UserDutyActionEnum;
-  payload: {
+  payload?: {
     isPending?: boolean;
     isSuccess?: boolean;
     isError?: boolean;
-    message?: string;
-    userDuty?: IUserDuty;
+    errorMessage?: string;
+    userDuty?: IUserDuty | null;
     userDuties?: IUserDuty[];
   };
 }
 
 export const UserDutyReducer = handleActions<IUserDutyStateContext, IUserDutyAction['payload']>(
   {
-    [UserDutyActionEnum.PENDING]: (state, action) => ({
+    [UserDutyActionEnum.SET_PENDING]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [UserDutyActionEnum.SUCCESS]: (state, action) => ({
+    [UserDutyActionEnum.SET_SUCCESS]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [UserDutyActionEnum.ERROR]: (state, action) => ({
+    [UserDutyActionEnum.SET_ERROR]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [UserDutyActionEnum.DUTIES_LOADED]: (state, action) => ({
+    [UserDutyActionEnum.SET_USER_DUTY]: (state, action) => ({
       ...state,
-      userDuties: action.payload.userDuties,
       ...action.payload
     }),
+    [UserDutyActionEnum.SET_USER_DUTIES]: (state, action) => ({
+      ...state,
+      ...action.payload
+    }),
+    [UserDutyActionEnum.RESET_STATE]: () => ({
+      ...INITIAL_STATE
+    })
   },
   INITIAL_STATE
 );

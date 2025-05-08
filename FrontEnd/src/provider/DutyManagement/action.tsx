@@ -1,42 +1,41 @@
 import { IUserDuty } from "./context";
 
 export enum UserDutyActionEnum {
-  PENDING = "USER_DUTY_PENDING",
-  SUCCESS = "USER_DUTY_SUCCESS",
-  ERROR = "USER_DUTY_ERROR",
-  DUTIES_LOADED = "USER_DUTIES_LOADED",
+  SET_PENDING = "SET_DUTY_PENDING",
+  SET_SUCCESS = "SET_DUTY_SUCCESS",
+  SET_ERROR = "SET_DUTY_ERROR",
+  SET_USER_DUTY = "SET_USER_DUTY",
+  SET_USER_DUTIES = "SET_USER_DUTIES",
+  RESET_STATE = "RESET_DUTY_STATE"
 }
 
 // Base Actions
-export const userDutyPending = () => ({
-  type: UserDutyActionEnum.PENDING,
-  payload: { isPending: true, isSuccess: false, isError: false }
+export const setPending = () => ({
+  type: UserDutyActionEnum.SET_PENDING,
+  payload: { isPending: true, isSuccess: false, isError: false, errorMessage: undefined }
 });
 
-export const userDutySuccess = (message: string) => ({
-  type: UserDutyActionEnum.SUCCESS,
-  payload: { isPending: false, isSuccess: true, message }
+export const setSuccess = (message?: string) => ({
+  type: UserDutyActionEnum.SET_SUCCESS,
+  payload: { isPending: false, isSuccess: true, isError: false, errorMessage: undefined, message }
 });
 
-export const userDutyError = (message: string) => ({
-  type: UserDutyActionEnum.ERROR,
-  payload: { isPending: false, isError: true, message }
+export const setError = (errorMessage: string) => ({
+  type: UserDutyActionEnum.SET_ERROR,
+  payload: { isPending: false, isSuccess: false, isError: true, errorMessage }
+});
+
+export const resetState = () => ({
+  type: UserDutyActionEnum.RESET_STATE
 });
 
 // Specific Actions
-export const createUserDutySuccess = (duty: IUserDuty) => ({
-  type: UserDutyActionEnum.SUCCESS,
-  payload: {
-    ...userDutySuccess("User duty created successfully").payload,
-    userDuty: duty,
-    userDuties: [duty]
-  }
+export const setUserDuty = (userDuty: IUserDuty) => ({
+  type: UserDutyActionEnum.SET_USER_DUTY,
+  payload: { userDuty, isPending: false, isSuccess: true, isError: false }
 });
 
-export const loadUserDutiesSuccess = (duties: IUserDuty[]) => ({
-  type: UserDutyActionEnum.DUTIES_LOADED,
-  payload: {
-    ...userDutySuccess("User duties loaded successfully").payload,
-    userDuties: duties
-  }
+export const setUserDuties = (userDuties: IUserDuty[]) => ({
+  type: UserDutyActionEnum.SET_USER_DUTIES,
+  payload: { userDuties, isPending: false, isSuccess: true, isError: false }
 });

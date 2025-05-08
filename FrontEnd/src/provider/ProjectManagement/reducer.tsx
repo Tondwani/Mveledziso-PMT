@@ -1,58 +1,55 @@
 import { handleActions } from "redux-actions";
-import { ProjectActionEnum } from "./action";
 import { INITIAL_STATE, IProjectStateContext, IProject, IProjectDuty } from "./context";
+import { ProjectActionEnum } from "./action";
 
-// Define a type for the action payload
-interface ActionPayload {
+interface IProjectAction {
+  type: ProjectActionEnum;
+  payload?: {
   isPending?: boolean;
   isSuccess?: boolean;
   isError?: boolean;
+    errorMessage?: string;
   message?: string;
-  project?: IProject;
+    project?: IProject | null;
   projects?: IProject[];
-  projectDuty?: IProjectDuty;
+    projectDuty?: IProjectDuty | null;
   projectDuties?: IProjectDuty[];
+  };
 }
 
-export const ProjectReducer = handleActions<IProjectStateContext, ActionPayload>(
+export const ProjectReducer = handleActions<IProjectStateContext, IProjectAction['payload']>(
   {
-    // Project Reducers
-    [ProjectActionEnum.PROJECT_PENDING]: (state, action) => ({
+    [ProjectActionEnum.SET_PENDING]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.PROJECT_SUCCESS]: (state, action) => ({
+    [ProjectActionEnum.SET_SUCCESS]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.PROJECT_ERROR]: (state, action) => ({
+    [ProjectActionEnum.SET_ERROR]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.PROJECTS_LOADED]: (state, action) => ({
-      ...state,
-      projects: action.payload.projects,
-      ...action.payload
-    }),
-
-    // Duty Reducers
-    [ProjectActionEnum.DUTY_PENDING]: (state, action) => ({
+    [ProjectActionEnum.SET_PROJECT]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.DUTY_SUCCESS]: (state, action) => ({
+    [ProjectActionEnum.SET_PROJECTS]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.DUTY_ERROR]: (state, action) => ({
+    [ProjectActionEnum.SET_PROJECT_DUTY]: (state, action) => ({
       ...state,
       ...action.payload
     }),
-    [ProjectActionEnum.DUTIES_LOADED]: (state, action) => ({
+    [ProjectActionEnum.SET_PROJECT_DUTIES]: (state, action) => ({
       ...state,
-      projectDuties: action.payload.projectDuties,
       ...action.payload
     }),
+    [ProjectActionEnum.RESET_STATE]: () => ({
+      ...INITIAL_STATE
+    })
   },
   INITIAL_STATE
 );

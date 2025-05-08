@@ -12,11 +12,11 @@ import {
 } from "./context";
 import { UserDutyReducer } from "./reducer";
 import { 
-  userDutyPending,
-  userDutySuccess,
-  userDutyError,
-  createUserDutySuccess,
-  loadUserDutiesSuccess
+  setPending,
+  setSuccess,
+  setError,
+  setUserDuty,
+  setUserDuties
 } from "./action";
 import axios from 'axios';
 
@@ -37,21 +37,21 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
 
   // Action implementations
   const createUserDuty = async (duty: ICreateUserDutyDto) => {
-    dispatch(userDutyPending());
+    dispatch(setPending());
     try {
       const response = await instance.post(`${API_ENDPOINTS.userDuties}/Create`, duty);
       const createdDuty: IUserDuty = response.data.result;
-      dispatch(createUserDutySuccess(createdDuty));
+      dispatch(setUserDuty(createdDuty));
       return createdDuty;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      dispatch(userDutyError(errorMessage));
+      dispatch(setError(errorMessage));
       throw error;
     }
   };
 
   const getUserDuties = async (input: IGetUserDutyInput) => {
-    dispatch(userDutyPending());
+    dispatch(setPending());
     try {
       const params = {
         teamMemberId: input.teamMemberId,
@@ -62,37 +62,37 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
 
       const response = await instance.get(`${API_ENDPOINTS.userDuties}/GetAll`, { params });
       const duties: IUserDuty[] = response.data.result.items;
-      dispatch(loadUserDutiesSuccess(duties));
+      dispatch(setUserDuties(duties));
       return duties;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      dispatch(userDutyError(errorMessage));
+      dispatch(setError(errorMessage));
       throw error;
     }
   };
 
   const updateUserDuty = async (duty: IUpdateUserDutyDto) => {
-    dispatch(userDutyPending());
+    dispatch(setPending());
     try {
       const response = await instance.put(`${API_ENDPOINTS.userDuties}/Update`, duty);
       const updatedDuty: IUserDuty = response.data.result;
-      dispatch(createUserDutySuccess(updatedDuty));
+      dispatch(setUserDuty(updatedDuty));
       return updatedDuty;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      dispatch(userDutyError(errorMessage));
+      dispatch(setError(errorMessage));
       throw error;
     }
   };
 
   const deleteUserDuty = async (id: string) => {
-    dispatch(userDutyPending());
+    dispatch(setPending());
     try {
       await instance.delete(`${API_ENDPOINTS.userDuties}/Delete`, { params: { id } });
-      dispatch(userDutySuccess("User duty deleted successfully"));
+      dispatch(setSuccess("User duty deleted successfully"));
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      dispatch(userDutyError(errorMessage));
+      dispatch(setError(errorMessage));
       throw error;
     }
   };
@@ -102,15 +102,15 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
     updateUserDuty,
     deleteUserDuty,
     getUserDuty: async (id) => {
-      dispatch(userDutyPending());
+      dispatch(setPending());
       try {
         const response = await instance.get(`${API_ENDPOINTS.userDuties}/Get`, { params: { id } });
         const duty: IUserDuty = response.data.result;
-        dispatch(createUserDutySuccess(duty));
+        dispatch(setUserDuty(duty));
         return duty;
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        dispatch(userDutyError(errorMessage));
+        dispatch(setError(errorMessage));
         throw error;
       }
     },
