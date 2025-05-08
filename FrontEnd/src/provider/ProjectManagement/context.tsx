@@ -36,17 +36,17 @@ export interface IMilestone {
 
 // Project Duty Interfaces
 export enum DutyStatus {
-  NotStarted = 0,
-  InProgress = 1,
-  Completed = 2,
-  Blocked = 3
+  ToDo = 1,
+  InProgress = 2,
+  Review = 3,
+  Done = 4,
 }
 
 export enum Priority {
-  Low = 0,
-  Medium = 1,
-  High = 2,
-  Critical = 3
+  low = 1,
+  Medium = 2,
+  High = 3,
+  Urgent = 4
 }
 
 export interface IProjectDuty {

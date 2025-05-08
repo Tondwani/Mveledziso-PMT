@@ -10,16 +10,16 @@ namespace Mveledziso.Domain.Enums
     public enum DutyStatus
     {
         [Description("ToDo")]
-        ToDo = 0,
+        ToDo = 1,
 
         [Description("InProgress")]
-        InProgress = 1,
+        InProgress = 2,
 
         [Description("Review")]
-        Review = 2,
+        Review = 3,
 
         [Description("Done")]
-        Done = 3,
+        Done = 4,
 
     }
 }
