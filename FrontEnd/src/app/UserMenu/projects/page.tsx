@@ -2,136 +2,154 @@
 
 import { Table, Tag, Space, Card, Typography, Button, Modal, Form, Input, DatePicker, Select, Progress } from 'antd';
 import { FolderOutlined, TeamOutlined, CalendarOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useProjectState, useProjectActions } from '../../../provider/ProjectManagement';
+import { 
+  IProject, 
+  ICreateProjectDto,
+  ICreateProjectDutyDto,
+  DutyStatus,
+  Priority,
+  IGetProjectsInput,
+  IGetProjectDutiesInput
+} from '../../../provider/ProjectManagement/context';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-interface Project {
-  id: string; // Added the id property that was missing in the interface
+// UI Status mapping
+const ProjectUIStatus = {
+  NotStarted: 'NotStarted',
+  InProgress: 'InProgress',
+  Completed: 'Completed',
+  OnHold: 'OnHold'
+} as const;
+
+type ProjectStatusType = keyof typeof ProjectUIStatus;
+
+// UI mappings for status and priority
+const STATUS_MAP = {
+  [DutyStatus.ToDo]: { color: 'default', text: 'Pending' },
+  [DutyStatus.InProgress]: { color: 'processing', text: 'In Progress' },
+  [DutyStatus.Done]: { color: 'success', text: 'Completed' },
+  [DutyStatus.Review]: { color: 'error', text: 'Blocked' }
+};
+
+const PRIORITY_MAP: Record<Priority, { color: string; text: string }> = {
+  [Priority.low]: { color: 'green', text: 'Low' },
+  [Priority.Medium]: { color: 'blue', text: 'Medium' },
+  [Priority.High]: { color: 'orange', text: 'High' },
+  [Priority.Urgent]: { color: 'red', text: 'Critical' }
+};
+
+// Form interfaces
+interface ProjectFormValues {
   name: string;
-  description: string;
+  description?: string;
   teamId: string;
-  teamName: string;
   startDate: string;
   endDate: string;
-  isCollaborationEnabled: boolean;
-  status: 'NotStarted' | 'InProgress' | 'Completed' | 'OnHold';
-  progress: number;
-  creationTime: string;
 }
 
-interface ProjectDuty {
-  id: string;
+interface DutyFormValues {
   title: string;
-  description: string;
-  status: 'Pending' | 'InProgress' | 'Completed' | 'Blocked';
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  description?: string;
+  priority: Priority;
   dueDate: string;
-  projectId: string;
-  projectName: string;
-  creationTime: string;
 }
 
-export default function ProjectsPage() {
-  // Static data matching your ABP service structure
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 'project1',
-      name: 'Website Redesign',
-      description: 'Complete redesign of company website with modern UI/UX',
-      teamId: 'team1',
-      teamName: 'Development Team',
-      startDate: '2023-06-01',
-      endDate: '2023-08-15',
-      isCollaborationEnabled: true,
-      status: 'InProgress',
-      progress: 45,
-      creationTime: '2023-05-20T09:30:00'
-    },
-    {
-      id: 'project2',
-      name: 'Mobile App Development',
-      description: 'Build cross-platform mobile application for iOS and Android',
-      teamId: 'team1',
-      teamName: 'Development Team',
-      startDate: '2023-07-01',
-      endDate: '2023-10-31',
-      isCollaborationEnabled: true,
-      status: 'NotStarted',
-      progress: 5,
-      creationTime: '2023-06-15T14:20:00'
-    },
-    {
-      id: 'project3',
-      name: 'Marketing Campaign',
-      description: 'Q4 product marketing campaign',
-      teamId: 'team2',
-      teamName: 'Marketing Team',
-      startDate: '2023-09-01',
-      endDate: '2023-12-15',
-      isCollaborationEnabled: false,
-      status: 'NotStarted',
-      progress: 0,
-      creationTime: '2023-06-10T11:15:00'
-    }
-  ]);
+const ProjectsPage = () => {
+  // Provider state and actions
+  const { projects, projectDuties, isPending } = useProjectState();
+  const { getProjects, createProject, getProjectDuties, createProjectDuty } = useProjectActions();
 
-  const [duties, setDuties] = useState<ProjectDuty[]>([
-    {
-      id: 'duty1',
-      title: 'Design Homepage',
-      description: 'Create new homepage design with updated branding',
-      status: 'Completed',
-      priority: 'High',
-      dueDate: '2023-06-15',
-      projectId: 'project1',
-      projectName: 'Website Redesign',
-      creationTime: '2023-05-22T10:30:00'
-    },
-    {
-      id: 'duty2',
-      title: 'Implement Authentication',
-      description: 'Setup user authentication system',
-      status: 'InProgress',
-      priority: 'Critical',
-      dueDate: '2023-06-30',
-      projectId: 'project1',
-      projectName: 'Website Redesign',
-      creationTime: '2023-05-25T14:15:00'
-    },
-    {
-      id: 'duty3',
-      title: 'API Documentation',
-      description: 'Document all API endpoints',
-      status: 'Pending',
-      priority: 'Medium',
-      dueDate: '2023-07-10',
-      projectId: 'project1',
-      projectName: 'Website Redesign',
-      creationTime: '2023-06-01T09:45:00'
-    }
-  ]);
-
+  // Local state
   const [isProjectModalVisible, setIsProjectModalVisible] = useState(false);
   const [isDutyModalVisible, setIsDutyModalVisible] = useState(false);
-  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [currentProject, setCurrentProject] = useState<IProject | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const [statusFilter, setStatusFilter] = useState<ProjectStatusType>();
 
+  // Load projects on mount
+  useEffect(() => {
+    const loadProjects = async () => {
+      const input: IGetProjectsInput = {};
+      await getProjects(input);
+    };
+    loadProjects();
+  }, []);
+
+  // Load duties when current project changes
+  useEffect(() => {
+    const loadProjectDuties = async () => {
+      if (currentProject?.id) {
+        const input: IGetProjectDutiesInput = { projectId: currentProject.id };
+        await getProjectDuties(input);
+      }
+    };
+    loadProjectDuties();
+  }, [currentProject?.id, getProjectDuties]);
+
+  // Memoize project progress calculation
+  const getProjectProgress = React.useCallback((projectId: string): number => {
+    const projectDutiesForProject = projectDuties.filter(duty => duty.projectId === projectId);
+    const completedDuties = projectDutiesForProject.filter(duty => duty.status === DutyStatus.Done).length;
+    return projectDutiesForProject.length > 0 ? (completedDuties / projectDutiesForProject.length) * 100 : 0;
+  }, [projectDuties]);
+
+  // Filter projects based on search and status
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter ? project.status === statusFilter : true;
+                         (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter ? project.progress === 100 : true;
     return matchesSearch && matchesStatus;
   });
 
+  // Form handlers
+  const handleCreateProject = async (values: ProjectFormValues) => {
+    try {
+      const projectData: ICreateProjectDto = {
+        name: values.name,
+        description: values.description,
+        teamId: values.teamId,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        isCollaborationEnabled: true
+      };
+      
+      await createProject(projectData);
+      setIsProjectModalVisible(false);
+    } catch (error) {
+      console.error('Failed to create project:', error);
+    }
+  };
+
+  const handleCreateDuty = async (values: DutyFormValues) => {
+    if (!currentProject) return;
+
+    try {
+      const dutyData: ICreateProjectDutyDto = {
+        title: values.title,
+        description: values.description,
+        projectId: currentProject.id,
+        priority: values.priority,
+        dueDate: values.dueDate
+      };
+      
+      await createProjectDuty(dutyData);
+      setIsDutyModalVisible(false);
+    } catch (error) {
+      console.error('Failed to create duty:', error);
+    }
+  };
+
+  // Table columns
   const projectColumns = [
     {
       title: 'Project Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: Project) => (
+      render: (text: string, record: IProject) => (
         <Space>
           <FolderOutlined />
           <a onClick={() => setCurrentProject(record)}>{text}</a>
@@ -140,14 +158,14 @@ export default function ProjectsPage() {
     },
     {
       title: 'Team',
-      dataIndex: 'teamName',
-      key: 'teamName',
+      dataIndex: 'teamId',
+      key: 'teamId',
       render: (text: string) => <Tag icon={<TeamOutlined />}>{text}</Tag>,
     },
     {
       title: 'Timeline',
       key: 'timeline',
-      render: (_: unknown, record: Project) => (
+      render: (_: unknown, record: IProject) => (
         <Space>
           <CalendarOutlined />
           <Text type="secondary">
@@ -157,40 +175,14 @@ export default function ProjectsPage() {
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: Project['status']) => {
-        const statusMap = {
-          NotStarted: { color: 'default', text: 'Not Started' },
-          InProgress: { color: 'processing', text: 'In Progress' },
-          Completed: { color: 'success', text: 'Completed' },
-          OnHold: { color: 'warning', text: 'On Hold' }
-        };
-        return <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>;
-      },
-    },
-    {
       title: 'Progress',
-      dataIndex: 'progress',
       key: 'progress',
-      render: (progress: number) => (
+      render: (_: unknown, record: IProject) => (
         <Progress 
-          percent={progress} 
+          percent={getProjectProgress(record.id)} 
           size="small" 
-          status={progress === 100 ? 'success' : 'active'} 
+          status={getProjectProgress(record.id) === 100 ? 'success' : 'active'} 
         />
-      ),
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_: unknown, record: Project) => (
-        <Space size="middle">
-          <Button size="small" onClick={() => setCurrentProject(record)}>
-            View Details
-          </Button>
-        </Space>
       ),
     },
   ];
@@ -205,76 +197,27 @@ export default function ProjectsPage() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: ProjectDuty['status']) => {
-        const statusMap = {
-          Pending: { color: 'default', text: 'Pending' },
-          InProgress: { color: 'processing', text: 'In Progress' },
-          Completed: { color: 'success', text: 'Completed' },
-          Blocked: { color: 'error', text: 'Blocked' }
-        };
-        return <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>;
+      render: (status: DutyStatus) => {
+        const { color, text } = STATUS_MAP[status];
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
       title: 'Priority',
       dataIndex: 'priority',
       key: 'priority',
-      render: (priority: ProjectDuty['priority']) => {
-        const priorityMap = {
-          Low: { color: 'green', text: 'Low' },
-          Medium: { color: 'blue', text: 'Medium' },
-          High: { color: 'orange', text: 'High' },
-          Critical: { color: 'red', text: 'Critical' }
-        };
-        return <Tag color={priorityMap[priority].color}>{priorityMap[priority].text}</Tag>;
+      render: (priority: Priority) => {
+        const { color, text } = PRIORITY_MAP[priority];
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
       title: 'Due Date',
       dataIndex: 'dueDate',
       key: 'dueDate',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: () => (
-        <Space size="middle">
-          <Button size="small">Edit</Button>
-        </Space>
-      ),
+      render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
     },
   ];
-
-  const handleCreateProject = (values: Omit<Project, 'id' | 'creationTime' | 'progress' | 'status'>) => {
-    const newProject: Project = {
-      id: `project${projects.length + 1}`,
-      ...values,
-      status: 'NotStarted',
-      progress: 0,
-      creationTime: new Date().toISOString()
-    };
-    setProjects([...projects, newProject]);
-    setIsProjectModalVisible(false);
-  };
-
-  const handleCreateDuty = (values: Omit<ProjectDuty, 'id' | 'creationTime'>) => {
-    if (!currentProject) return;
-    
-    const newDuty: ProjectDuty = {
-      id: `duty${duties.length + 1}`,
-      ...values,
-      projectId: currentProject.id,
-      projectName: currentProject.name,
-      creationTime: new Date().toISOString()
-    };
-    setDuties([...duties, newDuty]);
-    setIsDutyModalVisible(false);
-  };
-
-  const currentProjectDuties = currentProject 
-    ? duties.filter(duty => duty.projectId === currentProject.id)
-    : [];
 
   return (
     <div style={{ padding: 24 }}>
@@ -282,18 +225,18 @@ export default function ProjectsPage() {
       
       <Card 
         title="Project Management"
+        variant="outlined"
         extra={
           <Space>
             <Select
               placeholder="Filter by status"
               style={{ width: 150 }}
-              onChange={(value) => setStatusFilter(value)}
+              onChange={(value) => setStatusFilter(value as ProjectStatusType)}
               allowClear
             >
-              <Select.Option value="NotStarted">Not Started</Select.Option>
-              <Select.Option value="InProgress">In Progress</Select.Option>
-              <Select.Option value="Completed">Completed</Select.Option>
-              <Select.Option value="OnHold">On Hold</Select.Option>
+              {Object.entries(ProjectUIStatus).map(([key, value]) => (
+                <Select.Option key={key} value={value}>{key}</Select.Option>
+              ))}
             </Select>
             
             <Input
@@ -306,7 +249,7 @@ export default function ProjectsPage() {
             
             <Button 
               type="primary" 
-              icon={<PlusOutlined />} 
+              icon={<PlusOutlined />}
               onClick={() => setIsProjectModalVisible(true)}
             >
               New Project
@@ -318,6 +261,7 @@ export default function ProjectsPage() {
           columns={projectColumns} 
           dataSource={filteredProjects} 
           rowKey="id"
+          loading={isPending}
           pagination={{ pageSize: 10 }}
         />
       </Card>
@@ -334,6 +278,7 @@ export default function ProjectsPage() {
           <div style={{ marginBottom: 24 }}>
             <Card 
               title="Project Information"
+              variant="outlined"
               extra={
                 <Button 
                   type="primary" 
@@ -352,7 +297,7 @@ export default function ProjectsPage() {
               <Space size="large">
                 <div>
                   <Text strong>Team:</Text>
-                  <p>{currentProject.teamName}</p>
+                  <p>{currentProject.teamId}</p>
                 </div>
                 
                 <div>
@@ -377,17 +322,22 @@ export default function ProjectsPage() {
               <div style={{ marginTop: 16 }}>
                 <Text strong>Progress:</Text>
                 <Progress 
-                  percent={currentProject.progress} 
-                  status={currentProject.progress === 100 ? 'success' : 'active'} 
+                  percent={getProjectProgress(currentProject.id)} 
+                  status={getProjectProgress(currentProject.id) === 100 ? 'success' : 'active'} 
                 />
               </div>
             </Card>
             
-            <Card title="Project Duties">
+            <Card 
+              title="Project Duties" 
+              style={{ marginTop: 16 }}
+              variant="outlined"
+            >
               <Table 
                 columns={dutyColumns} 
-                dataSource={currentProjectDuties} 
+                dataSource={projectDuties.filter(duty => duty.projectId === currentProject.id)} 
                 rowKey="id"
+                loading={isPending}
                 pagination={{ pageSize: 5 }}
               />
             </Card>
@@ -401,7 +351,6 @@ export default function ProjectsPage() {
         open={isProjectModalVisible}
         onCancel={() => setIsProjectModalVisible(false)}
         footer={null}
-        width={600}
       >
         <Form layout="vertical" onFinish={handleCreateProject}>
           <Form.Item 
@@ -428,10 +377,7 @@ export default function ProjectsPage() {
             </Select>
           </Form.Item>
           
-          <Form.Item 
-            label="Timeline" 
-            required
-          >
+          <Form.Item label="Timeline" required>
             <Space>
               <Form.Item 
                 name="startDate" 
@@ -449,17 +395,6 @@ export default function ProjectsPage() {
                 <DatePicker placeholder="End Date" />
               </Form.Item>
             </Space>
-          </Form.Item>
-          
-          <Form.Item 
-            label="Collaboration" 
-            name="isCollaborationEnabled" 
-            valuePropName="checked"
-          >
-            <Select>
-              <Select.Option value={true}>Enabled</Select.Option>
-              <Select.Option value={false}>Disabled</Select.Option>
-            </Select>
           </Form.Item>
           
           <Form.Item>
@@ -496,10 +431,11 @@ export default function ProjectsPage() {
             rules={[{ required: true, message: 'Please select priority!' }]}
           >
             <Select>
-              <Select.Option value="Low">Low</Select.Option>
-              <Select.Option value="Medium">Medium</Select.Option>
-              <Select.Option value="High">High</Select.Option>
-              <Select.Option value="Critical">Critical</Select.Option>
+              {Object.entries(Priority).map(([key]) => (
+                <Select.Option key={key} value={key}>
+                  {key}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
           
@@ -520,4 +456,6 @@ export default function ProjectsPage() {
       </Modal>
     </div>
   );
-}
+};
+
+export default ProjectsPage;

@@ -1,5 +1,5 @@
 "use client";
-import { Layout, Dropdown, Menu, Avatar, Badge } from "antd";
+import { Layout, Dropdown, Avatar, Badge } from "antd";
 import { BellOutlined, UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
@@ -51,16 +51,14 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     }
   };
 
-  const userMenu = (
-    <Menu
-      onClick={handleMenuClick} 
-      items={[
+  const userMenu = {
+    items: [
         { key: "profile", label: "Profile" }, 
         { key: "settings", label: "Settings" }, 
         { key: "logout", label: "Logout" }, 
-      ]}
-    />
-  );
+    ],
+    onClick: handleMenuClick
+  };
 
   return (
     <Header
@@ -120,12 +118,12 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           gap: isMobile ? "12px" : "20px" 
         }}
       >
-        <Dropdown overlay={<Menu items={notificationItems} />} placement="bottomRight" arrow>
+        <Dropdown menu={{ items: notificationItems }} placement="bottomRight" arrow>
           <Badge count={notificationItems.length}>
             <BellOutlined style={{ fontSize: isMobile ? "18px" : "20px", color: "#000", cursor: "pointer" }} />
           </Badge>
         </Dropdown>
-        <Dropdown overlay={userMenu} placement="bottomRight">
+        <Dropdown menu={userMenu} placement="bottomRight">
         <Avatar 
             icon={<UserOutlined />}
             size={isMobile ? "small" : "default"}

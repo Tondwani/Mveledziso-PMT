@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 
   const getCurrentLoginInfo = useCallback(async () => {
-    dispatch(getCurrentLoginInfoPending(undefined));
+    dispatch(getCurrentLoginInfoPending());
     
     try {
       console.log('Fetching current user info...');
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch(getCurrentLoginInfoSuccess(user));
     } catch (error) {
       console.error('Error getting current user:', error);
-      dispatch(getCurrentLoginInfoError(undefined));
+      dispatch(getCurrentLoginInfoError());
       // If getting current user fails, assume token is invalid and logout
       logout();
     }
@@ -62,10 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       getCurrentLoginInfo();
     }
-  }, []);
+  }, [getCurrentLoginInfo]);
 
   const login = async (userNameOrEmail: string, password: string) => {
-    dispatch(loginPending(undefined));
+    dispatch(loginPending());
     
     try {
       const response = await getAxiosInstance().post(`/api/TokenAuth/Authenticate`, {
@@ -99,12 +99,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     sessionStorage.removeItem("auth_token");
     delete getAxiosInstance().defaults.headers.common["Authorization"];
-    dispatch(logoutSuccess(undefined));
+    dispatch(logoutSuccess());
   };
 
   const createTeamMember = useCallback(async (data: ICreateTeamMember) => {
     try {
-      dispatch(createTeamMemberPending(undefined));
+      dispatch(createTeamMemberPending());
       
       console.log('Creating team member account...');
 
@@ -156,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createProjectManager = useCallback(async (data: ICreateProjectManager) => {
     try {
-      dispatch(createProjectManagerPending(undefined));
+      dispatch(createProjectManagerPending());
       
       console.log('Creating project manager account...');
       
