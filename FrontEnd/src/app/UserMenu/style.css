@@ -1,0 +1,41 @@
+
+.tab-button.ant-btn-text {
+    padding: 12px 0; 
+    margin-right: 16px; 
+    border-bottom: 2px solid transparent; 
+    transition: all 0.3s ease;
+    border-radius: 0; 
+    color: rgba(0, 0, 0, 0.65); 
+  }
+  
+  .tab-button.ant-btn-text:hover {
+    color: #1890ff; 
+    border-color: #1890ff; 
+  }
+  
+  .tab-button.ant-btn-primary {
+    color: #1890ff; 
+    border-color: #1890ff; 
+    font-weight: bold;
+  }
+  
+  .site-layout .ant-layout-content {
+    /* Further refine content area styling if needed */
+  }
+  .title-animated {
+    color: #66ccff; /* Light blue */
+    transition: color 2s ease, transform 0.2s ease;
+    cursor: pointer;
+  }
+  
+  /* Hover effect: fade to navy blue */
+  .title-animated:hover {
+    color: #001f3f; /* Dark navy blue */
+  }
+  
+  /* Press effect: scale down slightly */
+  .title-animated:active {
+    transform: scale(0.96);
+  }
+  
+  

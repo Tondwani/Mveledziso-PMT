@@ -12,7 +12,7 @@ namespace Mveledziso.Services.UserDutiesService.Dto
     [AutoMapFrom(typeof(UserDuty))]
     public class UserDutyDto : EntityDto<Guid>
     {
-        public long UserId { get; set; }
+        public Guid TeamMemberId { get; set; }
         public Guid ProjectDutyId { get; set; }
         public DateTime CreationTime { get; set; }
         public long? CreatorUserId { get; set; }

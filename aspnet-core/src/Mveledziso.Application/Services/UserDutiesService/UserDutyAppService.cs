@@ -16,13 +16,12 @@ namespace Mveledziso.Services.UserDutiesService
             : base(userDutyRepository)
         {
             _userDutyRepository = userDutyRepository;
-
         }
 
         protected override IQueryable<UserDuty> CreateFilteredQuery(GetUserDutyInput input)
         {
             return _userDutyRepository.GetAll()
-                .WhereIf(input.UserId.HasValue, x => x.UserId == input.UserId.Value)
+                .WhereIf(input.TeamMemberId.HasValue, x => x.TeamMemberId == input.TeamMemberId.Value)
                 .WhereIf(input.ProjectDutyId.HasValue, x => x.ProjectDutyId == input.ProjectDutyId.Value)
                 .WhereIf(input.FromDate.HasValue, x => x.CreationTime >= input.FromDate.Value)
                 .WhereIf(input.ToDate.HasValue, x => x.CreationTime <= input.ToDate.Value.AddDays(1).AddTicks(-1));

@@ -7,13 +7,17 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mveledziso.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "mveledziso");
+
             migrationBuilder.CreateTable(
                 name: "AbpAuditLogs",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -42,6 +46,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpBackgroundJobs",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -63,6 +68,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpDynamicProperties",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -80,6 +86,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpEditions",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -101,6 +108,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpEntityChangeSets",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -123,6 +131,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpLanguages",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -147,6 +156,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpLanguageTexts",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -168,6 +178,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpNotifications",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -192,6 +203,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpNotificationSubscriptions",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -212,6 +224,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpOrganizationUnitRoles",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -230,6 +243,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpOrganizationUnits",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -252,12 +266,14 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpOrganizationUnits_AbpOrganizationUnits_ParentId",
                         column: x => x.ParentId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpOrganizationUnits",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "AbpTenantNotifications",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -279,6 +295,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserAccounts",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -303,6 +320,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserLoginAttempts",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -325,6 +343,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserNotifications",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -342,6 +361,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserOrganizationUnits",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -360,6 +380,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUsers",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -399,22 +420,26 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpUsers_AbpUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpUsers_AbpUsers_DeleterUserId",
                         column: x => x.DeleterUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpUsers_AbpUsers_LastModifierUserId",
                         column: x => x.LastModifierUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "AbpWebhookEvents",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -432,6 +457,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpWebhookSubscriptions",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -451,6 +477,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "ActivityLogs",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -468,7 +495,28 @@ namespace Mveledziso.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AppNotifications",
+                schema: "mveledziso",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Message = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    EntityType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppNotifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Comments",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -490,26 +538,8 @@ namespace Mveledziso.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Message = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
-                    EntityType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Teams",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -530,6 +560,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpDynamicEntityProperties",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -544,6 +575,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpDynamicEntityProperties_AbpDynamicProperties_DynamicProp~",
                         column: x => x.DynamicPropertyId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpDynamicProperties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -551,6 +583,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpDynamicPropertyValues",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -565,6 +598,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpDynamicPropertyValues_AbpDynamicProperties_DynamicProper~",
                         column: x => x.DynamicPropertyId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpDynamicProperties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -572,6 +606,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpFeatures",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -590,6 +625,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpFeatures_AbpEditions_EditionId",
                         column: x => x.EditionId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -597,6 +633,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpEntityChanges",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -614,6 +651,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpEntityChanges_AbpEntityChangeSets_EntityChangeSetId",
                         column: x => x.EntityChangeSetId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpEntityChangeSets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -621,6 +659,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpRoles",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -647,22 +686,26 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpRoles_AbpUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpRoles_AbpUsers_DeleterUserId",
                         column: x => x.DeleterUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpRoles_AbpUsers_LastModifierUserId",
                         column: x => x.LastModifierUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "AbpSettings",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -682,12 +725,14 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpSettings_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "AbpTenants",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -711,27 +756,32 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpTenants_AbpEditions_EditionId",
                         column: x => x.EditionId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpEditions",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpTenants_AbpUsers_CreatorUserId",
                         column: x => x.CreatorUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpTenants_AbpUsers_DeleterUserId",
                         column: x => x.DeleterUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AbpTenants_AbpUsers_LastModifierUserId",
                         column: x => x.LastModifierUserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "AbpUserClaims",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -749,6 +799,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpUserClaims_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -756,6 +807,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserLogins",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -771,6 +823,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpUserLogins_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -778,6 +831,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserRoles",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -794,6 +848,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpUserRoles_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -801,6 +856,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpUserTokens",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -818,13 +874,49 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpUserTokens_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
+                name: "Persons",
+                schema: "mveledziso",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FirstName = table.Column<string>(type: "text", nullable: true),
+                    LastName = table.Column<string>(type: "text", nullable: true),
+                    Email = table.Column<string>(type: "text", nullable: true),
+                    Password = table.Column<string>(type: "text", nullable: true),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    PersonType = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: true),
+                    Skills = table.Column<string>(type: "text", nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierUserId = table.Column<long>(type: "bigint", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeleterUserId = table.Column<long>(type: "bigint", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Persons", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Persons_AbpUsers_UserId",
+                        column: x => x.UserId,
+                        principalSchema: "mveledziso",
+                        principalTable: "AbpUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AbpWebhookSendAttempts",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -842,65 +934,15 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpWebhookSendAttempts_AbpWebhookEvents_WebhookEventId",
                         column: x => x.WebhookEventId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpWebhookEvents",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Projects",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
-                    IsCollaborationEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    LastModifierUserId = table.Column<long>(type: "bigint", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    DeleterUserId = table.Column<long>(type: "bigint", nullable: true),
-                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Projects", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Projects_Teams_TeamId",
-                        column: x => x.TeamId,
-                        principalTable: "Teams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserTeams",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
-                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Role = table.Column<int>(type: "integer", nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserTeams", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserTeams_Teams_TeamId",
-                        column: x => x.TeamId,
-                        principalTable: "Teams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AbpDynamicEntityPropertyValues",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -916,6 +958,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpDynamicEntityPropertyValues_AbpDynamicEntityProperties_D~",
                         column: x => x.DynamicEntityPropertyId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpDynamicEntityProperties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -923,6 +966,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpEntityPropertyChanges",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -942,6 +986,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpEntityPropertyChanges_AbpEntityChanges_EntityChangeId",
                         column: x => x.EntityChangeId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpEntityChanges",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -949,6 +994,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpPermissions",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -968,12 +1014,14 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpPermissions_AbpRoles_RoleId",
                         column: x => x.RoleId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_AbpPermissions_AbpUsers_UserId",
                         column: x => x.UserId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -981,6 +1029,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "AbpRoleClaims",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -998,13 +1047,86 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_AbpRoleClaims_AbpRoles_RoleId",
                         column: x => x.RoleId,
+                        principalSchema: "mveledziso",
                         principalTable: "AbpRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
+                name: "Projects",
+                schema: "mveledziso",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProjectManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsCollaborationEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierUserId = table.Column<long>(type: "bigint", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeleterUserId = table.Column<long>(type: "bigint", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Projects", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Projects_Persons_ProjectManagerId",
+                        column: x => x.ProjectManagerId,
+                        principalSchema: "mveledziso",
+                        principalTable: "Persons",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Projects_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalSchema: "mveledziso",
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserTeams",
+                schema: "mveledziso",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamMemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Role = table.Column<int>(type: "integer", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserTeams", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserTeams_Persons_TeamMemberId",
+                        column: x => x.TeamMemberId,
+                        principalSchema: "mveledziso",
+                        principalTable: "Persons",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserTeams_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalSchema: "mveledziso",
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ProjectDuties",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -1031,6 +1153,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_ProjectDuties_Projects_ProjectId",
                         column: x => x.ProjectId,
+                        principalSchema: "mveledziso",
                         principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1038,10 +1161,12 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Timelines",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProjectId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true),
                     CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatorUserId = table.Column<long>(type: "bigint", nullable: true),
                     LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -1056,6 +1181,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_Timelines_Projects_ProjectId",
                         column: x => x.ProjectId,
+                        principalSchema: "mveledziso",
                         principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1063,6 +1189,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Documents",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -1078,6 +1205,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_Documents_ProjectDuties_ProjectDutyId",
                         column: x => x.ProjectDutyId,
+                        principalSchema: "mveledziso",
                         principalTable: "ProjectDuties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1085,10 +1213,11 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "UserDuties",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    TeamMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProjectDutyId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatorUserId = table.Column<long>(type: "bigint", nullable: true)
@@ -1097,8 +1226,16 @@ namespace Mveledziso.Migrations
                 {
                     table.PrimaryKey("PK_UserDuties", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_UserDuties_Persons_TeamMemberId",
+                        column: x => x.TeamMemberId,
+                        principalSchema: "mveledziso",
+                        principalTable: "Persons",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_UserDuties_ProjectDuties_ProjectDutyId",
                         column: x => x.ProjectDutyId,
+                        principalSchema: "mveledziso",
                         principalTable: "ProjectDuties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1106,6 +1243,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Milestones",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -1128,6 +1266,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_Milestones_Timelines_TimelineId",
                         column: x => x.TimelineId,
+                        principalSchema: "mveledziso",
                         principalTable: "Timelines",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1135,6 +1274,7 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateTable(
                 name: "TimelinePhases",
+                schema: "mveledziso",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -1156,6 +1296,7 @@ namespace Mveledziso.Migrations
                     table.ForeignKey(
                         name: "FK_TimelinePhases_Timelines_TimelineId",
                         column: x => x.TimelineId,
+                        principalSchema: "mveledziso",
                         principalTable: "Timelines",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1163,563 +1304,709 @@ namespace Mveledziso.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpAuditLogs_TenantId_ExecutionDuration",
+                schema: "mveledziso",
                 table: "AbpAuditLogs",
                 columns: new[] { "TenantId", "ExecutionDuration" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpAuditLogs_TenantId_ExecutionTime",
+                schema: "mveledziso",
                 table: "AbpAuditLogs",
                 columns: new[] { "TenantId", "ExecutionTime" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpAuditLogs_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpAuditLogs",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpBackgroundJobs_IsAbandoned_NextTryTime",
+                schema: "mveledziso",
                 table: "AbpBackgroundJobs",
                 columns: new[] { "IsAbandoned", "NextTryTime" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpDynamicEntityProperties_DynamicPropertyId",
+                schema: "mveledziso",
                 table: "AbpDynamicEntityProperties",
                 column: "DynamicPropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpDynamicEntityProperties_EntityFullName_DynamicPropertyId~",
+                schema: "mveledziso",
                 table: "AbpDynamicEntityProperties",
                 columns: new[] { "EntityFullName", "DynamicPropertyId", "TenantId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpDynamicEntityPropertyValues_DynamicEntityPropertyId",
+                schema: "mveledziso",
                 table: "AbpDynamicEntityPropertyValues",
                 column: "DynamicEntityPropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpDynamicProperties_PropertyName_TenantId",
+                schema: "mveledziso",
                 table: "AbpDynamicProperties",
                 columns: new[] { "PropertyName", "TenantId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpDynamicPropertyValues_DynamicPropertyId",
+                schema: "mveledziso",
                 table: "AbpDynamicPropertyValues",
                 column: "DynamicPropertyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityChanges_EntityChangeSetId",
+                schema: "mveledziso",
                 table: "AbpEntityChanges",
                 column: "EntityChangeSetId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityChanges_EntityTypeFullName_EntityId",
+                schema: "mveledziso",
                 table: "AbpEntityChanges",
                 columns: new[] { "EntityTypeFullName", "EntityId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityChangeSets_TenantId_CreationTime",
+                schema: "mveledziso",
                 table: "AbpEntityChangeSets",
                 columns: new[] { "TenantId", "CreationTime" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityChangeSets_TenantId_Reason",
+                schema: "mveledziso",
                 table: "AbpEntityChangeSets",
                 columns: new[] { "TenantId", "Reason" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityChangeSets_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpEntityChangeSets",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpEntityPropertyChanges_EntityChangeId",
+                schema: "mveledziso",
                 table: "AbpEntityPropertyChanges",
                 column: "EntityChangeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpFeatures_EditionId_Name",
+                schema: "mveledziso",
                 table: "AbpFeatures",
                 columns: new[] { "EditionId", "Name" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpFeatures_TenantId_Name",
+                schema: "mveledziso",
                 table: "AbpFeatures",
                 columns: new[] { "TenantId", "Name" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpLanguages_TenantId_Name",
+                schema: "mveledziso",
                 table: "AbpLanguages",
                 columns: new[] { "TenantId", "Name" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpLanguageTexts_TenantId_Source_LanguageName_Key",
+                schema: "mveledziso",
                 table: "AbpLanguageTexts",
                 columns: new[] { "TenantId", "Source", "LanguageName", "Key" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpNotificationSubscriptions_NotificationName_EntityTypeNam~",
+                schema: "mveledziso",
                 table: "AbpNotificationSubscriptions",
                 columns: new[] { "NotificationName", "EntityTypeName", "EntityId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpNotificationSubscriptions_TenantId_NotificationName_Enti~",
+                schema: "mveledziso",
                 table: "AbpNotificationSubscriptions",
                 columns: new[] { "TenantId", "NotificationName", "EntityTypeName", "EntityId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpOrganizationUnitRoles_TenantId_OrganizationUnitId",
+                schema: "mveledziso",
                 table: "AbpOrganizationUnitRoles",
                 columns: new[] { "TenantId", "OrganizationUnitId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpOrganizationUnitRoles_TenantId_RoleId",
+                schema: "mveledziso",
                 table: "AbpOrganizationUnitRoles",
                 columns: new[] { "TenantId", "RoleId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpOrganizationUnits_ParentId",
+                schema: "mveledziso",
                 table: "AbpOrganizationUnits",
                 column: "ParentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpOrganizationUnits_TenantId_Code",
+                schema: "mveledziso",
                 table: "AbpOrganizationUnits",
                 columns: new[] { "TenantId", "Code" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpPermissions_RoleId",
+                schema: "mveledziso",
                 table: "AbpPermissions",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpPermissions_TenantId_Name",
+                schema: "mveledziso",
                 table: "AbpPermissions",
                 columns: new[] { "TenantId", "Name" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpPermissions_UserId",
+                schema: "mveledziso",
                 table: "AbpPermissions",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoleClaims_RoleId",
+                schema: "mveledziso",
                 table: "AbpRoleClaims",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoleClaims_TenantId_ClaimType",
+                schema: "mveledziso",
                 table: "AbpRoleClaims",
                 columns: new[] { "TenantId", "ClaimType" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoles_CreatorUserId",
+                schema: "mveledziso",
                 table: "AbpRoles",
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoles_DeleterUserId",
+                schema: "mveledziso",
                 table: "AbpRoles",
                 column: "DeleterUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoles_LastModifierUserId",
+                schema: "mveledziso",
                 table: "AbpRoles",
                 column: "LastModifierUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpRoles_TenantId_NormalizedName",
+                schema: "mveledziso",
                 table: "AbpRoles",
                 columns: new[] { "TenantId", "NormalizedName" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpSettings_TenantId_Name_UserId",
+                schema: "mveledziso",
                 table: "AbpSettings",
                 columns: new[] { "TenantId", "Name", "UserId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpSettings_UserId",
+                schema: "mveledziso",
                 table: "AbpSettings",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenantNotifications_TenantId",
+                schema: "mveledziso",
                 table: "AbpTenantNotifications",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenants_CreatorUserId",
+                schema: "mveledziso",
                 table: "AbpTenants",
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenants_DeleterUserId",
+                schema: "mveledziso",
                 table: "AbpTenants",
                 column: "DeleterUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenants_EditionId",
+                schema: "mveledziso",
                 table: "AbpTenants",
                 column: "EditionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenants_LastModifierUserId",
+                schema: "mveledziso",
                 table: "AbpTenants",
                 column: "LastModifierUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpTenants_TenancyName",
+                schema: "mveledziso",
                 table: "AbpTenants",
                 column: "TenancyName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserAccounts_EmailAddress",
+                schema: "mveledziso",
                 table: "AbpUserAccounts",
                 column: "EmailAddress");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserAccounts_TenantId_EmailAddress",
+                schema: "mveledziso",
                 table: "AbpUserAccounts",
                 columns: new[] { "TenantId", "EmailAddress" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserAccounts_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpUserAccounts",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserAccounts_TenantId_UserName",
+                schema: "mveledziso",
                 table: "AbpUserAccounts",
                 columns: new[] { "TenantId", "UserName" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserAccounts_UserName",
+                schema: "mveledziso",
                 table: "AbpUserAccounts",
                 column: "UserName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserClaims_TenantId_ClaimType",
+                schema: "mveledziso",
                 table: "AbpUserClaims",
                 columns: new[] { "TenantId", "ClaimType" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserClaims_UserId",
+                schema: "mveledziso",
                 table: "AbpUserClaims",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLoginAttempts_TenancyName_UserNameOrEmailAddress_Res~",
+                schema: "mveledziso",
                 table: "AbpUserLoginAttempts",
                 columns: new[] { "TenancyName", "UserNameOrEmailAddress", "Result" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLoginAttempts_UserId_TenantId",
+                schema: "mveledziso",
                 table: "AbpUserLoginAttempts",
                 columns: new[] { "UserId", "TenantId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLogins_ProviderKey_TenantId",
+                schema: "mveledziso",
                 table: "AbpUserLogins",
                 columns: new[] { "ProviderKey", "TenantId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLogins_TenantId_LoginProvider_ProviderKey",
+                schema: "mveledziso",
                 table: "AbpUserLogins",
                 columns: new[] { "TenantId", "LoginProvider", "ProviderKey" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLogins_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpUserLogins",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserLogins_UserId",
+                schema: "mveledziso",
                 table: "AbpUserLogins",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserNotifications_UserId_State_CreationTime",
+                schema: "mveledziso",
                 table: "AbpUserNotifications",
                 columns: new[] { "UserId", "State", "CreationTime" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserOrganizationUnits_TenantId_OrganizationUnitId",
+                schema: "mveledziso",
                 table: "AbpUserOrganizationUnits",
                 columns: new[] { "TenantId", "OrganizationUnitId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserOrganizationUnits_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpUserOrganizationUnits",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserRoles_TenantId_RoleId",
+                schema: "mveledziso",
                 table: "AbpUserRoles",
                 columns: new[] { "TenantId", "RoleId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserRoles_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpUserRoles",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserRoles_UserId",
+                schema: "mveledziso",
                 table: "AbpUserRoles",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUsers_CreatorUserId",
+                schema: "mveledziso",
                 table: "AbpUsers",
                 column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUsers_DeleterUserId",
+                schema: "mveledziso",
                 table: "AbpUsers",
                 column: "DeleterUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUsers_LastModifierUserId",
+                schema: "mveledziso",
                 table: "AbpUsers",
                 column: "LastModifierUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUsers_TenantId_NormalizedEmailAddress",
+                schema: "mveledziso",
                 table: "AbpUsers",
                 columns: new[] { "TenantId", "NormalizedEmailAddress" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUsers_TenantId_NormalizedUserName",
+                schema: "mveledziso",
                 table: "AbpUsers",
                 columns: new[] { "TenantId", "NormalizedUserName" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserTokens_TenantId_UserId",
+                schema: "mveledziso",
                 table: "AbpUserTokens",
                 columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpUserTokens_UserId",
+                schema: "mveledziso",
                 table: "AbpUserTokens",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AbpWebhookSendAttempts_WebhookEventId",
+                schema: "mveledziso",
                 table: "AbpWebhookSendAttempts",
                 column: "WebhookEventId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLogs_EntityType_EntityId",
+                schema: "mveledziso",
                 table: "ActivityLogs",
                 columns: new[] { "EntityType", "EntityId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AppNotifications_UserId",
+                schema: "mveledziso",
+                table: "AppNotifications",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Comments_EntityType_EntityId",
+                schema: "mveledziso",
                 table: "Comments",
                 columns: new[] { "EntityType", "EntityId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_ProjectDutyId",
+                schema: "mveledziso",
                 table: "Documents",
                 column: "ProjectDutyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Milestones_TimelineId",
+                schema: "mveledziso",
                 table: "Milestones",
                 column: "TimelineId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId",
-                table: "Notifications",
-                column: "UserId");
+                name: "IX_Persons_UserId",
+                schema: "mveledziso",
+                table: "Persons",
+                column: "UserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectDuties_ProjectId",
+                schema: "mveledziso",
                 table: "ProjectDuties",
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Projects_ProjectManagerId",
+                schema: "mveledziso",
+                table: "Projects",
+                column: "ProjectManagerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Projects_TeamId",
+                schema: "mveledziso",
                 table: "Projects",
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TimelinePhases_TimelineId",
+                schema: "mveledziso",
                 table: "TimelinePhases",
                 column: "TimelineId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Timelines_ProjectId",
+                schema: "mveledziso",
                 table: "Timelines",
                 column: "ProjectId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserDuties_ProjectDutyId",
+                schema: "mveledziso",
                 table: "UserDuties",
                 column: "ProjectDutyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserDuties_UserId",
+                name: "IX_UserDuties_TeamMemberId",
+                schema: "mveledziso",
                 table: "UserDuties",
-                column: "UserId");
+                column: "TeamMemberId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserTeams_TeamId",
+                schema: "mveledziso",
                 table: "UserTeams",
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserTeams_UserId",
+                name: "IX_UserTeams_TeamMemberId",
+                schema: "mveledziso",
                 table: "UserTeams",
-                column: "UserId");
+                column: "TeamMemberId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AbpAuditLogs");
+                name: "AbpAuditLogs",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpBackgroundJobs");
+                name: "AbpBackgroundJobs",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpDynamicEntityPropertyValues");
+                name: "AbpDynamicEntityPropertyValues",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpDynamicPropertyValues");
+                name: "AbpDynamicPropertyValues",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpEntityPropertyChanges");
+                name: "AbpEntityPropertyChanges",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpFeatures");
+                name: "AbpFeatures",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpLanguages");
+                name: "AbpLanguages",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpLanguageTexts");
+                name: "AbpLanguageTexts",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpNotifications");
+                name: "AbpNotifications",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpNotificationSubscriptions");
+                name: "AbpNotificationSubscriptions",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpOrganizationUnitRoles");
+                name: "AbpOrganizationUnitRoles",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpOrganizationUnits");
+                name: "AbpOrganizationUnits",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpPermissions");
+                name: "AbpPermissions",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpRoleClaims");
+                name: "AbpRoleClaims",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpSettings");
+                name: "AbpSettings",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpTenantNotifications");
+                name: "AbpTenantNotifications",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpTenants");
+                name: "AbpTenants",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserAccounts");
+                name: "AbpUserAccounts",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserClaims");
+                name: "AbpUserClaims",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserLoginAttempts");
+                name: "AbpUserLoginAttempts",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserLogins");
+                name: "AbpUserLogins",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserNotifications");
+                name: "AbpUserNotifications",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserOrganizationUnits");
+                name: "AbpUserOrganizationUnits",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserRoles");
+                name: "AbpUserRoles",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUserTokens");
+                name: "AbpUserTokens",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpWebhookSendAttempts");
+                name: "AbpWebhookSendAttempts",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpWebhookSubscriptions");
+                name: "AbpWebhookSubscriptions",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "ActivityLogs");
+                name: "ActivityLogs",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Comments");
+                name: "AppNotifications",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Documents");
+                name: "Comments",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Milestones");
+                name: "Documents",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
+                name: "Milestones",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "TimelinePhases");
+                name: "TimelinePhases",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "UserDuties");
+                name: "UserDuties",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "UserTeams");
+                name: "UserTeams",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpDynamicEntityProperties");
+                name: "AbpDynamicEntityProperties",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpEntityChanges");
+                name: "AbpEntityChanges",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpRoles");
+                name: "AbpRoles",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpEditions");
+                name: "AbpEditions",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpWebhookEvents");
+                name: "AbpWebhookEvents",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Timelines");
+                name: "Timelines",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "ProjectDuties");
+                name: "ProjectDuties",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpDynamicProperties");
+                name: "AbpDynamicProperties",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpEntityChangeSets");
+                name: "AbpEntityChangeSets",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "AbpUsers");
+                name: "Projects",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Projects");
+                name: "Persons",
+                schema: "mveledziso");
 
             migrationBuilder.DropTable(
-                name: "Teams");
+                name: "Teams",
+                schema: "mveledziso");
+
+            migrationBuilder.DropTable(
+                name: "AbpUsers",
+                schema: "mveledziso");
         }
     }
 }

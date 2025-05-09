@@ -2,7 +2,7 @@ using Abp.Application.Services.Dto;
 using Abp.Authorization.Users;
 using Abp.AutoMapper;
 using Mveledziso.Authorization.Users;
-using Mveledziso.Services.UserTeam.Dto;
+using Mveledziso.Services.UserTeamService.Dto;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

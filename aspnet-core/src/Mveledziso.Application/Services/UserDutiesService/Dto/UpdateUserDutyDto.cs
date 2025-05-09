@@ -10,7 +10,7 @@ namespace Mveledziso.Services.UserDutiesService.Dto
     public class UpdateUserDutyDto : EntityDto<Guid>
     {
         [Required]
-        public long UserId { get; set; }
+        public Guid TeamMemberId { get; set; }
 
         [Required]
         public Guid ProjectDutyId { get; set; }

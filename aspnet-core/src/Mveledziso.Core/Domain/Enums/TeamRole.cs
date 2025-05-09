@@ -12,19 +12,11 @@ namespace Mveledziso.Domain.Enums
         [Description("Team Member")]
         Member = 0,
 
-        [Description("Project Manager")]
-        ProjectManager = 1,
-
         [Description("Team Lead")]
-        TeamLead = 2,
-
-        [Description("Group Leader")]
-        Leader = 3,
+        TeamLead = 1,
 
         [Description("Viewer")]
-        Viewer = 4,
+        Viewer = 2,
 
-        [Description("Administrator")]
-        Admin = 5
     }
 }
