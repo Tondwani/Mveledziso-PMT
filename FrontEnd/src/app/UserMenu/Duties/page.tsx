@@ -38,7 +38,7 @@ export default function DutiesPage() {
         message.error('Failed to fetch duties');
       });
     }
-  }, [currentUser]);
+  }, []);
 
   const statusMap: Record<DutyStatus, { color: string; icon?: React.ReactNode }> = {
     Completed: { color: 'green', icon: <CheckCircleOutlined /> },
