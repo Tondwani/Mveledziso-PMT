@@ -47,13 +47,26 @@ namespace Mveledziso.Services.TimelinePhaseService
                 TimelineId = input.TimelineId
             };
 
-            await _phaseRepository.InsertAsync(phase);
-            return await GetAsync(phase.Id);
+            phase = await _phaseRepository.InsertAsync(phase);
+            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+
+            // Return DTO directly from created entity and already loaded timeline
+            return new TimelinePhaseDto
+            {
+                Id = phase.Id,
+                Name = phase.Name,
+                StartDate = phase.StartDate,
+                EndDate = phase.EndDate,
+                TimelineId = phase.TimelineId,
+                TimelineName = timeline.Name,
+                CreationTime = phase.CreationTime
+            };
         }
 
         public async Task<TimelinePhaseDto> UpdateAsync(Guid id, UpdateTimelinePhaseDto input)
         {
             var phase = await _phaseRepository.GetAsync(id);
+            var timeline = await _timelineRepository.GetAsync(phase.TimelineId);
 
             if (input.StartDate >= input.EndDate)
             {
@@ -65,7 +78,19 @@ namespace Mveledziso.Services.TimelinePhaseService
             phase.EndDate = input.EndDate;
 
             await _phaseRepository.UpdateAsync(phase);
-            return await GetAsync(id);
+            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+
+            // Return DTO directly from updated entity and already loaded timeline
+            return new TimelinePhaseDto
+            {
+                Id = phase.Id,
+                Name = phase.Name,
+                StartDate = phase.StartDate,
+                EndDate = phase.EndDate,
+                TimelineId = phase.TimelineId,
+                TimelineName = timeline.Name,
+                CreationTime = phase.CreationTime
+            };
         }
 
         public async Task DeleteAsync(Guid id)
