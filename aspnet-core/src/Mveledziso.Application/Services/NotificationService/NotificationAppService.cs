@@ -46,11 +46,32 @@ namespace Mveledziso.Services.NotificationService
                 UserId = input.UserId,
                 EntityType = input.EntityType,
                 EntityId = input.EntityId,
-                CreatorUserId = _abpSession.UserId // Sender = current user
+                CreatorUserId = _abpSession.UserId, // Sender = current user
+                IsRead = false // Ensure new notifications start as unread
             };
 
-            await _notificationRepository.InsertAsync(notification);
-            return await GetAsync(notification.Id);
+            notification = await _notificationRepository.InsertAsync(notification);
+            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+
+            // Return DTO directly from created entity
+            var sender = notification.CreatorUserId.HasValue ?
+                await _userRepository.GetAsync(notification.CreatorUserId.Value) :
+                null;
+
+            return new NotificationDto
+            {
+                Id = notification.Id,
+                Message = notification.Message,
+                Type = notification.Type,
+                IsRead = notification.IsRead,
+                UserId = notification.UserId,
+                RecipientName = recipient.UserName,
+                EntityType = notification.EntityType,
+                EntityId = notification.EntityId,
+                CreationTime = notification.CreationTime,
+                SenderUserId = notification.CreatorUserId ?? 0,
+                SenderUserName = sender?.UserName
+            };
         }
 
         public async Task<NotificationDto> UpdateAsync(Guid id, UpdateNotificationDto input)

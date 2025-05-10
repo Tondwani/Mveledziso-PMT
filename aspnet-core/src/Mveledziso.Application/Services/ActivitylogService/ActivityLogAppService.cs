@@ -29,8 +29,11 @@ namespace Mveledziso.Services.ActivitylogService
             _abpSession = abpSession;
         }
 
+        // Automatically log activity
         public async Task<ActivityLogDto> CreateAsync(CreateActivityLogDto input)
         {
+            var currentUser = await _userRepository.GetAsync(_abpSession.UserId.Value);
+            
             var log = new ActivityLog
             {
                 Action = input.Action,
@@ -40,8 +43,21 @@ namespace Mveledziso.Services.ActivitylogService
                 EntityId = input.EntityId
             };
 
-            await _activityLogRepository.InsertAsync(log);
-            return await GetAsync(log.Id);
+            log = await _activityLogRepository.InsertAsync(log);
+            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+
+            // Return DTO directly from created entity
+            return new ActivityLogDto
+            {
+                Id = log.Id,
+                Action = log.Action,
+                Details = log.Details,
+                UserId = log.UserId,
+                UserName = currentUser.UserName,
+                EntityType = log.EntityType,
+                EntityId = log.EntityId,
+                CreationTime = log.CreationTime
+            };
         }
 
         public async Task<ActivityLogDto> UpdateAsync(Guid id, UpdateActivityLogDto input)

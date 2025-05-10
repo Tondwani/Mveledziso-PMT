@@ -5,10 +5,10 @@ using Abp.UI;
 using Mveledziso.Authorization.Users;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.CommentService.Dto;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Mveledziso.Services.CommentService
@@ -17,15 +17,18 @@ namespace Mveledziso.Services.CommentService
     {
         private readonly IRepository<Comment, Guid> _commentRepository;
         private readonly IRepository<User, long> _userRepository;
+        private readonly IRepository<Person, Guid> _personRepository;
         private readonly IAbpSession _abpSession;
 
         public CommentAppService(
             IRepository<Comment, Guid> commentRepository,
             IRepository<User, long> userRepository,
+            IRepository<Person, Guid> personRepository,
             IAbpSession abpSession)
         {
             _commentRepository = commentRepository;
             _userRepository = userRepository;
+            _personRepository = personRepository;
             _abpSession = abpSession;
         }
 
@@ -74,6 +77,8 @@ namespace Mveledziso.Services.CommentService
         {
             var comment = await _commentRepository.GetAsync(id);
             var user = await _userRepository.GetAsync(comment.UserId);
+            var person = await _personRepository.GetAll()
+                .FirstOrDefaultAsync(p => p.UserId == comment.UserId);
 
             return new CommentDto
             {
@@ -81,6 +86,7 @@ namespace Mveledziso.Services.CommentService
                 Content = comment.Content,
                 UserId = comment.UserId,
                 UserName = user.UserName,
+                UserType = person is ProjectManager ? "ProjectManager" : "TeamMember",
                 EntityType = comment.EntityType,
                 EntityId = comment.EntityId,
                 CreationTime = comment.CreationTime
@@ -89,15 +95,28 @@ namespace Mveledziso.Services.CommentService
 
         public async Task<List<CommentDto>> GetListAsync(CommentListInputDto input)
         {
+            Logger.Debug($"Searching for comments with EntityType: {input.EntityType}, EntityId: {input.EntityId}");
+            
             var query = _commentRepository.GetAll()
-                .Where(c => c.EntityType == input.EntityType && c.EntityId == input.EntityId)
-                .OrderByDescending(c => c.CreationTime)
+                .Where(c => c.EntityType == input.EntityType && c.EntityId == input.EntityId);
+            
+            var count = await query.CountAsync();
+            Logger.Debug($"Found {count} comments before pagination");
+            
+            query = query.OrderByDescending(c => c.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var comments = await Task.FromResult(query.ToList());
+            var comments = await query.ToListAsync();
             var userIds = comments.Select(c => c.UserId).Distinct().ToList();
-            var users = _userRepository.GetAll().Where(u => userIds.Contains(u.Id)).ToList();
+            
+            var users = _userRepository.GetAll()
+                .Where(u => userIds.Contains(u.Id))
+                .ToList();
+
+            var persons = _personRepository.GetAll()
+                .Where(p => userIds.Contains(p.UserId))
+                .ToList();
 
             return comments.Select(c => new CommentDto
             {
@@ -105,6 +124,7 @@ namespace Mveledziso.Services.CommentService
                 Content = c.Content,
                 UserId = c.UserId,
                 UserName = users.FirstOrDefault(u => u.Id == c.UserId)?.UserName,
+                UserType = persons.FirstOrDefault(p => p.UserId == c.UserId) is ProjectManager ? "ProjectManager" : "TeamMember",
                 EntityType = c.EntityType,
                 EntityId = c.EntityId,
                 CreationTime = c.CreationTime
