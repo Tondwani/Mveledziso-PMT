@@ -1,99 +1,172 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { List, Badge, Typography, Space, Button, Spin } from "antd";
-import { useNotificationState, useNotificationActions, INotification } from "../../provider/NotificationManagement";
-import { formatDistanceToNow } from "date-fns";
 
-const { Text, Title } = Typography;
+import React, { useEffect } from 'react';
+import { Badge, Typography, Button, Dropdown } from 'antd';
+import { BellOutlined } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
+import { useNotificationState, useNotificationActions } from "../../provider/NotificationManagement";
 
-const NotificationPage: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const { notifications, totalCount, isPending } = useNotificationState();
-  const { getNotifications, markAsRead, markAllAsRead } = useNotificationActions();
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
+const { Text } = Typography;
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      await getNotifications({
-        skipCount: (page - 1) * pageSize,
-        maxResultCount: pageSize,
-      });
-    } finally {
-      setLoading(false);
+interface NotificationComponentProps {
+  isMobile: boolean;
+}
+
+const NotificationComponent: React.FC<NotificationComponentProps> = ({ isMobile }) => {
+  const router = useRouter();
+  const { notifications, unreadCount } = useNotificationState();
+  const { getNotifications, markAsRead } = useNotificationActions();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        console.log("Fetching notifications...");
+        const result = await getNotifications({
+          maxResultCount: 10,
+          skipCount: 0
+        });
+        console.log("Fetched notifications:", result);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [getNotifications]);
+
+  // Add logging for render
+  console.log("Current notifications:", notifications);
+  console.log("Unread count:", unreadCount);
+
+  const handleNotificationClick = async (id: string) => {
+    await markAsRead(id);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [page]);
-
-  const handleMarkAsRead = async (id: string) => {
-    await markAsRead(id);
-    fetchNotifications();
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-    fetchNotifications();
-  };
-
-  const renderNotificationItem = (notification: INotification) => {
-    const timeAgo = formatDistanceToNow(new Date(notification.creationTime), { addSuffix: true });
-
-    return (
-      <List.Item
-        key={notification.id}
-        actions={[
-          !notification.isRead && (
-            <Button type="link" onClick={() => handleMarkAsRead(notification.id)}>
-              Mark as read
-            </Button>
-          ),
-        ]}
-      >
-        <List.Item.Meta
-          title={
-            <Space>
-              {!notification.isRead && <Badge status="processing" />}
-              <Text>{notification.message}</Text>
-            </Space>
-          }
-          description={
-            <Space direction="vertical" size={0}>
-              <Text type="secondary">From: {notification.senderUserName}</Text>
-              <Text type="secondary">{timeAgo}</Text>
-            </Space>
-          }
-        />
-      </List.Item>
-    );
+  const handleViewAllNotifications = async () => {
+    await router.push('/notifications');
   };
 
   return (
-    <div style={{ padding: "24px" }}>
-      <Space direction="vertical" style={{ width: "100%" }} size="large">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Title level={4}>Notifications</Title>
-          <Button onClick={handleMarkAllAsRead}>Mark all as read</Button>
+    <Dropdown 
+      menu={{ 
+        items: [],
+        style: { 
+          minWidth: '350px',
+          maxWidth: '400px'
+        }
+      }}
+      placement="bottomRight"
+      arrow={{ pointAtCenter: true }}
+      trigger={['click']}
+      dropdownRender={() => (
+        <div style={{ 
+          backgroundColor: '#f8fafc', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          overflow: 'hidden',
+          minWidth: '350px'
+        }}>
+          <div style={{ 
+            padding: '16px 20px', 
+            borderBottom: '1px solid #e2e8f0',
+            backgroundColor: '#1890ff',
+            color: 'white'
+          }}>
+            <Text strong style={{ color: 'white', fontSize: '16px' }}>Notifications</Text>
+          </div>
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {notifications && notifications.length > 0 ? (
+              <div style={{ padding: '8px 0' }}>
+                {notifications.map(notification => (
+                  <div 
+                    key={notification.id}
+                    style={{ 
+                      padding: '12px 20px',
+                      borderBottom: '1px solid #e2e8f0',
+                      backgroundColor: notification.isRead ? '#f8fafc' : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = notification.isRead ? '#f8fafc' : '#fff';
+                    }}
+                    onClick={() => handleNotificationClick(notification.id)}
+                  >
+                    <Text style={{ 
+                      fontSize: '14px',
+                      flex: 1,
+                      marginRight: '8px'
+                    }}>
+                      {notification.message}
+                    </Text>
+                    <Text type="secondary" style={{ 
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {formatDate(notification.creationTime)}
+                    </Text>
+                  </div>
+                ))}
+                <div style={{ 
+                  padding: '12px 20px', 
+                  borderTop: '1px solid #e2e8f0',
+                  backgroundColor: '#fff'
+                }}>
+                  <Button 
+                    type="primary" 
+                    block 
+                    onClick={handleViewAllNotifications}
+                    style={{ backgroundColor: '#1890ff' }}
+                  >
+                    View all notifications
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ 
+                padding: '32px 20px', 
+                textAlign: 'center',
+                backgroundColor: '#fff' 
+              }}>
+                <Text type="secondary">No new notifications</Text>
+              </div>
+            )}
+          </div>
         </div>
-
-        <Spin spinning={loading || isPending}>
-          <List
-            dataSource={notifications}
-            renderItem={renderNotificationItem}
-            pagination={{
-              current: page,
-              pageSize,
-              total: totalCount,
-              onChange: setPage,
-            }}
-          />
-        </Spin>
-      </Space>
-    </div>
+      )}
+    >
+      <Badge count={unreadCount} offset={[-2, 2]}>
+        <BellOutlined style={{ 
+          fontSize: isMobile ? "18px" : "20px", 
+          color: "#000", 
+          cursor: "pointer",
+          padding: '4px'
+        }} />
+      </Badge>
+    </Dropdown>
   );
 };
 
-export default NotificationPage;
+export default NotificationComponent;

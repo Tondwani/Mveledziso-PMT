@@ -182,5 +182,41 @@ namespace Mveledziso.Services.NotificationService
                     null
             }).ToList();
         }
+
+        public async Task<int> GetUnreadCountAsync()
+        {
+            var userId = _abpSession.UserId;
+            if (!userId.HasValue)
+            {
+                Logger.Warn("No user ID found in session for GetUnreadCount");
+                return 0;
+            }
+
+            return await _notificationRepository.GetAll()
+                .Where(n => n.UserId == userId.Value && !n.IsRead)
+                .CountAsync();
+        }
+
+        public async Task MarkAllAsReadAsync()
+        {
+            var userId = _abpSession.UserId;
+            if (!userId.HasValue)
+            {
+                Logger.Warn("No user ID found in session for MarkAllAsRead");
+                return;
+            }
+
+            var unreadNotifications = await _notificationRepository.GetAll()
+                .Where(n => n.UserId == userId.Value && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var notification in unreadNotifications)
+            {
+                notification.IsRead = true;
+                await _notificationRepository.UpdateAsync(notification);
+            }
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
     }
 }

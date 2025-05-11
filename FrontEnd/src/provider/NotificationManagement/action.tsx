@@ -1,3 +1,5 @@
+"use client";
+
 import { INotification } from "./context";
 
 // Action Types

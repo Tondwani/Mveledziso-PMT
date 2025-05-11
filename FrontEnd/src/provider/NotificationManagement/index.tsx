@@ -1,4 +1,6 @@
-import React, { useReducer, useContext, useCallback, useEffect } from "react";
+"use client";
+
+import React, { useReducer, useContext, useCallback } from "react";
 import {
   NotificationStateContext,
   NotificationActionContext,
@@ -14,7 +16,6 @@ import {
   setPending,
   setError,
   setSuccess,
-  setNotification,
   setNotifications,
   setTotalCount,
   setUnreadCount,
@@ -35,103 +36,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [state, dispatch] = useReducer(NotificationReducer, INITIAL_STATE);
   const api = getAxiosInstance();
 
-  // Fetch unread count periodically
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await api.get("/api/services/app/Notification/GetUnreadCount");
-        dispatch(setUnreadCount(response.data.result));
-      } catch (error) {
-        console.error("Failed to fetch unread count:", error);
-      }
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [api]);
-
-  const createNotification = useCallback(
-    async (notification: ICreateNotificationDto): Promise<INotification> => {
-      try {
-        dispatch(setPending(true));
-        const response = await api.post("/api/services/app/Notification/Create", notification);
-        const result = response.data.result;
-        dispatch(setNotification(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to create notification"));
-        throw error;
-      }
-    },
-    [api]
-  );
-
-  const updateNotification = useCallback(
-    async (id: string, notification: IUpdateNotificationDto): Promise<INotification> => {
-      try {
-        dispatch(setPending(true));
-        const response = await api.put(`/api/services/app/Notification/Update?id=${id}`, notification);
-        const result = response.data.result;
-        dispatch(setNotification(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to update notification"));
-        throw error;
-      }
-    },
-    [api]
-  );
-
-  const deleteNotification = useCallback(
-    async (id: string): Promise<void> => {
-      try {
-        dispatch(setPending(true));
-        await api.delete(`/api/services/app/Notification/Delete?id=${id}`);
-        dispatch(setNotification(null));
-        dispatch(setSuccess(true));
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to delete notification"));
-        throw error;
-      }
-    },
-    [api]
-  );
-
-  const getNotification = useCallback(
-    async (id: string): Promise<INotification> => {
-      try {
-        dispatch(setPending(true));
-        const response = await api.get(`/api/services/app/Notification/Get?id=${id}`);
-        const result = response.data.result;
-        dispatch(setNotification(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to fetch notification"));
-        throw error;
-      }
-    },
-    [api]
-  );
-
   const getNotifications = useCallback(
     async (input: IGetNotificationInput): Promise<{ items: INotification[]; totalCount: number }> => {
       try {
         dispatch(setPending(true));
+        // The backend will automatically filter for the current logged-in user
         const response = await api.get("/api/services/app/Notification/GetList", {
           params: input,
         });
         const result = response.data.result;
         dispatch(setNotifications(result.items));
         dispatch(setTotalCount(result.totalCount));
+        // Calculate unread count from the full list
+        const unreadCount = result.items.filter((n: INotification) => !n.isRead).length;
+        dispatch(setUnreadCount(unreadCount));
         dispatch(setSuccess(true));
         return result;
       } catch (error) {
@@ -151,7 +69,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           isRead: true,
         });
         const result = response.data.result;
-        dispatch(setNotification(result));
+        
+        // Update the notifications list to reflect the change
+        const updatedNotifications = state.notifications.map((n: INotification) =>
+          n.id === id ? { ...n, isRead: true } : n
+        );
+        dispatch(setNotifications(updatedNotifications));
+        
+        // Recalculate unread count
+        const unreadCount = updatedNotifications.filter((n: INotification) => !n.isRead).length;
+        dispatch(setUnreadCount(unreadCount));
+        
         dispatch(setSuccess(true));
         return result;
       } catch (error) {
@@ -160,49 +88,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         throw error;
       }
     },
-    [api]
-  );
-
-  const markAllAsRead = useCallback(
-    async (): Promise<void> => {
-      try {
-        dispatch(setPending(true));
-        await api.post("/api/services/app/Notification/MarkAllAsRead");
-        dispatch(setUnreadCount(0));
-        dispatch(setSuccess(true));
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to mark all notifications as read"));
-        throw error;
-      }
-    },
-    [api]
-  );
-
-  const getUnreadCount = useCallback(
-    async (): Promise<number> => {
-      try {
-        const response = await api.get("/api/services/app/Notification/GetUnreadCount");
-        const count = response.data.result;
-        dispatch(setUnreadCount(count));
-        return count;
-      } catch (error) {
-        console.error("Failed to get unread count:", error);
-        return state.unreadCount;
-      }
-    },
-    [api, state.unreadCount]
+    [api, state.notifications]
   );
 
   const actions: INotificationActionContext = {
-    createNotification,
-    updateNotification,
-    deleteNotification,
-    getNotification,
     getNotifications,
-    markAsRead,
-    markAllAsRead,
-    getUnreadCount,
+    markAsRead
   };
 
   return (
@@ -214,7 +105,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// Custom hooks for using the notification context
 export const useNotificationState = () => {
   const context = useContext(NotificationStateContext);
   if (context === undefined) {
