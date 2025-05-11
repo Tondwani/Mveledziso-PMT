@@ -1,100 +1,74 @@
 "use client";
 
-import { Table, Tag, Space, Card, Typography, Button, Modal, Form, DatePicker, Select, Avatar, List } from 'antd';
+import { Table, Tag, Space, Card, Typography, Button, Modal, Form, DatePicker, Select, Avatar, message } from 'antd';
 import { FilterOutlined, InfoCircleOutlined, UserOutlined } from '@ant-design/icons';
-import React, { useState } from 'react';
-import type { Dayjs } from 'dayjs';
+import React, { useState, useEffect } from 'react';
+import { useActivityLogState, useActivityLogActions } from '../../../provider/ActivitylogManagement';
+import { IActivityLog, IGetActivityLogsInput } from '../../../provider/ActivitylogManagement/context';
+import { AxiosError } from 'axios';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
-interface ActivityLog {
-  id: string;
-  action: string;
-  details: string;
-  userId: number;
-  userName: string;
-  entityType: string;
-  entityId: string;
-  creationTime: string;
+interface FilterFormValues {
+  action?: string;
+  entityType?: string;
+  userId?: number;
+  dateRange?: [string, string];
 }
 
 export default function ActivityLogPage() {
-  // Static data matching your ABP service structure
-  const [activityLogs] = useState<ActivityLog[]>([
-    {
-      id: 'log1',
-      action: 'Created',
-      details: 'Created new project "Website Redesign"',
-      userId: 1,
-      userName: 'john.doe',
-      entityType: 'Project',
-      entityId: 'project1',
-      creationTime: '2023-06-15T09:30:00'
-    },
-    {
-      id: 'log2',
-      action: 'Updated',
-      details: 'Updated project timeline for "Mobile App"',
-      userId: 2,
-      userName: 'jane.smith',
-      entityType: 'Project',
-      entityId: 'project2',
-      creationTime: '2023-06-14T14:20:00'
-    },
-    {
-      id: 'log3',
-      action: 'Deleted',
-      details: 'Deleted milestone "Design Approval"',
-      userId: 3,
-      userName: 'mike.johnson',
-      entityType: 'Milestone',
-      entityId: 'milestone1',
-      creationTime: '2023-06-14T11:15:00'
-    },
-    {
-      id: 'log4',
-      action: 'Assigned',
-      details: 'Assigned duty "Implement authentication" to Jane Smith',
-      userId: 1,
-      userName: 'john.doe',
-      entityType: 'Duty',
-      entityId: 'duty1',
-      creationTime: '2023-06-13T16:45:00'
-    },
-    {
-      id: 'log5',
-      action: 'Completed',
-      details: 'Marked duty "API documentation" as completed',
-      userId: 2,
-      userName: 'jane.smith',
-      entityType: 'Duty',
-      entityId: 'duty2',
-      creationTime: '2023-06-12T10:30:00'
-    }
-  ]);
+  // State and Actions from Context
+  const { activityLogs, isPending } = useActivityLogState();
+  const { getActivityLogs } = useActivityLogActions();
 
+  // Local State
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
-  const [filters, setFilters] = useState({
+  const [selectedLog, setSelectedLog] = useState<IActivityLog | null>(null);
+  const [filters, setFilters] = useState<IGetActivityLogsInput>({
     action: '',
     entityType: '',
-    userId: null as number | null,
-    dateRange: null as [Dayjs, Dayjs] | null
+    userId: undefined,
+    startDate: undefined,
+    endDate: undefined,
+    skipCount: 0,
+    maxResultCount: 10
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredLogs = activityLogs.filter(log => {
-    const matchesAction = filters.action ? log.action === filters.action : true;
-    const matchesEntityType = filters.entityType ? log.entityType === filters.entityType : true;
-    const matchesUser = filters.userId ? log.userId === filters.userId : true;
-    const matchesDate = filters.dateRange 
-      ? new Date(log.creationTime) >= filters.dateRange[0].toDate() 
-        && new Date(log.creationTime) <= filters.dateRange[1].toDate()
-      : true;
-    
-    return matchesAction && matchesEntityType && matchesUser && matchesDate;
-  });
+  // Load activity logs on mount and when filters change
+  useEffect(() => {
+    const loadActivityLogs = async () => {
+      try {
+        setError(null);
+        const input: IGetActivityLogsInput = {
+          ...filters,
+          skipCount: filters.skipCount ?? 0,
+          maxResultCount: 10
+        };
+        await getActivityLogs(input);
+      } catch (err) {
+        console.error('Error fetching activity logs:', err);
+        const axiosError = err as AxiosError<{ error: { message: string } }>;
+        const errorMessage = axiosError.response?.data?.error?.message || 
+                           axiosError.message || 
+                           'Failed to fetch activity logs. Please try again later.';
+        setError(errorMessage);
+        message.error(errorMessage);
+      }
+    };
 
+    loadActivityLogs();
+  }, [
+    filters.action,
+    filters.entityType,
+    filters.userId,
+    filters.startDate,
+    filters.endDate,
+    (filters.skipCount ?? 0)
+  ]);
+
+  // Derived data
   const actionTypes = [...new Set(activityLogs.map(log => log.action))];
   const entityTypes = [...new Set(activityLogs.map(log => log.entityType))];
   const users = [...new Set(activityLogs.map(log => ({ id: log.userId, name: log.userName })))];
@@ -130,7 +104,7 @@ export default function ActivityLogPage() {
     {
       title: 'Entity',
       key: 'entity',
-      render: (_: unknown, record: ActivityLog) => (
+      render: (_: unknown, record: IActivityLog) => (
         <Space>
           <Tag>{record.entityType}</Tag>
           <Text type="secondary">ID: {record.entityId}</Text>
@@ -156,7 +130,7 @@ export default function ActivityLogPage() {
     {
       title: 'Action',
       key: 'action',
-      render: (_: unknown, record: ActivityLog) => (
+      render: (_: unknown, record: IActivityLog) => (
         <Button 
           type="text" 
           icon={<InfoCircleOutlined />} 
@@ -166,8 +140,15 @@ export default function ActivityLogPage() {
     },
   ];
 
-  const handleApplyFilters = (values: typeof filters) => {
-    setFilters(values);
+  const handleApplyFilters = (values: FilterFormValues) => {
+    const { dateRange, ...otherValues } = values;
+    setFilters(prev => ({
+      ...prev,
+      ...otherValues,
+      startDate: dateRange?.[0],
+      endDate: dateRange?.[1],
+      skipCount: 0 // Reset pagination when filters change
+    }));
     setIsFilterModalVisible(false);
   };
 
@@ -175,8 +156,11 @@ export default function ActivityLogPage() {
     setFilters({
       action: '',
       entityType: '',
-      userId: null,
-      dateRange: null
+      userId: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      skipCount: 0,
+      maxResultCount: 10
     });
   };
 
@@ -186,6 +170,7 @@ export default function ActivityLogPage() {
       
       <Card 
         title="System Activities"
+        variant="outlined"
         extra={
           <Space>
             <Button 
@@ -197,135 +182,101 @@ export default function ActivityLogPage() {
           </Space>
         }
       >
+        {error && (
+          <div style={{ marginBottom: 16, color: '#ff4d4f' }}>
+            {error}
+          </div>
+        )}
         <Table 
-          columns={columns} 
-          dataSource={filteredLogs} 
+          columns={columns}
+          dataSource={activityLogs}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+          loading={isPending}
+          pagination={{
+            total: activityLogs.length,
+            pageSize: filters.maxResultCount || 10,
+            current: Math.floor((filters.skipCount ?? 0) / (filters.maxResultCount || 10)) + 1,
+            onChange: (page) => {
+              setFilters(prev => ({
+                ...prev,
+                skipCount: (page - 1) * (prev.maxResultCount || 10)
+              }));
+            }
+          }}
         />
       </Card>
 
       {/* Filter Modal */}
       <Modal
-        title="Filter Activities"
+        title="Filter Activity Logs"
         open={isFilterModalVisible}
         onCancel={() => setIsFilterModalVisible(false)}
         footer={null}
       >
-        <Form
-          layout="vertical"
-          initialValues={filters}
+        <Form<FilterFormValues>
           onFinish={handleApplyFilters}
+          initialValues={{
+            action: filters.action,
+            entityType: filters.entityType,
+            userId: filters.userId,
+            dateRange: filters.startDate && filters.endDate ? [filters.startDate, filters.endDate] : undefined
+          }}
         >
-          <Form.Item label="Action Type" name="action">
-            <Select placeholder="Select action type" allowClear>
-              {actionTypes.map(action => (
-                <Select.Option key={action} value={action}>
-                  {action}
-                </Select.Option>
+          <Form.Item name="action" label="Action">
+            <Select allowClear>
+              {actionTypes.map(type => (
+                <Select.Option key={type} value={type}>{type}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          
-          <Form.Item label="Entity Type" name="entityType">
-            <Select placeholder="Select entity type" allowClear>
+          <Form.Item name="entityType" label="Entity Type">
+            <Select allowClear>
               {entityTypes.map(type => (
-                <Select.Option key={type} value={type}>
-                  {type}
-                </Select.Option>
+                <Select.Option key={type} value={type}>{type}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          
-          <Form.Item label="User" name="userId">
-            <Select placeholder="Select user" allowClear>
+          <Form.Item name="userId" label="User">
+            <Select allowClear>
               {users.map(user => (
-                <Select.Option key={user.id} value={user.id}>
-                  <Space>
-                    <Avatar size="small" icon={<UserOutlined />} />
-                    {user.name}
-                  </Space>
-                </Select.Option>
+                <Select.Option key={user.id} value={user.id}>{user.name}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          
-          <Form.Item label="Date Range" name="dateRange">
-            <RangePicker style={{ width: '100%' }} />
+          <Form.Item name="dateRange" label="Date Range">
+            <RangePicker showTime />
           </Form.Item>
-          
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
-                Apply Filters
-              </Button>
-              <Button onClick={handleResetFilters}>
-                Reset
-              </Button>
+              <Button type="primary" htmlType="submit">Apply</Button>
+              <Button onClick={handleResetFilters}>Reset</Button>
             </Space>
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Activity Detail Modal */}
+      {/* Details Modal */}
       <Modal
         title="Activity Details"
         open={!!selectedLog}
         onCancel={() => setSelectedLog(null)}
-        footer={null}
-        width={600}
+        footer={<Button onClick={() => setSelectedLog(null)}>Close</Button>}
       >
         {selectedLog && (
-          <List itemLayout="horizontal">
-            <List.Item>
-              <List.Item.Meta
-                title="Action"
-                description={
-                  <Tag color={
-                    selectedLog.action === 'Created' ? 'green' :
-                    selectedLog.action === 'Updated' ? 'blue' :
-                    selectedLog.action === 'Deleted' ? 'red' : 'purple'
-                  }>
-                    {selectedLog.action}
-                  </Tag>
-                }
-              />
-            </List.Item>
-            <List.Item>
-              <List.Item.Meta
-                title="User"
-                description={
-                  <Space>
-                    <Avatar icon={<UserOutlined />} />
-                    <span>{selectedLog.userName}</span>
-                  </Space>
-                }
-              />
-            </List.Item>
-            <List.Item>
-              <List.Item.Meta
-                title="Entity"
-                description={
-                  <Space>
-                    <Tag>{selectedLog.entityType}</Tag>
-                    <Text type="secondary">ID: {selectedLog.entityId}</Text>
-                  </Space>
-                }
-              />
-            </List.Item>
-            <List.Item>
-              <List.Item.Meta
-                title="Timestamp"
-                description={new Date(selectedLog.creationTime).toLocaleString()}
-              />
-            </List.Item>
-            <List.Item>
-              <List.Item.Meta
-                title="Details"
-                description={selectedLog.details}
-              />
-            </List.Item>
-          </List>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Text strong>Action:</Text>
+            <Text>{selectedLog.action}</Text>
+            <Text strong>Details:</Text>
+            <Text>{selectedLog.details}</Text>
+            <Text strong>User:</Text>
+            <Text>{selectedLog.userName}</Text>
+            <Text strong>Entity Type:</Text>
+            <Text>{selectedLog.entityType}</Text>
+            <Text strong>Entity ID:</Text>
+            <Text>{selectedLog.entityId}</Text>
+            <Text strong>Time:</Text>
+            <Text>{new Date(selectedLog.creationTime).toLocaleString()}</Text>
+          </Space>
         )}
       </Modal>
     </div>
