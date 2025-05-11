@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Abp.Application.Services.Dto;
 
 namespace Mveledziso.Services.DocumentService
 {
@@ -20,13 +21,6 @@ namespace Mveledziso.Services.DocumentService
             : base(documentRepository)
         {
             _documentRepository = documentRepository;
-
-            // Configure permissions if needed
-            // GetPermissionName = "Pages.Documents.View";
-            // GetAllPermissionName = "Pages.Documents.View";
-            // CreatePermissionName = "Pages.Documents.Create";
-            // UpdatePermissionName = "Pages.Documents.Edit";
-            // DeletePermissionName = "Pages.Documents.Delete";
         }
 
         protected override IQueryable<Document> CreateFilteredQuery(GetDocumentInput input)
@@ -45,6 +39,27 @@ namespace Mveledziso.Services.DocumentService
         protected override IQueryable<Document> ApplySorting(IQueryable<Document> query, GetDocumentInput input)
         {
             return query.OrderByDescending(x => x.CreationTime);
+        }
+
+        public override async Task<DocumentDto> CreateAsync(CreateDocumentDto input)
+        {
+            var entity = MapToEntity(input);
+            await Repository.InsertAsync(entity);
+            await CurrentUnitOfWork.SaveChangesAsync();
+            return MapToEntityDto(entity);
+        }
+
+        public override async Task<DocumentDto> UpdateAsync(UpdateDocumentDto input)
+        {
+            var entity = await Repository.GetAsync(input.Id);
+            MapToEntity(input, entity);
+            await Repository.UpdateAsync(entity);
+            return MapToEntityDto(entity);
+        }
+
+        public override async Task DeleteAsync(EntityDto<Guid> input)
+        {
+            await Repository.DeleteAsync(input.Id);
         }
     }
 }
