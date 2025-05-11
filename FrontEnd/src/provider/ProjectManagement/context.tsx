@@ -69,6 +69,7 @@ export interface ICreateProjectDto {
   startDate: string;
   endDate: string;
   isCollaborationEnabled: boolean;
+  projectManagerId: string;
 }
 
 export interface IUpdateProjectDto {

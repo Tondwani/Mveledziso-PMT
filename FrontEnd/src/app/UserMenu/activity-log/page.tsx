@@ -188,7 +188,7 @@ export default function ActivityLogPage() {
           </div>
         )}
         <Table 
-          columns={columns}
+          columns={columns} 
           dataSource={activityLogs}
           rowKey="id"
           loading={isPending}
@@ -276,7 +276,7 @@ export default function ActivityLogPage() {
             <Text>{selectedLog.entityId}</Text>
             <Text strong>Time:</Text>
             <Text>{new Date(selectedLog.creationTime).toLocaleString()}</Text>
-          </Space>
+                  </Space>
         )}
       </Modal>
     </div>
