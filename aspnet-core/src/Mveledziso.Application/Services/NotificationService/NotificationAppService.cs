@@ -3,6 +3,7 @@ using Abp.Domain.Repositories;
 using Abp.Linq.Extensions;
 using Abp.Runtime.Session;
 using Abp.UI;
+using Microsoft.EntityFrameworkCore;
 using Mveledziso.Authorization.Users;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.NotificationService.Dto;
@@ -116,14 +117,42 @@ namespace Mveledziso.Services.NotificationService
 
         public async Task<List<NotificationDto>> GetListAsync(NotificationListInputDto input)
         {
-            var query = _notificationRepository.GetAll()
-                .Where(n => n.UserId == input.UserId)
-                .WhereIf(input.IsRead.HasValue, n => n.IsRead == input.IsRead)
-                .OrderByDescending(n => n.CreationTime)
+            Logger.Info($"Getting notifications with UserId: {input.UserId}, IsRead: {input.IsRead}");
+
+            var query = _notificationRepository.GetAll();
+
+            // If no specific user is requested, use the current user's ID
+            var userId = input.UserId > 0 ? input.UserId : _abpSession.UserId;
+            
+            if (userId.HasValue)
+            {
+                query = query.Where(n => n.UserId == userId.Value);
+                Logger.Info($"Filtering for user: {userId.Value}");
+            }
+            else
+            {
+                Logger.Warn("No user ID provided or found in session");
+                return new List<NotificationDto>();
+            }
+
+            if (input.IsRead.HasValue)
+            {
+                query = query.Where(n => n.IsRead == input.IsRead.Value);
+                Logger.Info($"Filtering for IsRead: {input.IsRead.Value}");
+            }
+
+            query = query.OrderByDescending(n => n.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var notifications = await Task.FromResult(query.ToList());
+            var notifications = await query.ToListAsync();
+            Logger.Info($"Found {notifications.Count} notifications");
+
+            if (!notifications.Any())
+            {
+                return new List<NotificationDto>();
+            }
+
             var userIds = notifications
                 .Select(n => n.UserId)
                 .Concat(notifications.Where(n => n.CreatorUserId.HasValue)
@@ -131,9 +160,10 @@ namespace Mveledziso.Services.NotificationService
                 .Distinct()
                 .ToList();
 
-            var users = _userRepository.GetAll()
+            Logger.Info($"Fetching user details for {userIds.Count} users");
+            var users = await _userRepository.GetAll()
                 .Where(u => userIds.Contains(u.Id))
-                .ToList();
+                .ToListAsync();
 
             return notifications.Select(n => new NotificationDto
             {

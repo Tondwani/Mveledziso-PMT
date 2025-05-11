@@ -2,13 +2,13 @@
 using Abp.Domain.Repositories;
 using Abp.Linq.Extensions;
 using Abp.Runtime.Session;
+using Microsoft.EntityFrameworkCore;
 using Mveledziso.Authorization.Users;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.ActivitylogService.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Mveledziso.Services.ActivitylogService
@@ -29,9 +29,13 @@ namespace Mveledziso.Services.ActivitylogService
             _abpSession = abpSession;
         }
 
-        // Automatically log activity
         public async Task<ActivityLogDto> CreateAsync(CreateActivityLogDto input)
         {
+            if (!_abpSession.UserId.HasValue)
+            {
+                throw new Abp.UI.UserFriendlyException("User must be logged in to create activity logs");
+            }
+
             var currentUser = await _userRepository.GetAsync(_abpSession.UserId.Value);
             
             var log = new ActivityLog
@@ -44,9 +48,10 @@ namespace Mveledziso.Services.ActivitylogService
             };
 
             log = await _activityLogRepository.InsertAsync(log);
-            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+            await CurrentUnitOfWork.SaveChangesAsync();
 
-            // Return DTO directly from created entity
+            Logger.Info($"Created activity log: Action={log.Action}, EntityType={log.EntityType}, UserId={log.UserId}");
+
             return new ActivityLogDto
             {
                 Id = log.Id,
@@ -66,12 +71,27 @@ namespace Mveledziso.Services.ActivitylogService
             log.Details = input.Details;
 
             await _activityLogRepository.UpdateAsync(log);
-            return await GetAsync(id);
+            await CurrentUnitOfWork.SaveChangesAsync();
+            
+            var user = await _userRepository.GetAsync(log.UserId);
+            
+            return new ActivityLogDto
+            {
+                Id = log.Id,
+                Action = log.Action,
+                Details = log.Details,
+                UserId = log.UserId,
+                UserName = user.UserName,
+                EntityType = log.EntityType,
+                EntityId = log.EntityId,
+                CreationTime = log.CreationTime
+            };
         }
 
         public async Task DeleteAsync(Guid id)
         {
             await _activityLogRepository.DeleteAsync(id);
+            await CurrentUnitOfWork.SaveChangesAsync();
         }
 
         public async Task<ActivityLogDto> GetAsync(Guid id)
@@ -94,20 +114,39 @@ namespace Mveledziso.Services.ActivitylogService
 
         public async Task<List<ActivityLogDto>> GetListAsync(ActivityLogListInputDto input)
         {
-            var query = _activityLogRepository.GetAll()
-                .WhereIf(input.UserId.HasValue, l => l.UserId == input.UserId)
-                .WhereIf(!string.IsNullOrEmpty(input.Action), l => l.Action == input.Action)
-                .WhereIf(!string.IsNullOrEmpty(input.EntityType), l => l.EntityType == input.EntityType)
-                .WhereIf(input.EntityId.HasValue, l => l.EntityId == input.EntityId)
-                .WhereIf(input.StartDate.HasValue, l => l.CreationTime >= input.StartDate)
-                .WhereIf(input.EndDate.HasValue, l => l.CreationTime <= input.EndDate.Value.AddDays(1).AddTicks(-1))
-                .OrderByDescending(l => l.CreationTime)
+            Logger.Info($"Getting activity logs with filters - UserId: {input.UserId}, EntityType: {input.EntityType}");
+
+            var query = _activityLogRepository.GetAll();
+
+            // Only apply the most important filters
+            if (input.UserId.HasValue)
+            {
+                query = query.Where(l => l.UserId == input.UserId);
+            }
+
+            if (!string.IsNullOrEmpty(input.EntityType))
+            {
+                query = query.Where(l => l.EntityType == input.EntityType);
+            }
+
+            // Always order by creation time and apply paging
+            query = query.OrderByDescending(l => l.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var logs = await Task.FromResult(query.ToList());
+            var logs = await query.ToListAsync();
+            
+            Logger.Info($"Found {logs.Count} activity logs");
+
+            if (!logs.Any())
+            {
+                return new List<ActivityLogDto>();
+            }
+
             var userIds = logs.Select(l => l.UserId).Distinct().ToList();
-            var users = _userRepository.GetAll().Where(u => userIds.Contains(u.Id)).ToList();
+            var users = await _userRepository.GetAll()
+                .Where(u => userIds.Contains(u.Id))
+                .ToListAsync();
 
             return logs.Select(l => new ActivityLogDto
             {
