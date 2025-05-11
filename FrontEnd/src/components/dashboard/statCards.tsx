@@ -180,7 +180,7 @@ const StatCards = () => {
           <Col xs={24} sm={12} md={6} key={stat.title}>
             <Card
               title={stat.title}
-              bordered={false}
+              variant="borderless"
               style={{ borderRadius: 10, textAlign: "center" }}
               extra={
                 <Popover 
@@ -225,7 +225,7 @@ const StatCards = () => {
             Project AI Assistant
           </span>
         }
-        bordered={false}
+        variant="borderless"
         style={{ borderRadius: 10, marginTop: 24 }}
       >
         <div style={{ marginBottom: 16 }}>

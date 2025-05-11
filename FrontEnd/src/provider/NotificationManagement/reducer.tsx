@@ -1,3 +1,5 @@
+"use client";
+
 import { handleActions } from "redux-actions";
 import { INITIAL_STATE, INotificationStateContext, INotification } from "./context";
 import { NotificationActionEnum } from "./action";
@@ -20,31 +22,43 @@ export const NotificationReducer = handleActions<INotificationStateContext, INot
   {
     [NotificationActionEnum.SET_PENDING]: (state, action) => ({
       ...state,
-      ...action.payload
+      isPending: action.payload?.isPending || false,
+      isSuccess: action.payload?.isSuccess || false
     }),
     [NotificationActionEnum.SET_ERROR]: (state, action) => ({
       ...state,
-      ...action.payload
+      isError: action.payload?.isError || false,
+      errorMessage: action.payload?.errorMessage,
+      isPending: action.payload?.isPending || false,
+      isSuccess: action.payload?.isSuccess || false
     }),
     [NotificationActionEnum.SET_SUCCESS]: (state, action) => ({
       ...state,
-      ...action.payload
+      isSuccess: action.payload?.isSuccess || false,
+      isPending: action.payload?.isPending || false,
+      isError: action.payload?.isError || false,
+      errorMessage: action.payload?.errorMessage
     }),
     [NotificationActionEnum.SET_NOTIFICATION]: (state, action) => ({
       ...state,
-      ...action.payload
+      notification: action.payload?.notification || null
     }),
-    [NotificationActionEnum.SET_NOTIFICATIONS]: (state, action) => ({
-      ...state,
-      ...action.payload
-    }),
+    [NotificationActionEnum.SET_NOTIFICATIONS]: (state, action) => {
+      if (!action.payload?.notifications) {
+        return state;
+      }
+      return {
+        ...state,
+        notifications: action.payload.notifications
+      };
+    },
     [NotificationActionEnum.SET_TOTAL_COUNT]: (state, action) => ({
       ...state,
-      ...action.payload
+      totalCount: action.payload?.totalCount || 0
     }),
     [NotificationActionEnum.SET_UNREAD_COUNT]: (state, action) => ({
       ...state,
-      ...action.payload
+      unreadCount: action.payload?.unreadCount || 0
     }),
     [NotificationActionEnum.RESET_STATE]: () => ({
       ...INITIAL_STATE

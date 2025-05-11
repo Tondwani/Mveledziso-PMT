@@ -1,13 +1,12 @@
 "use client";
-import { Layout, Dropdown, Avatar, Badge, Space, Typography } from "antd";
-import { BellOutlined, UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { Layout, Dropdown, Avatar } from "antd";
+import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
 import type { MenuInfo } from 'rc-menu/lib/interface';
-import { useNotificationState, useNotificationActions } from "../../provider/NotificationManagement";
+import NotificationComponent from "../notification/page";
 
 const { Header } = Layout;
-const { Text } = Typography;
 
 interface HeaderProps {
   collapsed: boolean;
@@ -17,8 +16,6 @@ interface HeaderProps {
 const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-  const { notifications, unreadCount } = useNotificationState();
-  const { getNotifications, markAsRead } = useNotificationActions();
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -29,53 +26,6 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
-
-  useEffect(() => {
-    getNotifications({
-      maxResultCount: 5,
-      skipCount: 0,
-      isRead: false
-    });
-  }, [getNotifications]);
-
-  const handleNotificationClick = async (id: string) => {
-    await markAsRead(id);
-    await getNotifications({
-      maxResultCount: 5,
-      skipCount: 0,
-      isRead: false
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
-  const notificationItems = notifications.map(notification => ({
-    key: notification.id,
-    label: (
-      <Space direction="vertical" size={0} style={{ width: '100%' }}>
-        <Text strong>{notification.message}</Text>
-        <Text type="secondary" style={{ fontSize: '12px' }}>
-          {formatDate(notification.creationTime)}
-        </Text>
-      </Space>
-    ),
-    onClick: async () => await handleNotificationClick(notification.id)
-  }));
-
-  const handleViewAllNotifications = async () => {
-    await router.push('/notifications');
-  };
-
-  if (notificationItems.length > 0) {
-    notificationItems.push({
-      key: 'viewAll',
-      label: <Text strong style={{ color: '#1890ff' }}>View all notifications</Text>,
-      onClick: handleViewAllNotifications
-    });
-  }
 
   const handleMenuClick = (e: MenuInfo) => {
     if (e.key === "profile") { 
@@ -156,16 +106,7 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           gap: isMobile ? "12px" : "20px" 
         }}
       >
-        <Dropdown 
-          menu={{ items: notificationItems }} 
-          placement="bottomRight" 
-          arrow
-          trigger={['click']}
-        >
-          <Badge count={unreadCount}>
-            <BellOutlined style={{ fontSize: isMobile ? "18px" : "20px", color: "#000", cursor: "pointer" }} />
-          </Badge>
-        </Dropdown>
+        <NotificationComponent isMobile={isMobile} />
         <Dropdown menu={userMenu} placement="bottomRight">
           <Avatar 
             icon={<UserOutlined />}

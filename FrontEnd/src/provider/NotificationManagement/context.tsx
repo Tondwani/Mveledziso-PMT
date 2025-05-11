@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext } from "react";
 
 // Notification Interfaces
@@ -29,10 +31,9 @@ export interface IUpdateNotificationDto {
 }
 
 export interface IGetNotificationInput {
-  userId?: number;
-  isRead?: boolean;
   skipCount?: number;
   maxResultCount?: number;
+  isRead?: boolean;
 }
 
 // State Interface
@@ -61,25 +62,9 @@ export const INITIAL_STATE: INotificationStateContext = {
 
 // Actions Interface
 export interface INotificationActionContext {
-  createNotification: (notification: ICreateNotificationDto) => Promise<INotification>;
-  updateNotification: (id: string, notification: IUpdateNotificationDto) => Promise<INotification>;
-  deleteNotification: (id: string) => Promise<void>;
-  getNotification: (id: string) => Promise<INotification>;
-  getNotifications: (input: IGetNotificationInput) => Promise<{ items: INotification[], totalCount: number }>;
+  getNotifications: (input: IGetNotificationInput) => Promise<{ items: INotification[]; totalCount: number }>;
   markAsRead: (id: string) => Promise<INotification>;
-  markAllAsRead: () => Promise<void>;
-  getUnreadCount: () => Promise<number>;
 }
 
-// Create contexts
-export const NotificationStateContext = createContext<INotificationStateContext>(INITIAL_STATE);
-export const NotificationActionContext = createContext<INotificationActionContext>({
-  createNotification: () => Promise.resolve({} as INotification),
-  updateNotification: () => Promise.resolve({} as INotification),
-  deleteNotification: () => Promise.resolve(),
-  getNotification: () => Promise.resolve({} as INotification),
-  getNotifications: () => Promise.resolve({ items: [], totalCount: 0 }),
-  markAsRead: () => Promise.resolve({} as INotification),
-  markAllAsRead: () => Promise.resolve(),
-  getUnreadCount: () => Promise.resolve(0)
-});
+export const NotificationStateContext = createContext<INotificationStateContext | undefined>(undefined);
+export const NotificationActionContext = createContext<INotificationActionContext | undefined>(undefined);
