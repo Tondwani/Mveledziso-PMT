@@ -2,12 +2,12 @@
 using Abp.Domain.Repositories;
 using Abp.Linq.Extensions;
 using Abp.UI;
+using Microsoft.EntityFrameworkCore;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.MilestoneAppService.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Mveledziso.Services.MilestoneAppService
@@ -44,7 +44,22 @@ namespace Mveledziso.Services.MilestoneAppService
             };
 
             await _milestoneRepository.InsertAsync(milestone);
-            return await GetAsync(milestone.Id);
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            // Now we can safely get the milestone
+            var createdMilestone = await _milestoneRepository.GetAsync(milestone.Id);
+            
+            return new MilestoneDto
+            {
+                Id = createdMilestone.Id,
+                Title = createdMilestone.Title,
+                Description = createdMilestone.Description,
+                DueDate = createdMilestone.DueDate,
+                IsCompleted = createdMilestone.IsCompleted,
+                TimelineId = createdMilestone.TimelineId,
+                TimelineName = timeline.Name,
+                CreationTime = createdMilestone.CreationTime
+            };
         }
 
         public async Task<MilestoneDto> UpdateAsync(Guid id, UpdateMilestoneDto input)
@@ -57,12 +72,27 @@ namespace Mveledziso.Services.MilestoneAppService
             milestone.IsCompleted = input.IsCompleted;
 
             await _milestoneRepository.UpdateAsync(milestone);
-            return await GetAsync(id);
+            await CurrentUnitOfWork.SaveChangesAsync();
+            
+            var timeline = await _timelineRepository.GetAsync(milestone.TimelineId);
+            
+            return new MilestoneDto
+            {
+                Id = milestone.Id,
+                Title = milestone.Title,
+                Description = milestone.Description,
+                DueDate = milestone.DueDate,
+                IsCompleted = milestone.IsCompleted,
+                TimelineId = milestone.TimelineId,
+                TimelineName = timeline.Name,
+                CreationTime = milestone.CreationTime
+            };
         }
 
         public async Task DeleteAsync(Guid id)
         {
             await _milestoneRepository.DeleteAsync(id);
+            await CurrentUnitOfWork.SaveChangesAsync();
         }
 
         public async Task<MilestoneDto> GetAsync(Guid id)
@@ -85,16 +115,39 @@ namespace Mveledziso.Services.MilestoneAppService
 
         public async Task<List<MilestoneDto>> GetListAsync(MilestoneListInputDto input)
         {
-            var query = _milestoneRepository.GetAll()
-                .Where(m => m.TimelineId == input.TimelineId)
-                .WhereIf(input.IsCompleted.HasValue, m => m.IsCompleted == input.IsCompleted)
-                .OrderBy(m => m.DueDate)
+            Logger.Info($"Getting milestones with TimelineId: {input.TimelineId}");
+
+            var query = _milestoneRepository.GetAll();
+
+            // Only filter by TimelineId if provided
+            if (input.TimelineId != Guid.Empty)
+            {
+                query = query.Where(m => m.TimelineId == input.TimelineId);
+            }
+
+            // Filter by completion status if specified
+            if (input.IsCompleted.HasValue)
+            {
+                query = query.Where(m => m.IsCompleted == input.IsCompleted.Value);
+            }
+
+            query = query.OrderBy(m => m.DueDate)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var milestones = await Task.FromResult(query.ToList());
+            var milestones = await query.ToListAsync();
+            
+            Logger.Info($"Found {milestones.Count} milestones");
+
+            if (!milestones.Any())
+            {
+                return new List<MilestoneDto>();
+            }
+
             var timelineIds = milestones.Select(m => m.TimelineId).Distinct().ToList();
-            var timelines = _timelineRepository.GetAll().Where(t => timelineIds.Contains(t.Id)).ToList();
+            var timelines = await _timelineRepository.GetAll()
+                .Where(t => timelineIds.Contains(t.Id))
+                .ToListAsync();
 
             return milestones.Select(m => new MilestoneDto
             {

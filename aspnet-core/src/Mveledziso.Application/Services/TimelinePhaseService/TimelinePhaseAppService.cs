@@ -1,6 +1,7 @@
 ﻿using Abp.Application.Services;
 using Abp.Domain.Repositories;
 using Abp.UI;
+using Microsoft.EntityFrameworkCore;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.TimelinePhaseService.Dto;
 using System;
@@ -117,15 +118,33 @@ namespace Mveledziso.Services.TimelinePhaseService
 
         public async Task<List<TimelinePhaseDto>> GetListAsync(TimelinePhaseListInputDto input)
         {
-            var query = _phaseRepository.GetAll()
-                .Where(p => p.TimelineId == input.TimelineId)
-                .OrderBy(p => p.StartDate)
+            Logger.Info($"Getting timeline phases with TimelineId: {input.TimelineId}");
+
+            var query = _phaseRepository.GetAll();
+
+            // Only filter by TimelineId if provided
+            if (input.TimelineId != Guid.Empty)
+            {
+                query = query.Where(p => p.TimelineId == input.TimelineId);
+            }
+
+            query = query.OrderBy(p => p.StartDate)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var phases = await Task.FromResult(query.ToList());
+            var phases = await query.ToListAsync();
+            
+            Logger.Info($"Found {phases.Count} timeline phases");
+
+            if (!phases.Any())
+            {
+                return new List<TimelinePhaseDto>();
+            }
+
             var timelineIds = phases.Select(p => p.TimelineId).Distinct().ToList();
-            var timelines = _timelineRepository.GetAll().Where(t => timelineIds.Contains(t.Id)).ToList();
+            var timelines = await _timelineRepository.GetAll()
+                .Where(t => timelineIds.Contains(t.Id))
+                .ToListAsync();
 
             return phases.Select(p => new TimelinePhaseDto
             {
