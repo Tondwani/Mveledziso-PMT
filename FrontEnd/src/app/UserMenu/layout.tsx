@@ -7,6 +7,7 @@ import { useState } from "react";
 import { UserDutyProvider } from "@/provider/DutyManagement";
 import { ProjectProvider } from "@/provider/ProjectManagement";
 import { TeamProvider } from "@/provider/TeamManagement";
+import { ActivityLogProvider } from "@/provider/ActivitylogManagement";
 
 const { Content } = AntLayout;
 
@@ -17,25 +18,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <TeamProvider>
       <ProjectProvider>
         <UserDutyProvider>
-          <AntLayout style={{ minHeight: "100vh" }}>
-            <Sidebar collapsed={collapsed} />
-            <AntLayout
-              className="site-layout"
-              style={{ marginLeft: collapsed ? 80 : 220, transition: "all 0.2s ease" }}
-            >
-              <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} />
-              <Content
-                style={{
-                  margin: "24px 16px",
-                  padding: 0,
-                  background: "#f0f2f5",
-                  minHeight: "calc(100vh - 48px - 64px)",
-                }}
+          <ActivityLogProvider>
+            <AntLayout style={{ minHeight: "100vh" }}>
+              <Sidebar collapsed={collapsed} />
+              <AntLayout
+                className="site-layout"
+                style={{ marginLeft: collapsed ? 80 : 220, transition: "all 0.2s ease" }}
               >
-                {children}
-              </Content>
+                <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} />
+                <Content
+                  style={{
+                    margin: "24px 16px",
+                    padding: 0,
+                    background: "#f0f2f5",
+                    minHeight: "calc(100vh - 48px - 64px)",
+                  }}
+                >
+                  {children}
+                </Content>
+              </AntLayout>
             </AntLayout>
-          </AntLayout>
+          </ActivityLogProvider>
         </UserDutyProvider>
       </ProjectProvider>
     </TeamProvider>
