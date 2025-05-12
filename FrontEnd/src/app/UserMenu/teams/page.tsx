@@ -22,6 +22,12 @@ interface TeamFormValues {
   description?: string;
 }
 
+interface UpdateTeamFormValues {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface MemberFormValues {
   teamMemberId: string;
   role: TeamRole;
@@ -34,11 +40,13 @@ interface RoleFormValues {
 export default function TeamsPage() {
   // States
   const [isTeamModalVisible, setIsTeamModalVisible] = useState(false);
+  const [isUpdateTeamModalVisible, setIsUpdateTeamModalVisible] = useState(false);
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [currentTeam, setCurrentTeam] = useState<ITeam | null>(null);
   const [editRoleModalVisible, setEditRoleModalVisible] = useState(false);
   const [currentUserTeam, setCurrentUserTeam] = useState<IUserTeam | null>(null);
   const [form] = Form.useForm<TeamFormValues>();
+  const [updateTeamForm] = Form.useForm<UpdateTeamFormValues>();
   const [roleForm] = Form.useForm<RoleFormValues>();
   const [filters, setFilters] = useState<IGetTeamsInput>({
     filter: '',
@@ -201,6 +209,52 @@ export default function TeamsPage() {
       const axiosError = error as AxiosError;
       message.error(axiosError.message || 'Failed to create team');
     }
+  };
+
+  const handleUpdateTeam = async (values: UpdateTeamFormValues) => {
+    try {
+      await teamActions.updateTeam(values);
+      setIsUpdateTeamModalVisible(false);
+      updateTeamForm.resetFields();
+      await teamActions.getTeams(filters); // Refresh the list
+      message.success('Team updated successfully');
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      message.error(axiosError.message || 'Failed to update team');
+    }
+  };
+
+  const handleDeleteTeam = (team: ITeam) => {
+    Modal.confirm({
+      title: 'Delete Team',
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to delete the team "${team.name}"? This action cannot be undone.`,
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk: async () => {
+        try {
+          const api = getAxiosInstance();
+          await api.delete(`/api/services/app/Team/Delete?id=${team.id}`);
+          await teamActions.getTeams(filters); // Refresh the list
+          message.success('Team deleted successfully');
+        } catch (error) {
+          const axiosError = error as AxiosError;
+          console.error('Error deleting team:', error);
+          message.error(axiosError.message || 'Failed to delete team');
+        }
+      },
+    });
+  };
+
+  const handleOpenUpdateTeamModal = (team: ITeam) => {
+    setCurrentTeam(team);
+    updateTeamForm.setFieldsValue({
+      id: team.id,
+      name: team.name,
+      description: team.description
+    });
+    setIsUpdateTeamModalVisible(true);
   };
 
   const handleEditRole = async (userTeam: IUserTeam) => {
@@ -384,6 +438,21 @@ export default function TeamsPage() {
           }}>
             Manage Members
           </Button>
+          <Tooltip title="Edit Team">
+            <Button 
+              type="text" 
+              icon={<EditOutlined />} 
+              onClick={() => handleOpenUpdateTeamModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Delete Team">
+            <Button 
+              type="text" 
+              danger 
+              icon={<DeleteOutlined />} 
+              onClick={() => handleDeleteTeam(record)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -539,6 +608,42 @@ export default function TeamsPage() {
           <Form.Item>
             <Button type="primary" htmlType="submit">
               Create Team
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Update Team Modal */}
+      <Modal
+        title="Update Team"
+        open={isUpdateTeamModalVisible}
+        onCancel={() => setIsUpdateTeamModalVisible(false)}
+        footer={null}
+      >
+        <Form form={updateTeamForm} onFinish={handleUpdateTeam} layout="vertical">
+          <Form.Item
+            name="id"
+            hidden
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item 
+            name="name"
+            label="Team Name" 
+            rules={[{ required: true, message: 'Please enter team name' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: 'Please enter team description' }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Update Team
             </Button>
           </Form.Item>
         </Form>
