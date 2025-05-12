@@ -11,6 +11,7 @@ interface IUserDutyAction {
     errorMessage?: string;
     userDuty?: IUserDuty | null;
     userDuties?: IUserDuty[];
+    totalCount?: number;
   };
 }
 

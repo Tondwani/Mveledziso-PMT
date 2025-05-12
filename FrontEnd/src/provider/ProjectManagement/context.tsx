@@ -57,7 +57,8 @@ export interface IProjectDuty {
   status: DutyStatus;
   priority: Priority;
   projectId: string;
-  dueDate?: string;
+  deadline?: string;
+  projectName?: string;
   assignedUserId?: string;
 }
 

@@ -1,45 +1,33 @@
 import { createContext } from "react";
 
-export type DutyStatus = 'Completed' | 'InProgress' | 'NotStarted';
-export type DutyPriority = 'High' | 'Medium' | 'Low';
-
 // UserDuty Interface
 export interface IUserDuty {
   id: string;
-  title: string;
   teamMemberId: string;
   projectDutyId: string;
-  status: DutyStatus;
-  priority: DutyPriority;
-  dueDate: string;
   creationTime: string;
+  creatorUserId?: number;
 }
 
 // Input DTOs
 export interface ICreateUserDutyDto {
-  title: string;
-  teamMemberId: string;
-  projectDutyId: string;
-  status: DutyStatus;
-  priority: DutyPriority;
-  dueDate: string;
+  teamMemberId: string; 
+  projectDutyId: string; 
 }
 
 export interface IUpdateUserDutyDto {
   id: string;
-  title?: string;
-  teamMemberId?: string;
-  projectDutyId?: string;
-  status?: DutyStatus;
-  priority?: DutyPriority;
-  dueDate?: string;
+  teamMemberId: string; 
+  projectDutyId: string; 
 }
 
 export interface IGetUserDutyInput {
-  teamMemberId?: string;
-  projectDutyId?: string;
+  teamMemberId?: string; 
+  projectDutyId?: string; 
   fromDate?: Date;
   toDate?: Date;
+  skipCount?: number;    
+  maxResultCount?: number; 
 }
 
 // State Interface
@@ -50,6 +38,7 @@ export interface IUserDutyStateContext {
   errorMessage: string | undefined;
   userDuty: IUserDuty | null;
   userDuties: IUserDuty[];
+  totalCount: number;
 }
 
 // Actions Interface
@@ -68,7 +57,8 @@ export const INITIAL_STATE: IUserDutyStateContext = {
   isError: false,
   errorMessage: undefined,
   userDuty: null,
-  userDuties: []
+  userDuties: [],
+  totalCount: 0
 };
 
 // Create contexts

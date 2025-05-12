@@ -6,6 +6,8 @@ import { TeamProvider } from "../provider/TeamManagement";
 import { MilestoneProvider } from "../provider/MilestoneManagement";
 import { NotificationProvider } from "../provider/NotificationManagement";
 import { ProjectManagerProvider } from "../provider/ProjectManagerManagement";
+import { UserDutyProvider } from "../provider/DutyManagement";
+import { TeamMemberProvider } from "../provider/TeamMemberManagement";
 
 import "./globals.css";
 
@@ -36,11 +38,15 @@ export default function RootLayout({
           <ProjectManagerProvider>
             <TeamProvider>
               <ProjectProvider>
-                <MilestoneProvider>
-                  <NotificationProvider>
-                    {children}
-                  </NotificationProvider>
-                </MilestoneProvider>
+                <TeamMemberProvider>
+                  <UserDutyProvider>
+                    <MilestoneProvider>
+                      <NotificationProvider>
+                        {children}
+                      </NotificationProvider>
+                    </MilestoneProvider>
+                  </UserDutyProvider>
+                </TeamMemberProvider>
               </ProjectProvider>
             </TeamProvider>
           </ProjectManagerProvider>
