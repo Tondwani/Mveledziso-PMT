@@ -7,45 +7,69 @@ import { TeamActionEnum } from "./action";
 export const TeamReducer = handleActions<ITeamStateContext, any>(
   {
     // Base team actions
-    [TeamActionEnum.teamPending]: (state, action) => ({
+    [TeamActionEnum.teamPending]: (state) => ({
       ...state,
-      ...action.payload,
+      isPending: true,
+      isSuccess: false,
+      isError: false,
+      errorMessage: undefined
     }),
     [TeamActionEnum.teamSuccess]: (state, action) => ({
       ...state,
+      isPending: false,
+      isSuccess: true,
+      isError: false,
       ...action.payload,
     }),
     [TeamActionEnum.teamError]: (state, action) => ({
       ...state,
+      isPending: false,
+      isSuccess: false,
+      isError: true,
       ...action.payload,
     }),
 
     // Teams list
     [TeamActionEnum.teamsLoaded]: (state, action) => ({
       ...state,
-      ...action.payload,
+      isPending: false,
+      isSuccess: true,
+      isError: false,
       teams: action.payload.teams,
+      message: action.payload.message
     }),
 
     // UserTeam base actions
-    [TeamActionEnum.userTeamPending]: (state, action) => ({
+    [TeamActionEnum.userTeamPending]: (state) => ({
       ...state,
-      ...action.payload,
+      isPending: true,
+      isSuccess: false,
+      isError: false,
+      errorMessage: undefined
     }),
     [TeamActionEnum.userTeamSuccess]: (state, action) => ({
       ...state,
+      isPending: false,
+      isSuccess: true,
+      isError: false,
       ...action.payload,
     }),
     [TeamActionEnum.userTeamError]: (state, action) => ({
       ...state,
+      isPending: false,
+      isSuccess: false,
+      isError: true,
       ...action.payload,
     }),
 
     // UserTeams list
     [TeamActionEnum.userTeamsLoaded]: (state, action) => ({
       ...state,
-      ...action.payload,
+      isPending: false,
+      isSuccess: true,
+      isError: false,
       userTeams: action.payload.userTeams,
+      message: action.payload.message
     }),
   },
   INITIAL_STATE

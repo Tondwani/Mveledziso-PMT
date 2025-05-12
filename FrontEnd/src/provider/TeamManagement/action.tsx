@@ -71,7 +71,10 @@ export const updateTeamSuccess = (team: ITeam, message: string) => ({
 export const loadTeamsSuccess = (teams: ITeam[]) => ({
   type: TeamActionEnum.teamsLoaded,
   payload: {
-    ...baseSuccess("Teams loaded successfully").payload,
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    message: "Teams loaded successfully",
     teams
   }
 });

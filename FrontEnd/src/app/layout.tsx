@@ -5,6 +5,7 @@ import { ProjectProvider } from "../provider/ProjectManagement";
 import { TeamProvider } from "../provider/TeamManagement";
 import { MilestoneProvider } from "../provider/MilestoneManagement";
 import { NotificationProvider } from "../provider/NotificationManagement";
+import { ProjectManagerProvider } from "../provider/ProjectManagerManagement";
 
 import "./globals.css";
 
@@ -32,15 +33,17 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <AuthProvider>
-          <TeamProvider>
-            <ProjectProvider>
-              <MilestoneProvider>
-                <NotificationProvider>
-                  {children}
-                </NotificationProvider>
-              </MilestoneProvider>
-            </ProjectProvider>
-          </TeamProvider>
+          <ProjectManagerProvider>
+            <TeamProvider>
+              <ProjectProvider>
+                <MilestoneProvider>
+                  <NotificationProvider>
+                    {children}
+                  </NotificationProvider>
+                </MilestoneProvider>
+              </ProjectProvider>
+            </TeamProvider>
+          </ProjectManagerProvider>
         </AuthProvider>
       </body>
     </html>

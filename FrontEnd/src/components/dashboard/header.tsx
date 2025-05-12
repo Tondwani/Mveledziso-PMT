@@ -3,7 +3,7 @@ import { Layout, Dropdown, Avatar } from "antd";
 import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import type { MenuInfo } from 'rc-menu/lib/interface';
+import type { MenuInfo } from 'rc-menu/lib/interface'; 
 import NotificationComponent from "../notification/page";
 
 const { Header } = Layout;
@@ -41,9 +41,9 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
   const userMenu = {
     items: [
-      { key: "profile", label: "Profile" }, 
-      { key: "settings", label: "Settings" }, 
-      { key: "logout", label: "Logout" }, 
+        { key: "profile", label: "Profile" }, 
+        { key: "settings", label: "Settings" }, 
+        { key: "logout", label: "Logout" }, 
     ],
     onClick: handleMenuClick
   };
@@ -108,7 +108,7 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
       >
         <NotificationComponent isMobile={isMobile} />
         <Dropdown menu={userMenu} placement="bottomRight">
-          <Avatar 
+        <Avatar 
             icon={<UserOutlined />}
             size={isMobile ? "small" : "default"}
             style={{ cursor: "pointer" }} 

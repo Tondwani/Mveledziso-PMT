@@ -12,6 +12,7 @@ export interface IActivityLog {
   creationTime: string;
 }
 
+
 // Input DTOs
 export interface ICreateActivityLogDto {
   action: string;
