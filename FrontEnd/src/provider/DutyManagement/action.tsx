@@ -35,7 +35,7 @@ export const setUserDuty = (userDuty: IUserDuty) => ({
   payload: { userDuty, isPending: false, isSuccess: true, isError: false }
 });
 
-export const setUserDuties = (userDuties: IUserDuty[]) => ({
+export const setUserDuties = (userDuties: IUserDuty[], totalCount: number = 0) => ({
   type: UserDutyActionEnum.SET_USER_DUTIES,
-  payload: { userDuties, isPending: false, isSuccess: true, isError: false }
+  payload: { userDuties, totalCount, isPending: false, isSuccess: true, isError: false }
 });
