@@ -25,16 +25,26 @@ export default function Login() {
     if (currentUser && isSuccess) {
       // Check user roles for routing
       const roles = currentUser.roles || [];
-      const isProjectManager = roles.includes("ProjectManager");
-      // const isTeamMember = roles.includes("TeamMember");
-      const redirectPath = isProjectManager ? "/AdminMenu" : "/UserMenu";
+      console.log('User roles:', roles);
       
-      console.log(`Routing to ${redirectPath} based on roles:`, roles);
+      // Check roles in priority order
+      if (roles.includes("Admin")) {
+        console.log('Routing to AdminMenu - User is Admin');
+        router.push("/AdminMenu");
+      } else if (roles.includes("ProjectManager")) {
+        console.log('Routing to AdminMenu - User is ProjectManager');
+        router.push("/AdminMenu");
+      } else if (roles.includes("TeamMember")) {
+        console.log('Routing to UserMenu - User is TeamMember');
+        router.push("/UserMenu");
+      } else {
+        console.log('No valid role found - redirecting to login');
+        toast.error("No valid role found. Please contact your administrator.");
+        router.push("/login");
+        return;
+      }
       
-      toast.success(`Welcome back, ${currentUser.name || 'User'}! Redirecting...`);
-      setTimeout(() => {
-        router.push(redirectPath);
-      }, 1500);
+      toast.success(`Welcome back, ${currentUser.name || 'User'}!`);
     }
   }, [currentUser, isSuccess, router]);
 
