@@ -1,134 +1,263 @@
 "use client";
 
-import { Table, Tag, Space, Card, Typography, Timeline as AntTimeline, Button, Modal, Form, Input, DatePicker } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Table, Card, Button, Modal, Form, Input, DatePicker, Select, Space, Typography, message, Tooltip, Popconfirm, Tag } from 'antd';
 import type { Dayjs } from 'dayjs';
+import { 
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  CalendarOutlined,
+  ScheduleOutlined
+} from '@ant-design/icons';
+import { useTimelineState, useTimelineActions } from '../../../provider/TimelineManagement';
+import { ITimeline, ITimelinePhase, TimelinePhaseStatus, ICreateTimelinePhaseDto } from '../../../provider/TimelineManagement/context';
+import dayjs from 'dayjs';
+import { useProjectState } from '../../../provider/ProjectManagement';
 
 const { Title } = Typography;
+const { RangePicker } = DatePicker;
 
-interface TimelinePhase {
-  id: string;
+interface TimelineFormValues {
   name: string;
-  startDate: string;
-  endDate: string;
-  status: 'Completed' | 'InProgress' | 'NotStarted';
-}
-
-interface TimelineMilestone {
-  id: string;
-  name: string;
-  date: string;
-  status: 'Completed' | 'Pending';
-}
-
-interface ProjectTimeline {
-  id: string;
   projectId: string;
-  projectName: string;
-  phases: TimelinePhase[];
-  milestones: TimelineMilestone[];
-  creationTime: string;
 }
 
-type TimelineItem = {
-  children: React.ReactNode;
-  color?: string;
-  dot?: React.ReactNode;
-  startDate?: string;
-  date?: string;
-};
+interface PhaseFormValues {
+  name: string;
+  timelineId: string;
+  dateRange: [Dayjs, Dayjs];
+  status: TimelinePhaseStatus;
+}
 
-export default function TimelinePage() {
-  const [timelines, setTimelines] = useState<ProjectTimeline[]>([
-    {
-      id: '1',
-      projectId: 'project1',
-      projectName: 'Website Redesign',
-      phases: [
-        {
-          id: 'phase1',
-          name: 'Planning',
-          startDate: '2023-01-10',
-          endDate: '2023-01-20',
-          status: 'Completed'
-        },
-        {
-          id: 'phase2',
-          name: 'Development',
-          startDate: '2023-01-21',
-          endDate: '2023-03-15',
-          status: 'Completed'
+interface ApiError {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+    };
+  };
+  message?: string;
+}
+
+export default function TimelinesPage() {
+  // State Management
+  const { timelines, isPending, isError, errorMessage } = useTimelineState();
+  const { 
+    createTimeline, 
+    updateTimeline, 
+    deleteTimeline, 
+    getTimelines,
+    createTimelinePhase,
+    updateTimelinePhase,
+    // deleteTimelinePhase,
+    getTimelinePhases 
+  } = useTimelineActions();
+  const { projects } = useProjectState();
+
+  // Local State
+  const [timelineModalVisible, setTimelineModalVisible] = useState(false);
+  const [phaseModalVisible, setPhaseModalVisible] = useState(false);
+  const [editingTimeline, setEditingTimeline] = useState<ITimeline | null>(null);
+  const [editingPhase, setEditingPhase] = useState<ITimelinePhase | null>(null);
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [viewingItem, setViewingItem] = useState<ITimeline | ITimelinePhase | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [localTimelinePhases, setLocalTimelinePhases] = useState<ITimelinePhase[]>([]);
+  
+  const [timelineForm] = Form.useForm();
+  const [phaseForm] = Form.useForm();
+
+  // Load Data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        console.log('Starting to load timelines and phases...');
+        
+        // Load all timelines with pagination
+        const timelineResponse = await getTimelines({
+          maxResultCount: 10,
+          skipCount: 0,
+          isDeleted: false
+        });
+        console.log('Timelines response:', timelineResponse);
+        
+        if (timelineResponse?.items?.length > 0) {
+          console.log(`Found ${timelineResponse.items.length} timelines`);
+          
+          // Load phases for each timeline
+          const allPhases: ITimelinePhase[] = [];
+          
+          for (const timeline of timelineResponse.items) {
+            try {
+              console.log(`Loading phases for timeline: ${timeline.name} (${timeline.id})`);
+              const phases = await getTimelinePhases({ 
+                timelineId: timeline.id,
+                maxResultCount: 100,
+                skipCount: 0
+              });
+              if (phases) {
+                allPhases.push(...phases);
+              }
+              console.log(`Loaded ${phases?.length || 0} phases for timeline ${timeline.name}:`, phases);
+            } catch (phaseError) {
+              console.error(`Failed to load phases for timeline ${timeline.name}:`, phaseError);
+              message.error(`Failed to load phases for timeline ${timeline.name}`);
+            }
+          }
+
+          setLocalTimelinePhases(allPhases);
+          console.log('All phases loaded:', allPhases);
+        } else {
+          console.log('No timelines found in the response');
+          setLocalTimelinePhases([]);
         }
-      ],
-      milestones: [
-        {
-          id: 'milestone1',
-          name: 'Design Approval',
-          date: '2023-01-15',
-          status: 'Completed'
+      } catch (error: unknown) {
+        console.error('Error loading data:', error);
+        let errorMessage = 'Failed to load timelines and phases';
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (error && typeof error === 'object' && 'response' in error) {
+          const apiError = error as ApiError;
+          errorMessage = apiError.response?.data?.error?.message || apiError.message || errorMessage;
         }
-      ],
-      creationTime: '2023-01-05T09:00:00'
-    },
-    {
-      id: '2',
-      projectId: 'project2',
-      projectName: 'Mobile App',
-      phases: [
-        {
-          id: 'phase3',
-          name: 'Research',
-          startDate: '2023-02-01',
-          endDate: '2023-02-10',
-          status: 'Completed'
-        },
-        {
-          id: 'phase4',
-          name: 'Prototyping',
-          startDate: '2023-02-11',
-          endDate: '2023-02-28',
-          status: 'InProgress'
-        }
-      ],
-      milestones: [
-        {
-          id: 'milestone2',
-          name: 'User Testing',
-          date: '2023-02-20',
-          status: 'Pending'
-        }
-      ],
-      creationTime: '2023-01-25T14:30:00'
+        
+        message.error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [getTimelines, getTimelinePhases]);
+
+  // Error Handling
+  useEffect(() => {
+    if (isError && errorMessage) {
+      message.error(errorMessage);
     }
-  ]);
+  }, [isError, errorMessage]);
 
-  const [isPhaseModalVisible, setIsPhaseModalVisible] = useState(false);
-  const [currentTimeline, setCurrentTimeline] = useState<ProjectTimeline | null>(null);
+  const handleCreateTimeline = async (values: TimelineFormValues) => {
+    try {
+      await createTimeline(values);
+      message.success('Timeline created successfully');
+      setTimelineModalVisible(false);
+      timelineForm.resetFields();
+      getTimelines({});
+    } catch (error) {
+      console.error('Failed to create timeline:', error);
+      message.error('Failed to create timeline');
+    }
+  };
+
+  const handleCreatePhase = async (values: PhaseFormValues) => {
+    try {
+      const phaseData: ICreateTimelinePhaseDto = {
+        name: values.name,
+        timelineId: values.timelineId,
+        startDate: values.dateRange[0].toISOString(),
+        endDate: values.dateRange[1].toISOString(),
+        status: values.status
+      };
+      await createTimelinePhase(phaseData);
+      message.success('Phase created successfully');
+      setPhaseModalVisible(false);
+      phaseForm.resetFields();
+      getTimelinePhases({ timelineId: values.timelineId });
+    } catch (error) {
+      console.error('Failed to create phase:', error);
+      message.error('Failed to create phase');
+    }
+  };
+
+  const handleUpdateTimeline = async (values: TimelineFormValues) => {
+    if (!editingTimeline) return;
+    try {
+      await updateTimeline({ id: editingTimeline.id, ...values });
+      message.success('Timeline updated successfully');
+      setTimelineModalVisible(false);
+      timelineForm.resetFields();
+      getTimelines({});
+    } catch (error) {
+      console.error('Failed to update timeline:', error);
+      message.error('Failed to update timeline');
+    }
+  };
+
+  const handleUpdatePhase = async (values: PhaseFormValues) => {
+    if (!editingPhase) return;
+    try {
+      const phaseData = {
+        id: editingPhase.id,
+        name: values.name,
+        timelineId: values.timelineId,
+        startDate: values.dateRange[0].toISOString(),
+        endDate: values.dateRange[1].toISOString(),
+        status: values.status
+      };
+      await updateTimelinePhase(phaseData);
+      message.success('Phase updated successfully');
+      setPhaseModalVisible(false);
+      phaseForm.resetFields();
+      getTimelinePhases({ timelineId: values.timelineId });
+    } catch (error) {
+      console.error('Failed to update phase:', error);
+      message.error('Failed to update phase');
+    }
+  };
+
+  const handleDeleteTimeline = async (id: string) => {
+    try {
+      await deleteTimeline(id);
+      message.success('Timeline deleted successfully');
+      getTimelines({});
+    } catch (error) {
+      console.error('Failed to delete timeline:', error);
+      message.error('Failed to delete timeline');
+    }
+  };
 
   const columns = [
     {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string) => (
+        <Space>
+          <ScheduleOutlined />
+          <span>{text}</span>
+        </Space>
+      ),
+    },
+    {
       title: 'Project',
-      dataIndex: 'projectName',
-      key: 'projectName',
+      dataIndex: 'projectId',
+      key: 'projectId',
+      render: (projectId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        return <Tag color="blue">{project?.name || 'N/A'}</Tag>;
+      },
     },
     {
       title: 'Phases',
       key: 'phases',
-      render: (_: unknown, record: ProjectTimeline) => (
-        <span>
-          {record.phases.filter(p => p.status === 'Completed').length} / {record.phases.length} completed
-        </span>
-      ),
-    },
-    {
-      title: 'Milestones',
-      key: 'milestones',
-      render: (_: unknown, record: ProjectTimeline) => (
-        <span>
-          {record.milestones.filter(m => m.status === 'Completed').length} / {record.milestones.length} completed
-        </span>
-      ),
+      render: (_: unknown, record: ITimeline) => {
+        const timelinePhases = localTimelinePhases.filter(p => p.timelineId === record.id);
+        const completed = timelinePhases.filter(p => p.status === 'Completed').length;
+        const total = timelinePhases.length;
+        
+        return (
+          <Space>
+            <Tag color="default">{total} Total</Tag>
+            <Tag color="success">{completed} Completed</Tag>
+          </Space>
+        );
+      },
     },
     {
       title: 'Created',
@@ -137,171 +266,268 @@ export default function TimelinePage() {
       render: (date: string) => new Date(date).toLocaleDateString(),
     },
     {
-      title: 'Status',
-      key: 'status',
-      render: (_: unknown, record: ProjectTimeline) => {
-        const allPhasesCompleted = record.phases.every(p => p.status === 'Completed');
-        return (
-          <Tag color={allPhasesCompleted ? 'green' : 'blue'}>
-            {allPhasesCompleted ? 'Completed' : 'In Progress'}
-          </Tag>
-        );
-      },
+      title: 'Last Modified',
+      dataIndex: 'lastModificationTime',
+      key: 'lastModificationTime',
+      render: (date: string | null) => date ? new Date(date).toLocaleDateString() : 'Never',
     },
     {
-      title: 'Action',
-      key: 'action',
-      render: (_: unknown, record: ProjectTimeline) => (
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      render: (_: unknown, record: ITimeline) => (
         <Space size="middle">
-          <Button 
-            type="primary" 
-            size="small"
-            onClick={() => {
-              setCurrentTimeline(record);
-              setIsPhaseModalVisible(true);
-            }}
+          <Tooltip title="View Details">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => {
+                setViewingItem(record);
+                setViewModalVisible(true);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingTimeline(record);
+                setTimelineModalVisible(true);
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete Timeline"
+            description="Are you sure you want to delete this timeline? All associated phases will be deleted."
+            onConfirm={() => handleDeleteTimeline(record.id)}
+            okText="Yes"
+            cancelText="No"
           >
-            Add Phase
-          </Button>
-          <a>View Details</a>
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  const renderTimeline = (phases: TimelinePhase[], milestones: TimelineMilestone[]) => {
-    const items: TimelineItem[] = [
-      ...phases.map(phase => ({
-        children: (
-          <div>
-            <strong>{phase.name}</strong>
-            <div>{phase.startDate} to {phase.endDate}</div>
-            <Tag 
-              color={phase.status === 'Completed' ? 'green' : 'blue'} 
-              icon={phase.status === 'Completed' ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
-            >
-              {phase.status}
-            </Tag>
-          </div>
-        ),
-        color: phase.status === 'Completed' ? 'green' : 'blue',
-        startDate: phase.startDate
-      })),
-      ...milestones.map(milestone => ({
-        children: (
-          <div>
-            <strong>Milestone: {milestone.name}</strong>
-            <div>Target: {milestone.date}</div>
-            <Tag 
-              color={milestone.status === 'Completed' ? 'green' : 'orange'}
-              icon={milestone.status === 'Completed' ? <CheckCircleOutlined /> : undefined}
-            >
-              {milestone.status}
-            </Tag>
-          </div>
-        ),
-        dot: milestone.status === 'Completed' ? <CheckCircleOutlined /> : <ClockCircleOutlined />,
-        date: milestone.date
-      }))
-    ];
-
-    // Sort by start date
-    items.sort((a, b) => {
-      const dateA = a.startDate || a.date || '';
-      const dateB = b.startDate || b.date || '';
-      return new Date(dateA).getTime() - new Date(dateB).getTime();
-    });
-
-    return <AntTimeline mode="left" items={items} />;
-  };
-
-  const handleAddPhase = (values: { name: string; startDate: Dayjs; endDate: Dayjs }) => {
-    if (!currentTimeline) return;
-
-    const newPhase: TimelinePhase = {
-      id: `phase${Date.now()}`,
-      name: values.name,
-      startDate: values.startDate.format('YYYY-MM-DD'),
-      endDate: values.endDate.format('YYYY-MM-DD'),
-      status: 'NotStarted'
-    };
-
-    const updatedTimelines = timelines.map(timeline => 
-      timeline.id === currentTimeline.id
-        ? { ...timeline, phases: [...timeline.phases, newPhase] }
-        : timeline
-    );
-
-    setTimelines(updatedTimelines);
-    setIsPhaseModalVisible(false);
-  };
-
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Project Timelines</Title>
-      
-      <Table 
-        columns={columns} 
-        dataSource={timelines} 
-        rowKey="id"
-        expandable={{
-          expandedRowRender: (record) => (
-            <Card title={`Timeline Details: ${record.projectName}`}>
-              {renderTimeline(record.phases, record.milestones)}
-            </Card>
-          ),
-          rowExpandable: (record) => record.phases.length > 0 || record.milestones.length > 0,
-        }}
-      />
+      <Title level={2}>Timeline Management</Title>
 
-      {/* Add Phase Modal */}
+      <Card>
+        <div style={{ marginBottom: 16 }}>
+          <Space style={{ float: 'right' }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditingTimeline(null);
+                setTimelineModalVisible(true);
+              }}
+            >
+              Add Timeline
+            </Button>
+            <Button
+              icon={<CalendarOutlined />}
+              onClick={() => {
+                setEditingPhase(null);
+                setPhaseModalVisible(true);
+              }}
+              disabled={!timelines || timelines.length === 0}
+            >
+              Add Phase
+            </Button>
+          </Space>
+        </div>
+
+        <Table
+          dataSource={timelines}
+          columns={columns}
+          rowKey="id"
+          loading={loading || isPending}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} items`
+          }}
+        />
+      </Card>
+
+      {/* Timeline Modal */}
       <Modal
-        title={`Add Phase to ${currentTimeline?.projectName || 'Timeline'}`}
-        open={isPhaseModalVisible}
-        onCancel={() => setIsPhaseModalVisible(false)}
+        title={editingTimeline ? "Edit Timeline" : "Create Timeline"}
+        open={timelineModalVisible}
+        onCancel={() => {
+          setTimelineModalVisible(false);
+          setEditingTimeline(null);
+          timelineForm.resetFields();
+        }}
         footer={null}
       >
-        <Form layout="vertical" onFinish={handleAddPhase}>
-          <Form.Item 
-            label="Phase Name" 
-            name="name" 
-            rules={[{ required: true, message: 'Please input phase name!' }]}
+        <Form
+          form={timelineForm}
+          layout="vertical"
+          onFinish={editingTimeline ? handleUpdateTimeline : handleCreateTimeline}
+          initialValues={editingTimeline || {}}
+        >
+          <Form.Item
+            name="name"
+            label="Timeline Name"
+            rules={[{ required: true, message: 'Please enter timeline name' }]}
           >
             <Input />
           </Form.Item>
-          
-          <Form.Item 
-            label="Start Date" 
-            name="startDate" 
-            rules={[{ required: true, message: 'Please select start date!' }]}
+
+          <Form.Item
+            name="projectId"
+            label="Project"
+            rules={[{ required: true, message: 'Please select a project' }]}
           >
-            <DatePicker style={{ width: '100%' }} />
+            <Select
+              placeholder="Select a project"
+              loading={isPending}
+              disabled={isPending}
+            >
+              {projects?.map(project => (
+                <Select.Option key={project.id} value={project.id}>
+                  {project.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          
-          <Form.Item 
-            label="End Date" 
-            name="endDate" 
-            rules={[
-              { required: true, message: 'Please select end date!' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || !getFieldValue('startDate') || value.isAfter(getFieldValue('startDate'))) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('End date must be after start date!'));
-                },
-              }),
-            ]}
-          >
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          
+
           <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Add Phase
-            </Button>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={() => {
+                setTimelineModalVisible(false);
+                setEditingTimeline(null);
+                timelineForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit" loading={isPending}>
+                {editingTimeline ? 'Update' : 'Create'}
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Phase Modal */}
+      <Modal
+        title={editingPhase ? "Edit Phase" : "Create Phase"}
+        open={phaseModalVisible}
+        onCancel={() => {
+          setPhaseModalVisible(false);
+          setEditingPhase(null);
+          phaseForm.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={phaseForm}
+          layout="vertical"
+          onFinish={editingPhase ? handleUpdatePhase : handleCreatePhase}
+          initialValues={editingPhase ? {
+            ...editingPhase,
+            dateRange: [dayjs(editingPhase.startDate), dayjs(editingPhase.endDate)]
+          } : {}}
+        >
+          <Form.Item
+            name="name"
+            label="Phase Name"
+            rules={[{ required: true, message: 'Please enter phase name' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="timelineId"
+            label="Timeline"
+            rules={[{ required: true, message: 'Please select a timeline' }]}
+          >
+            <Select
+              placeholder="Select a timeline"
+              loading={isPending}
+              disabled={isPending}
+            >
+              {timelines?.map(timeline => (
+                <Select.Option key={timeline.id} value={timeline.id}>
+                  {timeline.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="dateRange"
+            label="Date Range"
+            rules={[{ required: true, message: 'Please select date range' }]}
+          >
+            <RangePicker style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: 'Please select status' }]}
+          >
+            <Select>
+              <Select.Option value="NotStarted">Not Started</Select.Option>
+              <Select.Option value="InProgress">In Progress</Select.Option>
+              <Select.Option value="Completed">Completed</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={() => {
+                setPhaseModalVisible(false);
+                setEditingPhase(null);
+                phaseForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit" loading={isPending}>
+                {editingPhase ? 'Update' : 'Create'}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* View Modal */}
+      <Modal
+        title="Details"
+        open={viewModalVisible}
+        onCancel={() => {
+          setViewModalVisible(false);
+          setViewingItem(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setViewModalVisible(false);
+            setViewingItem(null);
+          }}>
+            Close
+          </Button>
+        ]}
+      >
+        {viewingItem && (
+          <div>
+            <p><strong>Name:</strong> {viewingItem.name}</p>
+            {'startDate' in viewingItem ? (
+              <>
+                <p><strong>Start Date:</strong> {new Date(viewingItem.startDate).toLocaleDateString()}</p>
+                <p><strong>End Date:</strong> {new Date(viewingItem.endDate).toLocaleDateString()}</p>
+                <p><strong>Status:</strong> {viewingItem.status}</p>
+              </>
+            ) : (
+              <p><strong>Created:</strong> {new Date(viewingItem.creationTime).toLocaleString()}</p>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

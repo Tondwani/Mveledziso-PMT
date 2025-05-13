@@ -19,8 +19,11 @@ export const MilestoneReducer = handleActions<IMilestoneStateContext, any>(
     }),
     [MilestoneActionEnum.milestonesLoaded]: (state, action) => ({
       ...state,
-      ...action.payload,
+      isPending: false,
+      isSuccess: true,
+      isError: false,
       milestones: action.payload.milestones,
+      message: action.payload.message
     }),
   },
   INITIAL_STATE

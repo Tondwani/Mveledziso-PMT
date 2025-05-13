@@ -59,13 +59,17 @@ export const updateMilestoneSuccess = (milestone: IMilestone, message: string) =
   }
 });
 
-export const loadMilestonesSuccess = (result: PagedResultDto<IMilestone>) => ({
-  type: MilestoneActionEnum.milestonesLoaded,
-  payload: {
-    isPending: false,
-    isSuccess: true,
-    isError: false,
-    milestones: result.items,
-    message: "Milestones loaded successfully"
-  }
-});
+export const loadMilestonesSuccess = (result: PagedResultDto<IMilestone>) => {
+  console.log('Creating loadMilestonesSuccess action with result:', result);
+  return {
+    type: MilestoneActionEnum.milestonesLoaded,
+    payload: {
+      isPending: false,
+      isSuccess: true,
+      isError: false,
+      milestones: result.items || [],
+      totalCount: result.totalCount || 0,
+      message: "Milestones loaded successfully"
+    }
+  };
+};

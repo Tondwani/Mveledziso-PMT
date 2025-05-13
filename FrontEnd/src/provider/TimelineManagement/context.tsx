@@ -8,6 +8,17 @@ export interface ITimeline {
   name: string;
   projectId: string;
   creationTime: string;
+  creatorUserId: number;
+  lastModificationTime: string | null;
+  lastModifierUserId: number | null;
+  isDeleted: boolean;
+  deleterUserId: number | null;
+  deletionTime: string | null;
+}
+
+export interface TimelineResponse {
+  totalCount: number;
+  items: ITimeline[];
 }
 
 export interface ITimelinePhase {
@@ -49,10 +60,17 @@ export interface IUpdateTimelinePhaseDto {
 
 export interface IGetTimelineInput {
   projectId?: string;
+  maxResultCount?: number;
+  skipCount?: number;
+  fromDate?: string;
+  toDate?: string;
+  isDeleted?: boolean;
 }
 
 export interface IGetTimelinePhaseInput {
   timelineId?: string;
+  maxResultCount?: number;
+  skipCount?: number;
 }
 
 // State Interface
@@ -73,7 +91,7 @@ export interface ITimelineActionContext {
   updateTimeline: (timeline: IUpdateTimelineDto) => Promise<ITimeline>;
   deleteTimeline: (id: string) => Promise<void>;
   getTimeline: (id: string) => Promise<ITimeline>;
-  getTimelines: (input: IGetTimelineInput) => Promise<ITimeline[]>;
+  getTimelines: (input: IGetTimelineInput) => Promise<TimelineResponse>;
   createTimelinePhase: (phase: ICreateTimelinePhaseDto) => Promise<ITimelinePhase>;
   updateTimelinePhase: (phase: IUpdateTimelinePhaseDto) => Promise<ITimelinePhase>;
   deleteTimelinePhase: (id: string) => Promise<void>;
@@ -100,7 +118,7 @@ export const TimelineActionContext = createContext<ITimelineActionContext>({
   updateTimeline: () => Promise.resolve({} as ITimeline),
   deleteTimeline: () => Promise.resolve(),
   getTimeline: () => Promise.resolve({} as ITimeline),
-  getTimelines: () => Promise.resolve([]),
+  getTimelines: () => Promise.resolve({} as TimelineResponse),
   createTimelinePhase: () => Promise.resolve({} as ITimelinePhase),
   updateTimelinePhase: () => Promise.resolve({} as ITimelinePhase),
   deleteTimelinePhase: () => Promise.resolve(),

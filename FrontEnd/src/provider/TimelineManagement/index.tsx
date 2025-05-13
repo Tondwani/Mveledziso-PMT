@@ -1,7 +1,7 @@
 import React, { useContext, useReducer } from 'react';
 import { TimelineStateContext, TimelineActionContext, ITimelineStateContext, 
   ICreateTimelineDto, IUpdateTimelineDto, IGetTimelineInput, ICreateTimelinePhaseDto, 
-  IUpdateTimelinePhaseDto, IGetTimelinePhaseInput } from './context';
+  IUpdateTimelinePhaseDto, IGetTimelinePhaseInput, ITimeline } from './context';
 import { TimelineReducer } from './reducer';
 import { setPending, setSuccess, setError, setTimeline, setTimelines, 
   setTimelinePhase, setTimelinePhases } from './action';
@@ -11,14 +11,35 @@ interface Props {
   children: React.ReactNode;
 }
 
+interface TimelineResponse {
+  totalCount: number;
+  items: ITimeline[];
+}
+
 const TimelineProvider: React.FC<Props> = ({ children }) => {
   const [state, dispatch] = useReducer(TimelineReducer, {} as ITimelineStateContext);
 
   const handleError = (error: unknown) => {
-    const message = axios.isAxiosError(error) 
-      ? error.response?.data?.error?.message || error.message
-      : 'An unexpected error occurred';
-    dispatch(setError(message));
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.error?.message || error.message;
+      
+      switch (status) {
+        case 404:
+          dispatch(setError(`Resource not found: ${message}`));
+          break;
+        case 403:
+          dispatch(setError(`Access denied: ${message}`));
+          break;
+        case 500:
+          dispatch(setError(`Server error: ${message}`));
+          break;
+        default:
+          dispatch(setError(message || 'An unexpected error occurred'));
+      }
+    } else {
+      dispatch(setError('An unexpected error occurred'));
+    }
     throw error;
   };
 
@@ -71,16 +92,23 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
-  const getTimelines = async (input: IGetTimelineInput) => {
+  const getTimelines = async (input: IGetTimelineInput): Promise<TimelineResponse> => {
     try {
       dispatch(setPending());
-      const response = await axios.get('/api/services/app/Timeline/GetAll', { params: input });
-      const result = response.data.result;
-      dispatch(setTimelines(result));
+      const params = {
+        maxResultCount: input.maxResultCount || 10,
+        skipCount: input.skipCount || 0,
+        projectId: input.projectId
+      };
+      const response = await axios.get('/api/services/app/Timeline/GetAll', { params });
+     
+      const result = response.data.result as TimelineResponse;
+      dispatch(setTimelines(result.items));
       dispatch(setSuccess());
       return result;
     } catch (error: unknown) {
       handleError(error);
+      return { totalCount: 0, items: [] };
     }
   };
 
@@ -136,7 +164,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
   const getTimelinePhases = async (input: IGetTimelinePhaseInput) => {
     try {
       dispatch(setPending());
-      const response = await axios.get('/api/services/app/TimelinePhase/GetAll', { params: input });
+      const response = await axios.get('/api/services/app/TimelinePhase/GetList', { params: input });
       const result = response.data.result;
       dispatch(setTimelinePhases(result));
       dispatch(setSuccess());

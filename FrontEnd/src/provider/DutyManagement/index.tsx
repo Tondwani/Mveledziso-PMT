@@ -37,78 +37,109 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
     return 'An unexpected error occurred';
   };
 
-  // Action implementations
-  const createUserDuty = async (duty: ICreateUserDutyDto): Promise<IUserDuty> => {
-    if (!duty.teamMemberId || !duty.projectDutyId) {
-      throw new Error('TeamMemberId and ProjectDutyId are required');
-    }
-
-    if (!isValidGuid(duty.teamMemberId) || !isValidGuid(duty.projectDutyId)) {
-      throw new Error('Invalid GUID format for teamMemberId or projectDutyId');
-    }
-
-    try {
-      const response = await instance.post(`${API_ENDPOINTS.userDuties}/Create`, duty);
-      return response.data.result;
-    } catch (error) {
-      console.error('Error creating user duty:', error);
-      throw error;
-    }
+  // Helper function to validate GUID format
+  const isValidGuid = (value: unknown): boolean => {
+    if (!value) return false;
+    const guid = String(value).trim();
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return guidRegex.test(guid);
   };
 
-  const getUserDuties = async (input: IGetUserDutyInput) => {
-    console.log('getUserDuties called with input:', input);
+  // Helper function to format value as GUID
+  const formatGuid = (value: unknown): string => {
+    if (!value) return '';
+    return String(value).trim().toLowerCase();
+  };
+
+  const createUserDuty = async (duty: ICreateUserDutyDto): Promise<IUserDuty> => {
     dispatch(setPending());
     try {
-      // Validate GUIDs if provided
-      if (input.teamMemberId && !isValidGuid(input.teamMemberId)) {
-        console.error('Invalid GUID format for teamMemberId:', input.teamMemberId);
+      // Validate required fields
+      if (!duty.teamMemberId || !duty.projectDutyId) {
+        throw new Error('TeamMemberId and ProjectDutyId are required');
+      }
+
+      // Format and validate GUIDs
+      const formattedDuty = {
+        teamMemberId: formatGuid(duty.teamMemberId),
+        projectDutyId: formatGuid(duty.projectDutyId)
+      };
+
+      // Validate GUIDs
+      if (!isValidGuid(formattedDuty.teamMemberId)) {
         throw new Error('Invalid GUID format for teamMemberId');
       }
-      if (input.projectDutyId && !isValidGuid(input.projectDutyId)) {
-        console.error('Invalid GUID format for projectDutyId:', input.projectDutyId);
+      if (!isValidGuid(formattedDuty.projectDutyId)) {
         throw new Error('Invalid GUID format for projectDutyId');
       }
 
-      const params = {
-        teamMemberId: input.teamMemberId,
-        projectDutyId: input.projectDutyId,
-        fromDate: input.fromDate?.toISOString(),
-        toDate: input.toDate?.toISOString(),
-        skipCount: input.skipCount || 0,
-        maxResultCount: input.maxResultCount || 10
-      };
-
-      console.log('Making API call to GetAll with params:', params);
-      const response = await instance.get(`${API_ENDPOINTS.userDuties}/GetAll`, { params });
-      console.log('API response from GetAll:', response.data);
-      
-      const duties: IUserDuty[] = response.data.result.items;
-      const totalCount: number = response.data.result.totalCount;
-      console.log('Mapped duties from API:', duties);
-      console.log('Total count:', totalCount);
-      
-      dispatch(setUserDuties(duties, totalCount));
-      return duties;
+      const response = await instance.post(`${API_ENDPOINTS.userDuties}/Create`, formattedDuty);
+      const createdDuty = response.data.result;
+      dispatch(setUserDuty(createdDuty));
+      dispatch(setSuccess('User duty created successfully'));
+      return createdDuty;
     } catch (error) {
-      console.error('Error in getUserDuties:', error);
       const errorMessage = getErrorMessage(error);
       dispatch(setError(errorMessage));
       throw error;
     }
   };
 
-  const updateUserDuty = async (duty: IUpdateUserDutyDto) => {
+  const getUserDuties = async (input: IGetUserDutyInput): Promise<IUserDuty[]> => {
     dispatch(setPending());
     try {
-      // Validate GUIDs
-      if (!isValidGuid(duty.id) || !isValidGuid(duty.teamMemberId) || !isValidGuid(duty.projectDutyId)) {
-        throw new Error('Invalid GUID format for id, teamMemberId, or projectDutyId');
+      // Format and validate GUIDs if provided
+      const formattedInput = {
+        ...input,
+        teamMemberId: input.teamMemberId ? formatGuid(input.teamMemberId) : undefined,
+        projectDutyId: input.projectDutyId ? formatGuid(input.projectDutyId) : undefined
+      };
+
+      // Validate GUIDs if provided
+      if (formattedInput.teamMemberId && !isValidGuid(formattedInput.teamMemberId)) {
+        throw new Error('Invalid GUID format for teamMemberId');
+      }
+      if (formattedInput.projectDutyId && !isValidGuid(formattedInput.projectDutyId)) {
+        throw new Error('Invalid GUID format for projectDutyId');
       }
 
-      const response = await instance.put(`${API_ENDPOINTS.userDuties}/Update`, duty);
-      const updatedDuty: IUserDuty = response.data.result;
+      const response = await instance.get(`${API_ENDPOINTS.userDuties}/GetAll`, { params: formattedInput });
+      const duties = response.data.result.items;
+      const totalCount = response.data.result.totalCount;
+      dispatch(setUserDuties(duties, totalCount));
+      return duties;
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      dispatch(setError(errorMessage));
+      throw error;
+    }
+  };
+
+  const updateUserDuty = async (duty: IUpdateUserDutyDto): Promise<IUserDuty> => {
+    dispatch(setPending());
+    try {
+      // Format and validate GUIDs
+      const formattedDuty = {
+        id: formatGuid(duty.id),
+        teamMemberId: formatGuid(duty.teamMemberId),
+        projectDutyId: formatGuid(duty.projectDutyId)
+      };
+
+      // Validate GUIDs
+      if (!isValidGuid(formattedDuty.id)) {
+        throw new Error('Invalid GUID format for id');
+      }
+      if (!isValidGuid(formattedDuty.teamMemberId)) {
+        throw new Error('Invalid GUID format for teamMemberId');
+      }
+      if (!isValidGuid(formattedDuty.projectDutyId)) {
+        throw new Error('Invalid GUID format for projectDutyId');
+      }
+
+      const response = await instance.put(`${API_ENDPOINTS.userDuties}/Update`, formattedDuty);
+      const updatedDuty = response.data.result;
       dispatch(setUserDuty(updatedDuty));
+      dispatch(setSuccess('User duty updated successfully'));
       return updatedDuty;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -117,16 +148,17 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
-  const deleteUserDuty = async (id: string) => {
+  const deleteUserDuty = async (id: string): Promise<void> => {
     dispatch(setPending());
     try {
-      // Validate GUID
-      if (!isValidGuid(id)) {
+      // Format and validate GUID
+      const formattedId = formatGuid(id);
+      if (!isValidGuid(formattedId)) {
         throw new Error('Invalid GUID format for id');
       }
 
-      await instance.delete(`${API_ENDPOINTS.userDuties}/Delete`, { params: { id } });
-      dispatch(setSuccess("User duty deleted successfully"));
+      await instance.delete(`${API_ENDPOINTS.userDuties}/Delete`, { params: { id: formattedId } });
+      dispatch(setSuccess('User duty deleted successfully'));
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       dispatch(setError(errorMessage));
@@ -134,16 +166,17 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
-  const getUserDuty = async (id: string) => {
+  const getUserDuty = async (id: string): Promise<IUserDuty> => {
     dispatch(setPending());
     try {
-      // Validate GUID
-      if (!isValidGuid(id)) {
+      // Format and validate GUID
+      const formattedId = formatGuid(id);
+      if (!isValidGuid(formattedId)) {
         throw new Error('Invalid GUID format for id');
       }
 
-      const response = await instance.get(`${API_ENDPOINTS.userDuties}/Get`, { params: { id } });
-      const duty: IUserDuty = response.data.result;
+      const response = await instance.get(`${API_ENDPOINTS.userDuties}/Get`, { params: { id: formattedId } });
+      const duty = response.data.result;
       dispatch(setUserDuty(duty));
       return duty;
     } catch (error) {
@@ -168,12 +201,6 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
       </UserDutyActionContext.Provider>
     </UserDutyStateContext.Provider>
   );
-};
-
-// Helper function to validate GUID format
-const isValidGuid = (guid: string): boolean => {
-  const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return guidRegex.test(guid);
 };
 
 export const useUserDutyState = () => {
