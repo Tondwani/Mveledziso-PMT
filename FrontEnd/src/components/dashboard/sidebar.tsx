@@ -39,17 +39,22 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
 
   const basePath = getBasePath();
 
+  // Get user roles
+  const userRoles = currentUser?.roles || [];
+  const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
+
   const menuItems: MenuProps["items"] = [
     {
       key: `${basePath}/dashboard`,
       icon: <DashboardOutlined />,
       label: <Link href={`${basePath}/dashboard`}>Mveledziso</Link>,
     },
-    {
+    // Only show projects for ProjectManager
+    ...(isProjectManager ? [{
       key: `${basePath}/projects`,
       icon: <FolderOpenOutlined />,
       label: <Link href={`${basePath}/projects`}>Projects</Link>,
-    },
+    }] : []),
     {
       key: `${basePath}/Duties`,
       icon: <FileTextOutlined />,
