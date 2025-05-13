@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useActivityLogState, useActivityLogActions } from '../../../provider/ActivitylogManagement';
 import { IActivityLog, IGetActivityLogsInput } from '../../../provider/ActivitylogManagement/context';
 import { AxiosError } from 'axios';
+import { useAuthState } from '../../../provider/CurrentUserProvider';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -13,7 +14,6 @@ const { RangePicker } = DatePicker;
 interface FilterFormValues {
   action?: string;
   entityType?: string;
-  userId?: number;
   dateRange?: [string, string];
 }
 
@@ -21,6 +21,8 @@ export default function ActivityLogPage() {
   // State and Actions from Context
   const { activityLogs, isPending } = useActivityLogState();
   const { getActivityLogs } = useActivityLogActions();
+  const { currentUser } = useAuthState();
+  const isTeamMember = currentUser?.roles.includes('TeamMember');
 
   // Local State
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
@@ -28,7 +30,6 @@ export default function ActivityLogPage() {
   const [filters, setFilters] = useState<IGetActivityLogsInput>({
     action: '',
     entityType: '',
-    userId: undefined,
     startDate: undefined,
     endDate: undefined,
     skipCount: 0,
@@ -42,9 +43,15 @@ export default function ActivityLogPage() {
       try {
         setError(null);
         const input: IGetActivityLogsInput = {
-          ...filters,
+          entityType: filters.entityType, // Only keep entity type filter for team members
           skipCount: filters.skipCount ?? 0,
-          maxResultCount: 10
+          maxResultCount: 10,
+          // Only include other filters for non-team members
+          ...(isTeamMember ? {} : {
+            action: filters.action,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          })
         };
         await getActivityLogs(input);
       } catch (err) {
@@ -60,18 +67,20 @@ export default function ActivityLogPage() {
 
     loadActivityLogs();
   }, [
-    filters.action,
-    filters.entityType,
-    filters.userId,
-    filters.startDate,
-    filters.endDate,
-    (filters.skipCount ?? 0)
+    ...(isTeamMember ? [filters.entityType] : [
+      filters.action,
+      filters.entityType,
+      filters.startDate,
+      filters.endDate,
+    ]),
+    filters.skipCount,
+    currentUser,
+    isTeamMember
   ]);
 
   // Derived data
-  const actionTypes = [...new Set(activityLogs.map(log => log.action))];
   const entityTypes = [...new Set(activityLogs.map(log => log.entityType))];
-  const users = [...new Set(activityLogs.map(log => ({ id: log.userId, name: log.userName })))];
+  const actionTypes = isTeamMember ? [] : [...new Set(activityLogs.map(log => log.action))];
 
   const columns = [
     {
@@ -145,8 +154,8 @@ export default function ActivityLogPage() {
     setFilters(prev => ({
       ...prev,
       ...otherValues,
-      startDate: dateRange?.[0],
-      endDate: dateRange?.[1],
+      startDate: isTeamMember ? undefined : dateRange?.[0],
+      endDate: isTeamMember ? undefined : dateRange?.[1],
       skipCount: 0 // Reset pagination when filters change
     }));
     setIsFilterModalVisible(false);
@@ -156,7 +165,6 @@ export default function ActivityLogPage() {
     setFilters({
       action: '',
       entityType: '',
-      userId: undefined,
       startDate: undefined,
       endDate: undefined,
       skipCount: 0,
@@ -166,10 +174,12 @@ export default function ActivityLogPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Activity Log</Title>
+      <Title level={2}>
+        {isTeamMember ? 'My Activity Log' : 'Activity Log'}
+      </Title>
       
       <Card 
-        title="System Activities"
+        title={isTeamMember ? 'My Activities' : 'System Activities'}
         variant="outlined"
         extra={
           <Space>
@@ -177,7 +187,7 @@ export default function ActivityLogPage() {
               icon={<FilterOutlined />} 
               onClick={() => setIsFilterModalVisible(true)}
             >
-              Filters
+              Filter by Type
             </Button>
           </Space>
         }
@@ -208,7 +218,7 @@ export default function ActivityLogPage() {
 
       {/* Filter Modal */}
       <Modal
-        title="Filter Activity Logs"
+        title={isTeamMember ? "Filter Activities by Type" : "Filter Activity Logs"}
         open={isFilterModalVisible}
         onCancel={() => setIsFilterModalVisible(false)}
         footer={null}
@@ -218,34 +228,33 @@ export default function ActivityLogPage() {
           initialValues={{
             action: filters.action,
             entityType: filters.entityType,
-            userId: filters.userId,
             dateRange: filters.startDate && filters.endDate ? [filters.startDate, filters.endDate] : undefined
           }}
         >
-          <Form.Item name="action" label="Action">
-            <Select allowClear>
-              {actionTypes.map(type => (
-                <Select.Option key={type} value={type}>{type}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="entityType" label="Entity Type">
+          {/* Show only entity type filter for team members */}
+          <Form.Item name="entityType" label="Activity Type">
             <Select allowClear>
               {entityTypes.map(type => (
                 <Select.Option key={type} value={type}>{type}</Select.Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="userId" label="User">
-            <Select allowClear>
-              {users.map(user => (
-                <Select.Option key={user.id} value={user.id}>{user.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="dateRange" label="Date Range">
-            <RangePicker showTime />
-          </Form.Item>
+
+          {/* Show additional filters only for non-team members */}
+          {!isTeamMember && (
+            <>
+              <Form.Item name="action" label="Action">
+                <Select allowClear>
+                  {actionTypes.map(type => (
+                    <Select.Option key={type} value={type}>{type}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item name="dateRange" label="Date Range">
+                <RangePicker showTime />
+              </Form.Item>
+            </>
+          )}
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">Apply</Button>

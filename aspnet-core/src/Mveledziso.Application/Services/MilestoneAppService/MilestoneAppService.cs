@@ -9,9 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Abp.Authorization;
 
 namespace Mveledziso.Services.MilestoneAppService
 {
+    [AbpAuthorize]
     public class MilestoneAppService : ApplicationService, IMilestoneAppService
     {
         private readonly IRepository<Milestone, Guid> _milestoneRepository;
@@ -117,49 +119,78 @@ namespace Mveledziso.Services.MilestoneAppService
         {
             Logger.Info($"Getting milestones with TimelineId: {input.TimelineId}");
 
-            var query = _milestoneRepository.GetAll();
-
-            // Only filter by TimelineId if provided
-            if (input.TimelineId != Guid.Empty)
+            try
             {
-                query = query.Where(m => m.TimelineId == input.TimelineId);
+                var query = _milestoneRepository.GetAll();
+
+                Logger.Info("Initial query created");
+
+                // Only filter by TimelineId if provided
+                if (input.TimelineId != Guid.Empty)
+                {
+                    query = query.Where(m => m.TimelineId == input.TimelineId);
+                    Logger.Info($"Filtered by TimelineId: {input.TimelineId}");
+                }
+
+                // Filter by completion status if specified
+                if (input.IsCompleted.HasValue)
+                {
+                    query = query.Where(m => m.IsCompleted == input.IsCompleted.Value);
+                    Logger.Info($"Filtered by IsCompleted: {input.IsCompleted}");
+                }
+
+                // Add ordering and paging
+                query = query.OrderBy(m => m.DueDate);
+
+                if (input.SkipCount > 0)
+                {
+                    query = query.Skip(input.SkipCount);
+                }
+
+                if (input.MaxResultCount > 0)
+                {
+                    query = query.Take(input.MaxResultCount);
+                }
+
+                Logger.Info("Executing query to get milestones");
+                var milestones = await query.ToListAsync();
+                Logger.Info($"Found {milestones.Count} milestones");
+
+                if (!milestones.Any())
+                {
+                    Logger.Info("No milestones found, returning empty list");
+                    return new List<MilestoneDto>();
+                }
+
+                var timelineIds = milestones.Select(m => m.TimelineId).Distinct().ToList();
+                Logger.Info($"Getting timelines for {timelineIds.Count} unique timeline IDs");
+
+                var timelines = await _timelineRepository.GetAll()
+                    .Where(t => timelineIds.Contains(t.Id))
+                    .ToListAsync();
+
+                Logger.Info($"Found {timelines.Count} related timelines");
+
+                var result = milestones.Select(m => new MilestoneDto
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    Description = m.Description,
+                    DueDate = m.DueDate,
+                    IsCompleted = m.IsCompleted,
+                    TimelineId = m.TimelineId,
+                    TimelineName = timelines.FirstOrDefault(t => t.Id == m.TimelineId)?.Name,
+                    CreationTime = m.CreationTime
+                }).ToList();
+
+                Logger.Info($"Returning {result.Count} milestone DTOs");
+                return result;
             }
-
-            // Filter by completion status if specified
-            if (input.IsCompleted.HasValue)
+            catch (Exception ex)
             {
-                query = query.Where(m => m.IsCompleted == input.IsCompleted.Value);
+                Logger.Error("Error getting milestones", ex);
+                throw;
             }
-
-            query = query.OrderBy(m => m.DueDate)
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount);
-
-            var milestones = await query.ToListAsync();
-            
-            Logger.Info($"Found {milestones.Count} milestones");
-
-            if (!milestones.Any())
-            {
-                return new List<MilestoneDto>();
-            }
-
-            var timelineIds = milestones.Select(m => m.TimelineId).Distinct().ToList();
-            var timelines = await _timelineRepository.GetAll()
-                .Where(t => timelineIds.Contains(t.Id))
-                .ToListAsync();
-
-            return milestones.Select(m => new MilestoneDto
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description,
-                DueDate = m.DueDate,
-                IsCompleted = m.IsCompleted,
-                TimelineId = m.TimelineId,
-                TimelineName = timelines.FirstOrDefault(t => t.Id == m.TimelineId)?.Name,
-                CreationTime = m.CreationTime
-            }).ToList();
         }
     }
 }

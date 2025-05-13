@@ -3,8 +3,9 @@ import { Layout, Dropdown, Avatar } from "antd";
 import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import type { MenuInfo } from 'rc-menu/lib/interface'; 
 import NotificationComponent from "../notification/page";
+import { useAuthState } from "@/provider/CurrentUserProvider";
+import { toast } from "react-hot-toast";
 
 const { Header } = Layout;
 
@@ -16,6 +17,7 @@ interface HeaderProps {
 const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const { currentUser } = useAuthState();
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -27,25 +29,45 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  const handleMenuClick = (e: MenuInfo) => {
-    if (e.key === "profile") { 
-      router.push('UserMenu/profile'); 
+  const getBasePath = () => {
+    const roles = currentUser?.roles || [];
+    if (roles.includes("Admin") || roles.includes("ProjectManager")) {
+      return "AdminMenu";
     }
-    if (e.key === "settings") {
-      router.push('UserMenu/settings'); 
-    }
-    if (e.key === "logout") {
-      router.push('/login'); 
+    return "UserMenu";
+  };
+
+  const handleNavigation = async (path: string) => {
+    try {
+      await router.push(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Failed to navigate. Please try again.');
     }
   };
 
   const userMenu = {
     items: [
-        { key: "profile", label: "Profile" }, 
-        { key: "settings", label: "Settings" }, 
-        { key: "logout", label: "Logout" }, 
-    ],
-    onClick: handleMenuClick
+        { 
+          key: "profile", 
+          label: "Profile",
+          onClick: () => handleNavigation(`/${getBasePath()}/profile`)
+        }, 
+        { 
+          key: "settings", 
+          label: "Settings",
+          onClick: () => handleNavigation(`/${getBasePath()}/settings`)
+        }, 
+        { 
+          key: "logout", 
+          label: "Logout",
+          style: { color: '#ff4d4f' },
+          onClick: () => {
+            sessionStorage.clear();
+            window.location.href = '/login';
+          }
+        }, 
+    ]
   };
 
   return (
@@ -96,6 +118,7 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           whiteSpace: "nowrap" 
         }}
       >
+        {currentUser?.name || 'Welcome'}
       </div>
 
       <div 
@@ -108,10 +131,13 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
       >
         <NotificationComponent isMobile={isMobile} />
         <Dropdown menu={userMenu} placement="bottomRight">
-        <Avatar 
+          <Avatar 
             icon={<UserOutlined />}
             size={isMobile ? "small" : "default"}
-            style={{ cursor: "pointer" }} 
+            style={{ 
+              cursor: "pointer",
+              backgroundColor: '#1890ff'  // Blue background for avatar
+            }} 
           />
         </Dropdown>
       </div>

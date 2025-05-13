@@ -1,213 +1,250 @@
-
 "use client";
-import React, { useState } from 'react';
-import {
-  Table,
-  Tag,
-  Space,
-  Button,
-  Card,
-  Typography,
-  Input,
-  DatePicker,
-  Select,
-  Upload,
-  message,
-} from 'antd';
-import {
-  FileTextOutlined,
-  SearchOutlined,
-  UploadOutlined,
-  DownloadOutlined,
-} from '@ant-design/icons';
+
+import React, { useEffect, useState } from 'react';
+import { Table, Card, Space, Button, Tag, Typography, Upload, message, Input, DatePicker, Row, Col, Modal, Form } from 'antd';
+import { UploadOutlined, FileOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
+import { useDocumentState, useDocumentActions } from '../../../provider/DocumentManagement';
+import { IDocument, IGetDocumentInput, IUpdateDocumentDto } from '../../../provider/DocumentManagement/context';
+import { AxiosError } from 'axios';
+import type { RangePickerProps } from 'antd/es/date-picker';
+import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
+import type { ColumnsType } from 'antd/es/table';
 
 const { Title } = Typography;
-const { Search } = Input;
 const { RangePicker } = DatePicker;
 
-interface Document {
-  id: string;
-  fileName: string;
-  fileType: string;
-  fileSize: string;
-  projectDutyId?: string;
-  projectDutyName?: string;
-  creationTime: string;
-  lastModifiedTime: string;
-  fileContent?: Blob;
-}
-
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      fileName: 'Project Requirements.pdf',
-      fileType: 'PDF',
-      fileSize: '2.4 MB',
-      projectDutyId: 'project1',
-      projectDutyName: 'Website Redesign',
-      creationTime: '2023-01-10T08:30:00',
-      lastModifiedTime: '2023-01-15T10:20:00',
-    },
-    {
-      id: '2',
-      fileName: 'User Manual.docx',
-      fileType: 'DOCX',
-      fileSize: '1.2 MB',
-      projectDutyId: 'project2',
-      projectDutyName: 'Mobile App',
-      creationTime: '2023-02-05T14:15:00',
-      lastModifiedTime: '2023-02-10T09:30:00',
-    },
-    {
-      id: '3',
-      fileName: 'Meeting Notes.txt',
-      fileType: 'TXT',
-      fileSize: '0.1 MB',
-      creationTime: '2023-03-01T10:00:00',
-      lastModifiedTime: '2023-03-01T10:00:00',
-    },
-  ]);
+  const { documents, totalCount, isPending, isError, errorMessage } = useDocumentState();
+  const { getDocuments, uploadDocument, deleteDocument, updateDocument } = useDocumentActions();
+  const [filters, setFilters] = useState<IGetDocumentInput>({
+    skipCount: 0,
+    maxResultCount: 10,
+    keyword: '',
+    fromDate: undefined,
+    toDate: undefined
+  });
 
-  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>(documents);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedProject, setSelectedProject] = useState<string>();
-  const [dateRange, setDateRange] = useState<[string, string]>();
+  const [selectedDocument, setSelectedDocument] = useState<IDocument | null>(null);
+  const [isViewModalVisible, setIsViewModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
-  const handleFileUpload = (file: File) => {
-    const newDoc: Document = {
-      id: (documents.length + 1).toString(),
-      fileName: file.name,
-      fileType: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN',
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      creationTime: new Date().toISOString(),
-      lastModifiedTime: new Date().toISOString(),
-      fileContent: new Blob([file], { type: file.type }),
-    };
+  useEffect(() => {
+    console.log('Current filters:', filters);
+    loadDocuments();
+  }, [filters]);
 
-    const newList = [...documents, newDoc];
-    setDocuments(newList);
-    setFilteredDocuments(newList);
-    message.success(`${file.name} uploaded successfully`);
-    return false; // Prevent automatic upload
-  };
+  useEffect(() => {
+    console.log('Documents state:', { documents, totalCount, isPending, isError, errorMessage });
+  }, [documents, totalCount, isPending, isError, errorMessage]);
 
-  const handleDownload = (record: Document) => {
-    if (record.fileContent) {
-      const url = URL.createObjectURL(record.fileContent);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', record.fileName);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else {
-      message.info(`Simulating download for: ${record.fileName}`);
+  const loadDocuments = async () => {
+    try {
+      console.log('Loading documents with filters:', filters);
+      const result = await getDocuments(filters);
+      console.log('Documents loaded:', result);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Error loading documents:', axiosError);
+      message.error(axiosError.message || 'Failed to load documents');
     }
   };
 
-  const columns = [
+  const handleUpload = async (file: File) => {
+    try {
+      console.log('Uploading file:', file.name);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const result = await uploadDocument(file);
+      console.log('Upload result:', result);
+      message.success('Document uploaded successfully');
+      loadDocuments();
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Upload error:', axiosError);
+      message.error(axiosError.message || 'Failed to upload document');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    Modal.confirm({
+      title: 'Delete Document',
+      content: 'Are you sure you want to delete this document?',
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk: async () => {
+        try {
+          console.log('Deleting document:', id);
+          await deleteDocument(id);
+          message.success('Document deleted successfully');
+          loadDocuments();
+        } catch (error) {
+          const axiosError = error as AxiosError;
+          console.error('Delete error:', axiosError);
+          message.error(axiosError.message || 'Failed to delete document');
+        }
+      }
+    });
+  };
+
+  const handleEdit = async (values: IUpdateDocumentDto) => {
+    if (!selectedDocument) return;
+
+    try {
+      console.log('Updating document:', { id: selectedDocument.id, values });
+      await updateDocument(selectedDocument.id, values);
+      message.success('Document updated successfully');
+      setIsEditModalVisible(false);
+      loadDocuments();
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Update error:', axiosError);
+      message.error(axiosError.message || 'Failed to update document');
+    }
+  };
+
+  const handleDownload = (fileUrl: string, fileName: string) => {
+    console.log('Downloading document:', { fileUrl, fileName });
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSearch = (value: string) => {
+    console.log('Searching for:', value);
+    setFilters(prev => ({
+      ...prev,
+      keyword: value,
+      skipCount: 0
+    }));
+  };
+
+  const handleDateRangeChange = (dates: RangePickerProps['value']) => {
+    console.log('Date range changed:', dates);
+    setFilters(prev => ({
+      ...prev,
+      fromDate: dates?.[0]?.toISOString(),
+      toDate: dates?.[1]?.toISOString(),
+      skipCount: 0
+    }));
+  };
+
+  const handleReset = () => {
+    console.log('Resetting filters');
+    setFilters({
+      skipCount: 0,
+      maxResultCount: 10,
+      keyword: '',
+      fromDate: undefined,
+      toDate: undefined
+    });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const columns: ColumnsType<IDocument> = [
     {
       title: 'File Name',
       dataIndex: 'fileName',
       key: 'fileName',
       render: (text: string) => (
         <Space>
-          <FileTextOutlined />
-          <a>{text}</a>
+          <FileOutlined />
+          {text}
         </Space>
       ),
-    },
-    {
-      title: 'Type',
-      dataIndex: 'fileType',
-      key: 'fileType',
-      render: (type: string) => <Tag>{type}</Tag>,
+      responsive: ['xs', 'sm', 'md', 'lg', 'xl'] as Breakpoint[],
     },
     {
       title: 'Size',
       dataIndex: 'fileSize',
       key: 'fileSize',
+      render: (size: number) => formatFileSize(size),
+      responsive: ['sm', 'md', 'lg', 'xl'] as Breakpoint[],
     },
     {
-      title: 'Project/Duty',
-      dataIndex: 'projectDutyName',
-      key: 'projectDutyName',
-      render: (name?: string) => (name ? <Tag color="blue">{name}</Tag> : '-'),
+      title: 'Type',
+      dataIndex: 'fileType',
+      key: 'fileType',
+      render: (type: string) => <Tag>{type?.toUpperCase() || 'N/A'}</Tag>,
+      responsive: ['md', 'lg', 'xl'] as Breakpoint[],
     },
     {
       title: 'Uploaded',
       dataIndex: 'creationTime',
       key: 'creationTime',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Last Modified',
-      dataIndex: 'lastModifiedTime',
-      key: 'lastModifiedTime',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => new Date(date).toLocaleString(),
+      responsive: ['lg', 'xl'] as Breakpoint[],
     },
     {
       title: 'Action',
       key: 'action',
-      render: (_: unknown, record: Document) => (
+      fixed: 'right' as const,
+      responsive: ['xs', 'sm', 'md', 'lg', 'xl'] as Breakpoint[],
+      render: (_: unknown, record: IDocument) => (
         <Space size="middle">
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownload(record)}
-          >
-            Download
-          </Button>
-          <a>View</a>
-          <a>Delete</a>
+          <Button 
+            type="text" 
+            icon={<EyeOutlined />}
+            onClick={() => {
+              console.log('Viewing document:', record);
+              setSelectedDocument(record);
+              setIsViewModalVisible(true);
+            }}
+          />
+          <Button 
+            type="text" 
+            icon={<EditOutlined />}
+            onClick={() => {
+              console.log('Editing document:', record);
+              setSelectedDocument(record);
+              form.setFieldsValue(record);
+              setIsEditModalVisible(true);
+            }}
+          />
+          <Button 
+            type="text" 
+            icon={<DownloadOutlined />} 
+            onClick={() => handleDownload(record.fileUrl, record.fileName)}
+          />
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+            onClick={() => handleDelete(record.id)}
+          />
         </Space>
       ),
     },
   ];
 
-  const handleSearch = () => {
-    let results = [...documents];
-
-    if (searchKeyword) {
-      results = results.filter((doc) =>
-        doc.fileName.toLowerCase().includes(searchKeyword.toLowerCase())
-      );
-    }
-
-    if (selectedProject) {
-      results = results.filter((doc) => doc.projectDutyId === selectedProject);
-    }
-
-    if (dateRange) {
-      const [start, end] = dateRange;
-      results = results.filter((doc) => {
-        const docDate = new Date(doc.creationTime);
-        return docDate >= new Date(start) && docDate <= new Date(end);
-      });
-    }
-
-    setFilteredDocuments(results);
-  };
-
-  const handleReset = () => {
-    setSearchKeyword('');
-    setSelectedProject(undefined);
-    setDateRange(undefined);
-    setFilteredDocuments(documents);
-  };
+  const skipCount = filters.skipCount ?? 0;
+  const maxResultCount = filters.maxResultCount ?? 10;
 
   return (
     <div style={{ padding: 24 }}>
       <Title level={2}>Documents</Title>
-
+      
       <Card
         title="Document Management"
         extra={
           <Upload
-            multiple
             showUploadList={false}
-            beforeUpload={handleFileUpload}
+            beforeUpload={(file) => {
+              handleUpload(file);
+              return false;
+            }}
             accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx,.csv,.json"
           >
             <Button icon={<UploadOutlined />} type="primary">
@@ -216,55 +253,91 @@ export default function DocumentsPage() {
           </Upload>
         }
       >
-        <div style={{ marginBottom: 16 }}>
-          <Space size="large">
-            <Search
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={24} md={8}>
+            <Input.Search
               placeholder="Search documents"
-              enterButton={<SearchOutlined />}
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
               onSearch={handleSearch}
-              style={{ width: 300 }}
-            />
-
-            <Select
-              placeholder="Filter by project"
-              style={{ width: 200 }}
-              value={selectedProject}
-              onChange={(value) => setSelectedProject(value)}
+              style={{ width: '100%' }}
               allowClear
-              onClear={handleSearch}
-            >
-              <Select.Option value="project1">Website Redesign</Select.Option>
-              <Select.Option value="project2">Mobile App</Select.Option>
-            </Select>
-
-            <RangePicker
-              placeholder={['Start Date', 'End Date']}
-              onChange={(dates) => {
-                if (dates) {
-                  setDateRange([
-                    dates[0]?.format('YYYY-MM-DD') || '',
-                    dates[1]?.format('YYYY-MM-DD') || '',
-                  ]);
-                } else {
-                  setDateRange(undefined);
-                }
-              }}
-              onOk={handleSearch}
             />
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <RangePicker
+              onChange={handleDateRangeChange}
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col xs={24} sm={24} md={4}>
+            <Button onClick={handleReset} style={{ width: '100%' }}>Reset Filters</Button>
+          </Col>
+        </Row>
 
-            <Button onClick={handleReset}>Reset Filters</Button>
-          </Space>
-        </div>
-
+        {isError && (
+          <div style={{ marginTop: 16, marginBottom: 16, color: '#ff4d4f' }}>
+            {errorMessage}
+          </div>
+        )}
+        
         <Table
           columns={columns}
-          dataSource={filteredDocuments}
+          dataSource={documents}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+          loading={isPending}
+          pagination={{
+            total: totalCount,
+            pageSize: maxResultCount,
+            current: Math.floor(skipCount / maxResultCount) + 1,
+            onChange: (page) => {
+              setFilters(prev => ({
+                ...prev,
+                skipCount: (page - 1) * (prev.maxResultCount ?? 10)
+              }));
+            }
+          }}
+          scroll={{ x: 'max-content' }}
         />
       </Card>
+
+      {/* View Modal */}
+      <Modal
+        title="View Document"
+        open={isViewModalVisible}
+        onCancel={() => setIsViewModalVisible(false)}
+        footer={null}
+      >
+        {selectedDocument && (
+          <div>
+            <p><strong>File Name:</strong> {selectedDocument.fileName}</p>
+            <p><strong>File Type:</strong> {selectedDocument.fileType || 'N/A'}</p>
+            <p><strong>File Size:</strong> {selectedDocument.fileSize ? formatFileSize(selectedDocument.fileSize) : 'N/A'}</p>
+            <p><strong>Upload Date:</strong> {new Date(selectedDocument.creationTime).toLocaleString()}</p>
+            <p><strong>File URL:</strong> <a href={selectedDocument.fileUrl} target="_blank" rel="noopener noreferrer">View File</a></p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        title="Edit Document"
+        open={isEditModalVisible}
+        onOk={form.submit}
+        onCancel={() => setIsEditModalVisible(false)}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleEdit}
+        >
+          <Form.Item
+            name="fileName"
+            label="File Name"
+            rules={[{ required: true, message: 'Please input the file name!' }]}
+          >
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

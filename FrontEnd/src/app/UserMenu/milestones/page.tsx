@@ -1,253 +1,161 @@
 "use client";
 
-import { Table, Tag, Space, Button, Card, Typography, Modal, Form, Input, DatePicker, Select, message } from 'antd';
-import type { Dayjs } from 'dayjs';
-import { FlagOutlined, CheckCircleOutlined, ClockCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import React, { useState, useEffect } from 'react';
-import { useMilestoneState, useMilestoneActions } from '../../../provider/MilestoneManagement';
-import { IMilestone, MilestoneStatus, ICreateMilestoneDto } from '../../../provider/MilestoneManagement/context';
-import { useTimelineState, useTimelineActions } from '../../../provider/TimelineManagement';
+import { Card, Typography, List, Tag, Space, Empty, Button, Modal, Form, DatePicker, Input, Select, message } from 'antd';
+import { FlagOutlined, CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { useContext, useEffect, useState } from 'react';
+import { ProjectActionContext, IProject, IMilestone } from '@/provider/ProjectManagement/context';
+import { useAuthState } from '@/provider/CurrentUserProvider';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
-const { TextArea } = Input;
+const { Title, Text } = Typography;
 
-interface FormValues {
-  title: string;
-  description: string;
-  timelineId: string;
-  dueDate: Dayjs;
-  status: MilestoneStatus;
+interface IProjectOption {
+  value: string;
+  label: string;
 }
 
-interface Timeline {
-  id: string;
-  name: string;
+interface IMilestoneWithProject extends IMilestone {
+  projectId: string;
+  projectName?: string;
 }
 
-export default function MilestonesPage() {
-  // State Management
-  const { milestones, isPending, isError, message: stateMessage } = useMilestoneState();
-  const { createMilestone, updateMilestone, deleteMilestone, getMilestones } = useMilestoneActions();
-  const { timelines } = useTimelineState();
-  const { getTimelines } = useTimelineActions();
-
-  // Local State
+export default function TeamMemberMilestonesPage() {
+  const projectActions = useContext(ProjectActionContext);
+  const { currentUser } = useAuthState();
+  const [loading, setLoading] = useState(true);
+  const [myMilestones, setMyMilestones] = useState<IMilestoneWithProject[]>([]);
+  const [myProjects, setMyProjects] = useState<IProjectOption[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentTimelineFilter, setCurrentTimelineFilter] = useState<string | undefined>();
-  const [currentStatusFilter, setCurrentStatusFilter] = useState<MilestoneStatus | undefined>();
-  const [editingMilestone, setEditingMilestone] = useState<IMilestone | null>(null);
+  const [editingMilestone, setEditingMilestone] = useState<IMilestoneWithProject | null>(null);
   const [form] = Form.useForm();
 
-  // Load Data
-  useEffect(() => {
-    getTimelines({});
-    getMilestones({});
-  }, []);
-
-  // Error Handling
-  useEffect(() => {
-    if (isError && stateMessage) {
-      message.error(stateMessage);
-    }
-  }, [isError, stateMessage]);
-
-  const filteredMilestones = milestones?.filter(m => {
-    const matchesTimeline = currentTimelineFilter ? m.timelineId === currentTimelineFilter : true;
-    const matchesStatus = currentStatusFilter ? m.status === currentStatusFilter : true;
-    return matchesTimeline && matchesStatus;
-  }) || [];
-
-  const columns = [
-    {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      render: (text: string) => (
-        <Space>
-          <FlagOutlined />
-          <a>{text}</a>
-        </Space>
-      ),
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: 'Timeline',
-      dataIndex: 'timeline',
-      key: 'timeline',
-      render: (timeline: Timeline) => <Tag color="blue">{timeline?.name || 'N/A'}</Tag>,
-    },
-    {
-      title: 'Due Date',
-      dataIndex: 'dueDate',
-      key: 'dueDate',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: MilestoneStatus) => {
-        const statusConfig = {
-          [MilestoneStatus.NotStarted]: { color: 'default', icon: <ClockCircleOutlined /> },
-          [MilestoneStatus.InProgress]: { color: 'processing', icon: <ClockCircleOutlined /> },
-          [MilestoneStatus.Completed]: { color: 'success', icon: <CheckCircleOutlined /> },
-          [MilestoneStatus.Delayed]: { color: 'error', icon: <ClockCircleOutlined /> },
-        };
-        const config = statusConfig[status];
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {status}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_: unknown, record: IMilestone) => (
-        <Space size="middle">
-          <a onClick={() => handleView(record)}>View</a>
-          <a onClick={() => handleEdit(record)}>Edit</a>
-          <a onClick={() => handleDelete(record.id)}>Delete</a>
-        </Space>
-      ),
-    },
-  ];
-
-  const handleCreate = async (values: FormValues) => {
+  const loadData = async () => {
     try {
-      const newMilestone: ICreateMilestoneDto = {
-        title: values.title,
-        description: values.description,
-        timelineId: values.timelineId,
-        dueDate: values.dueDate.toDate(),
-        status: values.status
-      };
-      await createMilestone(newMilestone);
-      message.success('Milestone created successfully');
-      setIsModalVisible(false);
-      form.resetFields();
-      getMilestones({});
-    } catch (err) {
-      console.error('Failed to create milestone:', err);
-      message.error('Failed to create milestone');
+      if (currentUser?.id) {
+        // Get projects the team member is involved in
+        const projects = await projectActions.getProjects({
+          filter: `assignedUserId eq ${currentUser.id}`
+        });
+        
+        setMyProjects(projects.map(p => ({
+          value: p.id,
+          label: p.name
+        })));
+
+        // Get project details with milestones
+        const projectDetails = await Promise.all(
+          projects.map(p => projectActions.getProjectWithDetails(p.id))
+        );
+        
+        // Extract milestones
+        const milestones = projectDetails
+          .filter((p): p is IProject & { timeline: NonNullable<IProject['timeline']> } => 
+            p.timeline !== undefined && p.timeline !== null
+          )
+          .flatMap(p => p.timeline.milestones.map(m => ({
+            ...m,
+            projectId: p.id,
+            projectName: p.name
+          })));
+        
+        setMyMilestones(milestones);
+      }
+    } catch (error) {
+      console.error('Failed to load milestones:', error);
+      message.error('Failed to load milestones');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleView = (milestone: IMilestone) => {
-    // Implement view logic
-    console.log('View milestone:', milestone);
+  useEffect(() => {
+    loadData();
+  }, [currentUser?.id, projectActions]);
+
+  const handleSubmit = async () => {
+    try {
+      message.info('This feature is currently under development. The changes will be reflected in the next update.');
+      setIsModalVisible(false);
+      setEditingMilestone(null);
+      form.resetFields();
+    } catch (error) {
+      console.error('Failed to save milestone:', error);
+      message.error('Failed to save milestone');
+    }
   };
 
-  const handleEdit = (milestone: IMilestone) => {
+  const handleEdit = (milestone: IMilestoneWithProject) => {
     setEditingMilestone(milestone);
     form.setFieldsValue({
-      title: milestone.title,
-      description: milestone.description,
-      timelineId: milestone.timelineId,
-      dueDate: dayjs(milestone.dueDate),
-      status: milestone.status
+      name: milestone.name,
+      date: dayjs(milestone.date),
+      isCompleted: milestone.isCompleted,
+      projectId: milestone.projectId
     });
     setIsModalVisible(true);
   };
 
-  const handleSubmit = async (values: FormValues) => {
-    try {
-      if (editingMilestone) {
-        await updateMilestone({
-          id: editingMilestone.id,
-          ...values,
-          dueDate: values.dueDate.toDate()
-        });
-        message.success('Milestone updated successfully');
-      } else {
-        await handleCreate(values);
-      }
-      setIsModalVisible(false);
-      setEditingMilestone(null);
-      form.resetFields();
-      getMilestones({});
-    } catch (err) {
-      console.error('Failed to save milestone:', err);
-      message.error(`Failed to ${editingMilestone ? 'update' : 'create'} milestone`);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteMilestone(id);
-      message.success('Milestone deleted successfully');
-      getMilestones({});
-    } catch (err) {
-      console.error('Failed to delete milestone:', err);
-      message.error('Failed to delete milestone');
-    }
-  };
-
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={2}>Milestones</Title>
-      
-      <Card 
-        title="Milestone Management"
-        extra={
-          <Space>
-            <Select
-              placeholder="Filter by timeline"
-              style={{ width: 200 }}
-              onChange={(value) => setCurrentTimelineFilter(value)}
-              allowClear
-            >
-              {timelines?.map(timeline => (
-                <Select.Option key={timeline.id} value={timeline.id}>
-                  {timeline.name}
-                </Select.Option>
-              ))}
-            </Select>
-            
-            <Select
-              placeholder="Filter by status"
-              style={{ width: 150 }}
-              onChange={(value) => setCurrentStatusFilter(value)}
-              allowClear
-            >
-              {Object.values(MilestoneStatus).map(status => (
-                <Select.Option key={status} value={status}>
-                  {status}
-                </Select.Option>
-              ))}
-            </Select>
-            
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => {
-                setEditingMilestone(null);
-                form.resetFields();
-                setIsModalVisible(true);
-              }}
-            >
-              New Milestone
-            </Button>
-          </Space>
-        }
-      >
-        <Table 
-          columns={columns} 
-          dataSource={filteredMilestones} 
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          loading={isPending}
+    <div className="p-6">
+      <Space className="w-full justify-between mb-4">
+        <Title level={2}>Project Milestones</Title>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setEditingMilestone(null);
+            form.resetFields();
+            setIsModalVisible(true);
+          }}
+        >
+          Add Milestone
+        </Button>
+      </Space>
+
+      {loading ? (
+        <div className="text-center py-8">Loading milestones...</div>
+      ) : myMilestones.length > 0 ? (
+        <List
+          dataSource={myMilestones}
+          renderItem={(milestone: IMilestoneWithProject) => (
+            <Card key={milestone.id} className="mb-4">
+              <Space align="start" className="w-full justify-between">
+                <Space align="start">
+                  <FlagOutlined className="text-xl" />
+                  <div>
+                    <Title level={4} style={{ margin: 0 }}>{milestone.name}</Title>
+                    <Text type="secondary">{milestone.projectName}</Text>
+                    <div className="mt-2">
+                      <Space>
+                        <CalendarOutlined />
+                        <Text>{new Date(milestone.date).toLocaleDateString()}</Text>
+                        <Tag 
+                          color={milestone.isCompleted ? 'success' : 'processing'}
+                          icon={milestone.isCompleted ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
+                        >
+                          {milestone.isCompleted ? 'Completed' : 'In Progress'}
+                        </Tag>
+                      </Space>
+                    </div>
+                  </div>
+                </Space>
+                <Button 
+                  type="text" 
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(milestone)}
+                >
+                  Edit
+                </Button>
+              </Space>
+            </Card>
+          )}
         />
-      </Card>
+      ) : (
+        <Empty description="No milestones found" />
+      )}
 
       <Modal
-        title={editingMilestone ? "Edit Milestone" : "Create New Milestone"}
+        title={editingMilestone ? "Edit Milestone" : "Create Milestone"}
         open={isModalVisible}
         onCancel={() => {
           setIsModalVisible(false);
@@ -256,64 +164,48 @@ export default function MilestonesPage() {
         }}
         footer={null}
       >
-        <Form
+        <Form 
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
         >
           <Form.Item
-            name="title"
-            label="Title"
-            rules={[{ required: true, message: 'Please enter milestone title' }]}
+            name="name"
+            label="Milestone Name"
+            rules={[{ required: true, message: 'Please enter milestone name' }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item
-            name="description"
-            label="Description"
+            name="projectId"
+            label="Project"
+            rules={[{ required: true, message: 'Please select a project' }]}
           >
-            <TextArea rows={4} />
+            <Select options={myProjects} />
           </Form.Item>
 
           <Form.Item
-            name="timelineId"
-            label="Timeline"
-            rules={[{ required: true, message: 'Please select a timeline' }]}
+            name="date"
+            label="Target Date"
+            rules={[{ required: true, message: 'Please select target date' }]}
           >
-            <Select>
-              {timelines?.map(timeline => (
-                <Select.Option key={timeline.id} value={timeline.id}>
-                  {timeline.name}
-                </Select.Option>
-              ))}
-            </Select>
+            <DatePicker className="w-full" />
           </Form.Item>
 
           <Form.Item
-            name="dueDate"
-            label="Due Date"
-            rules={[{ required: true, message: 'Please select due date' }]}
-          >
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="status"
+            name="isCompleted"
             label="Status"
-            rules={[{ required: true, message: 'Please select status' }]}
+            initialValue={false}
           >
             <Select>
-              {Object.values(MilestoneStatus).map(status => (
-                <Select.Option key={status} value={status}>
-                  {status}
-                </Select.Option>
-              ))}
+              <Select.Option value={false}>In Progress</Select.Option>
+              <Select.Option value={true}>Completed</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item>
-            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+            <Space className="w-full justify-end">
               <Button onClick={() => {
                 setIsModalVisible(false);
                 setEditingMilestone(null);
@@ -321,7 +213,7 @@ export default function MilestonesPage() {
               }}>
                 Cancel
               </Button>
-              <Button type="primary" htmlType="submit" loading={isPending}>
+              <Button type="primary" htmlType="submit">
                 {editingMilestone ? 'Update' : 'Create'}
               </Button>
             </Space>

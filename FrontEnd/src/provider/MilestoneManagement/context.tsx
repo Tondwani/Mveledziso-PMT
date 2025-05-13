@@ -9,14 +9,9 @@ export interface IMilestone {
   timelineId: string;
   timeline?: ITimeline;
   dueDate: Date;
-  status: MilestoneStatus;
-}
-
-export enum MilestoneStatus {
-  NotStarted = "NotStarted",
-  InProgress = "InProgress",
-  Completed = "Completed",
-  Delayed = "Delayed"
+  isCompleted: boolean;
+  timelineName?: string;
+  creationTime: Date;
 }
 
 // Input DTOs
@@ -25,7 +20,7 @@ export interface ICreateMilestoneDto {
   description?: string;
   timelineId: string;
   dueDate: Date;
-  status: MilestoneStatus;
+  isCompleted: boolean;
 }
 
 export interface IUpdateMilestoneDto {
@@ -34,13 +29,12 @@ export interface IUpdateMilestoneDto {
   description?: string;
   timelineId: string;
   dueDate: Date;
-  status: MilestoneStatus;
+  isCompleted: boolean;
 }
 
 export interface IGetMilestonesInput {
   timelineId?: string;
-  status?: MilestoneStatus;
-  filter?: string;
+  isCompleted?: boolean;
   skipCount?: number;
   maxResultCount?: number;
 }

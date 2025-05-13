@@ -1,305 +1,321 @@
 "use client";
 
-import { useState, useEffect, useRef, KeyboardEvent, useCallback } from "react";
-import { Card, Col, Row, Button, Input, Avatar, Popover, message } from "antd";
-import { SoundOutlined, RobotOutlined, UserOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Col, Row, Progress, Statistic, Typography } from "antd";
+import {
+  ProjectOutlined,
+  TeamOutlined,
+  FileDoneOutlined,
+  LoadingOutlined,
+} from "@ant-design/icons";
+import { Area, Column, Pie, Line } from '@ant-design/plots';
 
-// Define TypeScript interfaces for our data structures
-interface StatItem {
-  title: string;
+const { Title } = Typography;
+
+interface StatData {
+  totalProjects: number;
+  completedProjects: number;
+  totalDuties: number;
+  completedDuties: number;
+  totalTeams: number;
+  totalTeamMembers: number;
+}
+
+interface ProjectTrend {
+  month: string;
   value: number;
-  key: string;
+  category: string;
 }
 
-interface ConversationMessage {
-  speaker: string;
-  text: string;
-}
-
-// Define interfaces for the Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-        confidence: number;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-// Create a type for our SpeechRecognition
-interface SpeechRecognitionInstance {
-  continuous: boolean;
-  interimResults: boolean;
-  start(): void;
-  stop(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-}
-
-// Create a type for the SpeechRecognition constructor
-interface SpeechRecognitionConstructor {
-  new(): SpeechRecognitionInstance;
+interface DutyDistribution {
+  type: string;
+  value: number;
 }
 
 const StatCards = () => {
-  const [stats, setStats] = useState<StatItem[]>([
-    { title: "Active Projects", value: 8, key: "projects" },
-    { title: "Pending Tasks", value: 23, key: "tasks" },
-    { title: "Completed Goals", value: 12, key: "goals" },
-    { title: "Team Members", value: 5, key: "team" },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StatData>({
+    totalProjects: 0,
+    completedProjects: 0,
+    totalDuties: 0,
+    completedDuties: 0,
+    totalTeams: 0,
+    totalTeamMembers: 0,
+  });
 
-  const [aiQuery, setAiQuery] = useState("");
-  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
-  const [isListening, setIsListening] = useState(false);
-  const speechRecognition = useRef<SpeechRecognitionInstance | null>(null);
-  const synth = useRef<SpeechSynthesis | null>(typeof window !== 'undefined' ? window.speechSynthesis : null);
+  // Sample data for charts
+  const projectTrendData: ProjectTrend[] = [
+    { month: 'Jan', value: 3, category: 'Active' },
+    { month: 'Feb', value: 4, category: 'Active' },
+    { month: 'Mar', value: 6, category: 'Active' },
+    { month: 'Apr', value: 8, category: 'Active' },
+    { month: 'May', value: 12, category: 'Active' },
+    { month: 'Jan', value: 2, category: 'Completed' },
+    { month: 'Feb', value: 3, category: 'Completed' },
+    { month: 'Mar', value: 4, category: 'Completed' },
+    { month: 'Apr', value: 5, category: 'Completed' },
+    { month: 'May', value: 7, category: 'Completed' },
+  ];
 
-  const addToConversation = (speaker: string, text: string) => {
-    setConversation(prev => [...prev, { speaker, text }]);
-  };
+  const dutyDistributionData: DutyDistribution[] = [
+    { type: 'To Do', value: 20 },
+    { type: 'In Progress', value: 15 },
+    { type: 'Under Review', value: 8 },
+    { type: 'Completed', value: 28 },
+  ];
 
-  const speak = (text: string) => {
-    if (synth.current) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      synth.current.speak(utterance);
-      addToConversation("AI", text);
-    }
-  };
+  const teamPerformanceData = [
+    { team: 'Team A', performance: 85 },
+    { team: 'Team B', performance: 78 },
+    { team: 'Team C', performance: 92 },
+    { team: 'Team D', performance: 76 },
+    { team: 'Team E', performance: 89 },
+  ];
 
-  // Use useCallback to memoize the function so it doesn't change on each render
-  const handleAIQuery = useCallback((query: string) => {
-    addToConversation("You", query);
-    
-    // Simple AI response logic - extend with real API calls as needed
-    const lowerQuery = query.toLowerCase();
-    let response = "";
+  const projectTimelineData = Array.from({ length: 12 }, (_, i) => ({
+    month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
+    'Project A': Math.floor(Math.random() * 100),
+    'Project B': Math.floor(Math.random() * 100),
+    'Project C': Math.floor(Math.random() * 100),
+  }));
 
-    if (lowerQuery.includes("active project") || lowerQuery.includes("projects")) {
-      const count = stats.find(s => s.key === "projects")?.value;
-      response = `You currently have ${count} active projects.`;
-    } 
-    else if (lowerQuery.includes("task") || lowerQuery.includes("pending")) {
-      const count = stats.find(s => s.key === "tasks")?.value;
-      response = `There are ${count} pending tasks across all projects.`;
-    }
-    else if (lowerQuery.includes("goal") || lowerQuery.includes("complete")) {
-      const count = stats.find(s => s.key === "goals")?.value;
-      response = `Your team has completed ${count} major goals this quarter.`;
-    }
-    else if (lowerQuery.includes("team") || lowerQuery.includes("member")) {
-      const count = stats.find(s => s.key === "team")?.value;
-      response = `Your project team consists of ${count} members.`;
-    }
-    else if (lowerQuery.includes("summary") || lowerQuery.includes("overview")) {
-      response = `Here's your project summary: ${stats[0].value} active projects, ${stats[1].value} pending tasks, ${stats[2].value} completed goals, with ${stats[3].value} team members.`;
-    }
-    else {
-      response = "I can help you with project stats. Try asking about active projects, pending tasks, completed goals, or team members.";
-    }
-
-    speak(response);
-  }, [stats]); // Add stats as dependency
-
-  // Initialize speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Type-safe way to access browser APIs
-      const SpeechRecognition = 
-        (window as Window & typeof globalThis & { 
-          SpeechRecognition?: SpeechRecognitionConstructor,
-          webkitSpeechRecognition?: SpeechRecognitionConstructor 
-        }).SpeechRecognition || 
-        (window as Window & typeof globalThis & { 
-          SpeechRecognition?: SpeechRecognitionConstructor,
-          webkitSpeechRecognition?: SpeechRecognitionConstructor 
-        }).webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        speechRecognition.current = new SpeechRecognition();
-        speechRecognition.current.continuous = false;
-        speechRecognition.current.interimResults = false;
-        
-        speechRecognition.current.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript;
-          setAiQuery(transcript);
-          handleAIQuery(transcript);
+    const fetchStats = async () => {
+      try {
+        // TODO: Replace with actual API call
+        const data = {
+          totalProjects: 12,
+          completedProjects: 5,
+          totalDuties: 48,
+          completedDuties: 28,
+          totalTeams: 6,
+          totalTeamMembers: 24,
         };
-        
-        speechRecognition.current.onerror = (event: SpeechRecognitionErrorEvent) => {
-          console.error("Speech recognition error", event.error);
-          setIsListening(false);
-        };
+        setStats(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        setLoading(false);
       }
-    }
-  }, [handleAIQuery]); // Include handleAIQuery in dependencies
+    };
 
-  const startListening = () => {
-    if (speechRecognition.current) {
-      speechRecognition.current.start();
-      setIsListening(true);
-      message.info("Listening... Speak now");
-    } else {
-      message.error("Speech recognition not supported in your browser");
-    }
+    fetchStats();
+  }, []);
+
+  // Chart Configurations
+  const areaConfig = {
+    data: projectTrendData,
+    xField: 'month',
+    yField: 'value',
+    seriesField: 'category',
+    smooth: true,
+    animation: {
+      appear: {
+        animation: 'wave-in',
+        duration: 1500,
+      },
+    },
   };
 
-  const stopListening = () => {
-    if (speechRecognition.current) {
-      speechRecognition.current.stop();
-      setIsListening(false);
-    }
+  const pieConfig = {
+    data: dutyDistributionData,
+    angleField: 'value',
+    colorField: 'type',
+    radius: 0.8,
+    label: {
+      type: 'outer',
+    },
+    animation: {
+      appear: {
+        animation: 'fade-in',
+        duration: 1500,
+      },
+    },
   };
 
-  const updateStat = (key: string, newValue: number) => {
-    setStats(prev => prev.map(stat => 
-      stat.key === key ? { ...stat, value: newValue } : stat
-    ));
-    speak(`Updated ${key} to ${newValue}`);
+  const columnConfig = {
+    data: teamPerformanceData,
+    xField: 'team',
+    yField: 'performance',
+    label: {
+      position: 'middle',
+      style: {
+        fill: '#FFFFFF',
+        opacity: 0.6,
+      },
+    },
+    animation: {
+      appear: {
+        animation: 'wave-in',
+        duration: 1500,
+      },
+    },
   };
 
-  const handleEnterKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAIQuery(aiQuery);
-      setAiQuery("");
-    }
+  const lineConfig = {
+    data: projectTimelineData,
+    xField: 'month',
+    yField: ['Project A', 'Project B', 'Project C'],
+    smooth: true,
+    animation: {
+      appear: {
+        animation: 'wave-in',
+        duration: 1500,
+      },
+    },
   };
+
+  const cards = [
+    {
+      title: "Projects Overview",
+      icon: <ProjectOutlined style={{ fontSize: 24, color: "#1890ff" }} />,
+      content: (
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Statistic
+            title="Total Projects"
+            value={stats.totalProjects}
+            loading={loading}
+          />
+          <Progress
+            type="circle"
+            percent={Math.round((stats.completedProjects / stats.totalProjects) * 100)}
+            width={80}
+            strokeColor="#1890ff"
+          />
+        </div>
+      ),
+      color: "#e6f7ff",
+    },
+    {
+      title: "Duties Status",
+      icon: <FileDoneOutlined style={{ fontSize: 24, color: "#52c41a" }} />,
+      content: (
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Statistic
+            title="Total Duties"
+            value={stats.totalDuties}
+            loading={loading}
+          />
+          <Progress
+            type="circle"
+            percent={Math.round((stats.completedDuties / stats.totalDuties) * 100)}
+            width={80}
+            strokeColor="#52c41a"
+          />
+        </div>
+      ),
+      color: "#f6ffed",
+    },
+    {
+      title: "Team Overview",
+      icon: <TeamOutlined style={{ fontSize: 24, color: "#722ed1" }} />,
+      content: (
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Statistic
+            title="Total Teams"
+            value={stats.totalTeams}
+            loading={loading}
+          />
+          <Statistic
+            title="Team Members"
+            value={stats.totalTeamMembers}
+            loading={loading}
+          />
+        </div>
+      ),
+      color: "#f9f0ff",
+    },
+  ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      {/* Stats Cards with Interactive Controls */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        {stats.map((stat) => (
-          <Col xs={24} sm={12} md={6} key={stat.title}>
+    <div style={{ padding: "24px" }}>
+      <Title level={2} style={{ marginBottom: "24px", color: "#1890ff" }}>
+        Dashboard Overview
+      </Title>
+      
+      <Row gutter={[24, 24]}>
+        {cards.map((card, index) => (
+          <Col xs={24} sm={24} md={8} key={index}>
             <Card
-              title={stat.title}
-              variant="borderless"
-              style={{ borderRadius: 10, textAlign: "center" }}
-              extra={
-                <Popover 
-                  content={
-                    <div style={{ padding: 8 }}>
-                      <Input 
-                        type="number"
-                        min={0} 
-                        defaultValue={stat.value.toString()} 
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (!isNaN(value)) {
-                            updateStat(stat.key, value);
-                          }
-                        }}
-                        style={{ marginBottom: 8 }}
-                      />
-                    </div>
-                  }
-                  trigger="click"
-                >
-                  <Button size="small" type="text">✏️</Button>
-                </Popover>
-              }
+              style={{
+                background: card.color,
+                borderRadius: "15px",
+                height: "100%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+              bordered={false}
             >
-              <h2 style={{ fontSize: 28, margin: "12px 0" }}>{stat.value}</h2>
-              <Button 
-                icon={<SoundOutlined />} 
-                type="text" 
-                onClick={() => speak(`${stat.title}: ${stat.value}`)}
-              />
+              <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
+                {card.icon}
+                <span style={{ marginLeft: "12px", fontSize: "18px", fontWeight: 500 }}>
+                  {card.title}
+                </span>
+              </div>
+              {loading ? (
+                <div style={{ textAlign: "center", padding: "20px" }}>
+                  <LoadingOutlined style={{ fontSize: 24 }} />
+                </div>
+              ) : (
+                card.content
+              )}
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* AI Assistant Section */}
-      <Card
-        title={
-          <span>
-            <RobotOutlined style={{ marginRight: 8 }} />
-            Project AI Assistant
-          </span>
-        }
-        variant="borderless"
-        style={{ borderRadius: 10, marginTop: 24 }}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Input.TextArea
-            placeholder="Ask about your project stats..."
-            value={aiQuery}
-            onChange={(e) => setAiQuery(e.target.value)}
-            onKeyPress={handleEnterKey}
-            autoSize={{ minRows: 2, maxRows: 4 }}
-          />
-          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-            <Button 
-              type="primary" 
-              onClick={() => {
-                handleAIQuery(aiQuery);
-                setAiQuery("");
-              }}
-            >
-              Ask AI
-            </Button>
-            <Button 
-              icon={<SoundOutlined />} 
-              onClick={isListening ? stopListening : startListening}
-              danger={isListening}
-            >
-              {isListening ? "Stop Listening" : "Voice Input"}
-            </Button>
-          </div>
-        </div>
+      <Row gutter={[24, 24]} style={{ marginTop: "24px" }}>
+        <Col xs={24} md={12}>
+          <Card
+            title="Project Trends"
+            style={{
+              borderRadius: "15px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+            bordered={false}
+          >
+            <Area {...areaConfig} height={300} />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card
+            title="Duty Distribution"
+            style={{
+              borderRadius: "15px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+            bordered={false}
+          >
+            <Pie {...pieConfig} height={300} />
+          </Card>
+        </Col>
+      </Row>
 
-        {/* Conversation History */}
-        <div style={{ 
-          border: '1px solid #f0f0f0', 
-          borderRadius: 8, 
-          padding: 16,
-          maxHeight: 300,
-          overflowY: 'auto'
-        }}>
-          {conversation.length === 0 ? (
-            <div style={{ color: '#999', textAlign: 'center' }}>
-              Start a conversation with your project AI
-            </div>
-          ) : (
-            conversation.map((msg, i) => (
-              <div 
-                key={i} 
-                style={{ 
-                  marginBottom: 12,
-                  display: 'flex',
-                  flexDirection: msg.speaker === "You" ? 'row-reverse' : 'row',
-                  gap: 8
-                }}
-              >
-                <Avatar 
-                  icon={msg.speaker === "You" ? <UserOutlined /> : <RobotOutlined />} 
-                  style={{ 
-                    backgroundColor: msg.speaker === "You" ? '#1890ff' : '#f56a00'
-                  }}
-                />
-                <div 
-                  style={{ 
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    background: msg.speaker === "You" ? '#e6f7ff' : '#f5f5f5',
-                    maxWidth: '70%'
-                  }}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+      <Row gutter={[24, 24]} style={{ marginTop: "24px" }}>
+        <Col xs={24} md={12}>
+          <Card
+            title="Team Performance"
+            style={{
+              borderRadius: "15px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+            bordered={false}
+          >
+            <Column {...columnConfig} height={300} />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card
+            title="Project Progress Timeline"
+            style={{
+              borderRadius: "15px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+            bordered={false}
+          >
+            <Line {...lineConfig} height={300} />
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
