@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Card, Col, Row, Progress, Statistic, Typography } from "antd";
 import {
@@ -9,6 +7,10 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Area, Column, Pie, Line } from '@ant-design/plots';
+import { useProjectActions } from "@/provider/ProjectManagement";
+import { useTeamActions } from "@/provider/TeamManagement";
+import { useTeamMemberActions } from "@/provider/TeamMemberManagement";
+import { DutyStatus } from "@/provider/ProjectManagement/context";
 
 const { Title } = Typography;
 
@@ -32,6 +34,16 @@ interface DutyDistribution {
   value: number;
 }
 
+interface TeamPerformance {
+  team: string;
+  performance: number;
+}
+
+interface ProjectTimeline {
+  month: string;
+  [projectName: string]: number | string;
+}
+
 const StatCards = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatData>({
@@ -43,55 +55,98 @@ const StatCards = () => {
     totalTeamMembers: 0,
   });
 
-  // Sample data for charts
-  const projectTrendData: ProjectTrend[] = [
-    { month: 'Jan', value: 3, category: 'Active' },
-    { month: 'Feb', value: 4, category: 'Active' },
-    { month: 'Mar', value: 6, category: 'Active' },
-    { month: 'Apr', value: 8, category: 'Active' },
-    { month: 'May', value: 12, category: 'Active' },
-    { month: 'Jan', value: 2, category: 'Completed' },
-    { month: 'Feb', value: 3, category: 'Completed' },
-    { month: 'Mar', value: 4, category: 'Completed' },
-    { month: 'Apr', value: 5, category: 'Completed' },
-    { month: 'May', value: 7, category: 'Completed' },
-  ];
+  const [projectTrendData, setProjectTrendData] = useState<ProjectTrend[]>([]);
+  const [dutyDistributionData, setDutyDistributionData] = useState<DutyDistribution[]>([]);
+  const [teamPerformanceData, setTeamPerformanceData] = useState<TeamPerformance[]>([]);
+  const [projectTimelineData, setProjectTimelineData] = useState<ProjectTimeline[]>([]);
 
-  const dutyDistributionData: DutyDistribution[] = [
-    { type: 'To Do', value: 20 },
-    { type: 'In Progress', value: 15 },
-    { type: 'Under Review', value: 8 },
-    { type: 'Completed', value: 28 },
-  ];
-
-  const teamPerformanceData = [
-    { team: 'Team A', performance: 85 },
-    { team: 'Team B', performance: 78 },
-    { team: 'Team C', performance: 92 },
-    { team: 'Team D', performance: 76 },
-    { team: 'Team E', performance: 89 },
-  ];
-
-  const projectTimelineData = Array.from({ length: 12 }, (_, i) => ({
-    month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-    'Project A': Math.floor(Math.random() * 100),
-    'Project B': Math.floor(Math.random() * 100),
-    'Project C': Math.floor(Math.random() * 100),
-  }));
+  // Get actions from providers
+  const { getProjects, getProjectDuties } = useProjectActions();
+  const { getTeams } = useTeamActions();
+  const { getTeamMembers } = useTeamMemberActions();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // TODO: Replace with actual API call
-        const data = {
-          totalProjects: 12,
-          completedProjects: 5,
-          totalDuties: 48,
-          completedDuties: 28,
-          totalTeams: 6,
-          totalTeamMembers: 24,
-        };
-        setStats(data);
+        setLoading(true);
+        
+        // Fetch projects
+        const projects = await getProjects({});
+        const completedProjects = projects.filter(p => {
+          const endDate = new Date(p.endDate);
+          return endDate < new Date();
+        });
+
+        // Fetch duties
+        const duties = await getProjectDuties({});
+        const completedDuties = duties.filter(d => d.status === DutyStatus.Done);
+
+        // Fetch teams and team members
+        const teams = await getTeams({});
+        const teamMembers = await getTeamMembers({});
+
+        // Update stats
+        setStats({
+          totalProjects: projects.length,
+          completedProjects: completedProjects.length,
+          totalDuties: duties.length,
+          completedDuties: completedDuties.length,
+          totalTeams: teams.length,
+          totalTeamMembers: teamMembers.items.length,
+        });
+
+        // Calculate duty distribution
+        const dutyDistribution = [
+          { type: 'To Do', value: duties.filter(d => d.status === DutyStatus.ToDo).length },
+          { type: 'In Progress', value: duties.filter(d => d.status === DutyStatus.InProgress).length },
+          { type: 'Under Review', value: duties.filter(d => d.status === DutyStatus.Review).length },
+          { type: 'Completed', value: duties.filter(d => d.status === DutyStatus.Done).length },
+        ];
+        setDutyDistributionData(dutyDistribution);
+
+        // Calculate project trends (last 6 months)
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          return date.toLocaleString('default', { month: 'short' });
+        }).reverse();
+
+        const trends: ProjectTrend[] = [];
+        last6Months.forEach(month => {
+          const activeCount = projects.filter(p => {
+            const projectDate = new Date(p.startDate);
+            return projectDate.toLocaleString('default', { month: 'short' }) === month;
+          }).length;
+
+          const completedCount = completedProjects.filter(p => {
+            const projectDate = new Date(p.endDate);
+            return projectDate.toLocaleString('default', { month: 'short' }) === month;
+          }).length;
+
+          trends.push(
+            { month, value: activeCount, category: 'Active' },
+            { month, value: completedCount, category: 'Completed' }
+          );
+        });
+        setProjectTrendData(trends);
+
+        // Calculate team performance
+        const teamPerf = teams.map(team => ({
+          team: team.name,
+          performance: Math.round((team.projectCount || 0) / projects.length * 100)
+        }));
+        setTeamPerformanceData(teamPerf);
+
+        // Calculate project timeline data
+        const timelineData = last6Months.flatMap(month => {
+          const monthProjects = projects.slice(0, 3).map(project => ({
+            month,
+            [project.name]: Math.round(Math.random() * 100) // This should be replaced with actual progress data
+          }));
+          return monthProjects;
+        });
+        setProjectTimelineData(timelineData);
+
         setLoading(false);
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -155,7 +210,7 @@ const StatCards = () => {
   const lineConfig = {
     data: projectTimelineData,
     xField: 'month',
-    yField: ['Project A', 'Project B', 'Project C'],
+    yField: Object.keys(projectTimelineData[0] || {}).filter(key => key !== 'month'),
     smooth: true,
     animation: {
       appear: {
@@ -178,7 +233,7 @@ const StatCards = () => {
           />
           <Progress
             type="circle"
-            percent={Math.round((stats.completedProjects / stats.totalProjects) * 100)}
+            percent={Math.round((stats.completedProjects / stats.totalProjects) * 100) || 0}
             width={80}
             strokeColor="#1890ff"
           />
@@ -198,7 +253,7 @@ const StatCards = () => {
           />
           <Progress
             type="circle"
-            percent={Math.round((stats.completedDuties / stats.totalDuties) * 100)}
+            percent={Math.round((stats.completedDuties / stats.totalDuties) * 100) || 0}
             width={80}
             strokeColor="#52c41a"
           />
