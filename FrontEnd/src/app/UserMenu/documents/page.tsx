@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Space, Button, Tag, Typography, Upload, message, Input, DatePicker, Row, Col, Modal, Form } from 'antd';
+import { Table, Card, Space, Button, Tag, Typography, Upload, message, Input, DatePicker, Row, Col, Modal, Form, Progress } from 'antd';
 import { UploadOutlined, FileOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { useDocumentState, useDocumentActions } from '../../../provider/DocumentManagement';
 import { IDocument, IGetDocumentInput, IUpdateDocumentDto } from '../../../provider/DocumentManagement/context';
@@ -28,6 +28,21 @@ export default function DocumentsPage() {
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  const allowedFileTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'text/csv',
+    'application/json'
+  ];
 
   useEffect(() => {
     console.log('Current filters:', filters);
@@ -52,19 +67,49 @@ export default function DocumentsPage() {
 
   const handleUpload = async (file: File) => {
     try {
-      console.log('Uploading file:', file.name);
-      const formData = new FormData();
-      formData.append('file', file);
+      setIsUploading(true);
+      setUploadProgress(0);
       
+      // Log file details
+      console.log('Attempting to upload file:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      if (!allowedFileTypes.includes(file.type)) {
+        const error = `File type ${file.type} is not supported. Please upload a supported document type.`;
+        console.error(error);
+        message.error(error);
+        return false;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        const error = 'File size exceeds 10MB limit. Please upload a smaller file.';
+        console.error(error);
+        message.error(error);
+        return false;
+      }
+
+      console.log('Starting upload process...');
       const result = await uploadDocument(file);
-      console.log('Upload result:', result);
-      message.success('Document uploaded successfully');
-      loadDocuments();
+      console.log('Upload completed successfully:', result);
+      
+      message.success(`${file.name} uploaded successfully`);
+      setUploadProgress(100);
+      await loadDocuments();
     } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Upload error:', axiosError);
-      message.error(axiosError.message || 'Failed to upload document');
+      console.error('Upload failed:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload document';
+      message.error(errorMessage);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
+    return false;
   };
 
   const handleDelete = async (id: string) => {
@@ -239,18 +284,34 @@ export default function DocumentsPage() {
       <Card
         title="Document Management"
         extra={
-          <Upload
-            showUploadList={false}
-            beforeUpload={(file) => {
-              handleUpload(file);
-              return false;
-            }}
-            accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx,.csv,.json"
-          >
-            <Button icon={<UploadOutlined />} type="primary">
-              Upload Document
-            </Button>
-          </Upload>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Upload
+              showUploadList={false}
+              beforeUpload={handleUpload}
+              accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx,.csv,.json"
+              disabled={isUploading}
+              multiple={false}
+            >
+              <Button 
+                icon={<UploadOutlined />} 
+                type="primary" 
+                loading={isUploading}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Uploading...' : 'Upload Document'}
+              </Button>
+            </Upload>
+            {isUploading && (
+              <Progress 
+                percent={uploadProgress} 
+                status="active" 
+                strokeColor={{
+                  '0%': '#108ee9',
+                  '100%': '#87d068',
+                }}
+              />
+            )}
+          </Space>
         }
       >
         <Row gutter={[16, 16]}>

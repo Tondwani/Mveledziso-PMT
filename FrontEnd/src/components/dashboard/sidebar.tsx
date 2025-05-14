@@ -60,16 +60,18 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       icon: <FileTextOutlined />,
       label: <Link href={`${basePath}/Duties`}>Duties</Link>,
     },
-    {
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `${basePath}/milestones`,
       icon: <FlagOutlined />,
       label: <Link href={`${basePath}/milestones`}>Milestones</Link>,
-    },
-    {
+    }] : []),
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `${basePath}/timelines`,
       icon: <CalendarOutlined />,
       label: <Link href={`${basePath}/timelines`}>Timelines</Link>,
-    },
+    }] : []),
     {
       key: `${basePath}/documents`,
       icon: <FileTextOutlined />,
@@ -80,11 +82,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       icon: <TeamOutlined />,
       label: <Link href={`${basePath}/teams`}>Teams / Users</Link>,
     },
-    {
-      key: `${basePath}/activity-log`,
+    // Only show activity log for ProjectManager and only in AdminMenu
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `/AdminMenu/activity-log`,
       icon: <HistoryOutlined />,
-      label: <Link href={`${basePath}/activity-log`}>Activity Log</Link>,
-    },
+      label: <Link href={`/AdminMenu/activity-log`}>Activity Log</Link>,
+    }] : []),
     {
       key: `${basePath}/help`,
       icon: <QuestionCircleOutlined />,
