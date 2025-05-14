@@ -34,6 +34,11 @@ namespace Mveledziso.Services.CommentService
 
         public async Task<CommentDto> CreateAsync(CreateCommentDto input)
         {
+            if (string.IsNullOrEmpty(input.Content))
+            {
+                throw new UserFriendlyException("Comment content cannot be empty");
+            }
+
             var comment = new Comment
             {
                 Content = input.Content,
@@ -95,40 +100,74 @@ namespace Mveledziso.Services.CommentService
 
         public async Task<List<CommentDto>> GetListAsync(CommentListInputDto input)
         {
-            Logger.Debug($"Searching for comments with EntityType: {input.EntityType}, EntityId: {input.EntityId}");
-            
-            var query = _commentRepository.GetAll()
-                .Where(c => c.EntityType == input.EntityType && c.EntityId == input.EntityId);
-            
-            var count = await query.CountAsync();
-            Logger.Debug($"Found {count} comments before pagination");
-            
-            query = query.OrderByDescending(c => c.CreationTime)
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount);
-
-            var comments = await query.ToListAsync();
-            var userIds = comments.Select(c => c.UserId).Distinct().ToList();
-            
-            var users = _userRepository.GetAll()
-                .Where(u => userIds.Contains(u.Id))
-                .ToList();
-
-            var persons = _personRepository.GetAll()
-                .Where(p => userIds.Contains(p.UserId))
-                .ToList();
-
-            return comments.Select(c => new CommentDto
+            try
             {
-                Id = c.Id,
-                Content = c.Content,
-                UserId = c.UserId,
-                UserName = users.FirstOrDefault(u => u.Id == c.UserId)?.UserName,
-                UserType = persons.FirstOrDefault(p => p.UserId == c.UserId) is ProjectManager ? "ProjectManager" : "TeamMember",
-                EntityType = c.EntityType,
-                EntityId = c.EntityId,
-                CreationTime = c.CreationTime
-            }).ToList();
+                if (input == null)
+                {
+                    throw new UserFriendlyException("Input parameters cannot be null");
+                }
+
+                if (string.IsNullOrEmpty(input.EntityType))
+                {
+                    throw new UserFriendlyException("EntityType must be specified");
+                }
+
+                if (input.EntityId == Guid.Empty)
+                {
+                    throw new UserFriendlyException("Valid EntityId must be specified");
+                }
+
+                Logger.Debug($"Fetching comments for EntityType: {input.EntityType}, EntityId: {input.EntityId}");
+
+                var query = await _commentRepository.GetAll()
+                    .Where(c => c.EntityType == input.EntityType && c.EntityId == input.EntityId)
+                    .OrderByDescending(c => c.CreationTime)
+                    .Skip(input.SkipCount)
+                    .Take(input.MaxResultCount)
+                    .ToListAsync();
+
+                if (!query.Any())
+                {
+                    Logger.Debug($"No comments found for EntityType: {input.EntityType}, EntityId: {input.EntityId}");
+                    return new List<CommentDto>();
+                }
+
+                var userIds = query.Select(c => c.UserId).Distinct().ToList();
+                
+                var users = await _userRepository.GetAll()
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToListAsync();
+
+                var persons = await _personRepository.GetAll()
+                    .Where(p => userIds.Contains(p.UserId))
+                    .ToListAsync();
+
+                var result = query.Select(c =>
+                {
+                    var user = users.FirstOrDefault(u => u.Id == c.UserId);
+                    var person = persons.FirstOrDefault(p => p.UserId == c.UserId);
+
+                    return new CommentDto
+                    {
+                        Id = c.Id,
+                        Content = c.Content,
+                        UserId = c.UserId,
+                        UserName = user?.UserName ?? "Unknown User",
+                        UserType = person is ProjectManager ? "ProjectManager" : "TeamMember",
+                        EntityType = c.EntityType,
+                        EntityId = c.EntityId,
+                        CreationTime = c.CreationTime
+                    };
+                }).ToList();
+
+                Logger.Debug($"Successfully retrieved {result.Count} comments");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error retrieving comments: {ex.Message}", ex);
+                throw new UserFriendlyException("An error occurred while retrieving comments. Please try again.");
+            }
         }
     }
 }

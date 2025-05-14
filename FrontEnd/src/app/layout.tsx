@@ -9,6 +9,7 @@ import { ProjectManagerProvider } from "../provider/ProjectManagerManagement";
 import { UserDutyProvider } from "../provider/DutyManagement";
 import { TeamMemberProvider } from "../provider/TeamMemberManagement";
 
+
 import "./globals.css";
 
 const geistSans = Geist({

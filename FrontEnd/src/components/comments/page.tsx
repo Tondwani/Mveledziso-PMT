@@ -1,96 +1,120 @@
-// "use client";
-
-// import { Card, List, Avatar, Input, Button, Form, Typography, Popconfirm } from 'antd';
+// // FrontEnd/src/components/comments/CommentSection.tsx
+// import React, { useEffect, useState, useContext, useCallback } from 'react';
+// import { Card, List, Avatar, Input, Button, Form, Typography, Popconfirm, message } from 'antd';
 // import { UserOutlined, SendOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
-// import React, { useState } from 'react';
+// import { 
+//   CommentStateContext, 
+//   CommentActionContext,
+//   ICreateCommentDto,
+//   IUpdateCommentDto,
+//   ICommentListInputDto
+// } from '@/provider/CommentManagement/context';
 
 // const { TextArea } = Input;
 // const { Text } = Typography;
 
-// interface Comment {
-//   id: string;
-//   content: string;
-//   userId: number;
-//   userName: string;
-//   creationTime: string;
-//   isCurrentUser: boolean;
-// }
-
-// interface CommentProps {
-//   entityType: string;
+// interface CommentSectionProps {
+//   entityType: string;  // e.g., 'ProjectDuty', 'Document'
 //   entityId: string;
-//   initialComments?: Comment[];
-//   currentUserId?: number;
+//   title?: string;      
 // }
 
-// const CommentComponent: React.FC<CommentProps> = ({ 
+// const CommentSection: React.FC<CommentSectionProps> = ({ 
 //   entityType, 
-//   entityId, 
-//   initialComments = [], 
-//   currentUserId 
+//   entityId,
+//   title = 'Comments'
 // }) => {
-//   const [comments, setComments] = useState<Comment[]>(initialComments);
+//   // Context
+//   const state = useContext(CommentStateContext);
+//   const actions = useContext(CommentActionContext);
+
+//   // Local state
 //   const [content, setContent] = useState('');
 //   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 //   const [editContent, setEditContent] = useState('');
+//   const [form] = Form.useForm();
 
-//   const handleSubmit = () => {
+//   // Load comments with useCallback to prevent unnecessary recreations
+//   const loadComments = useCallback(async () => {
+//     try {
+//       const input: ICommentListInputDto = {
+//         entityType,
+//         entityId,
+//         skipCount: 0,
+//         maxResultCount: 50
+//       };
+//       await actions.getComments(input);
+//     } catch {
+//       message.error('Failed to load comments');
+//     }
+//   }, [actions, entityType, entityId]);
+
+//   // Load comments on mount or when dependencies change
+//   useEffect(() => {
+//     loadComments();
+//   }, [loadComments]);
+
+//   const handleSubmit = async () => {
 //     if (!content.trim()) return;
-    
-//     const newComment: Comment = {
-//       id: `comment-${Date.now()}`,
-//       content,
-//       userId: currentUserId || 0,
-//       userName: 'Current User',
-//       creationTime: new Date().toISOString(),
-//       isCurrentUser: true
-//     };
-    
-//     setComments([newComment, ...comments]);
-//     setContent('');
-    
-//     // Here you would call your CommentAppService.CreateAsync
-//     // await commentAppService.createAsync({
-//     //   content,
-//     //   entityType,
-//     //   entityId
-//     // });
+
+//     try {
+//       const input: ICreateCommentDto = {
+//         content: content.trim(),
+//         entityType,
+//         entityId
+//       };
+      
+//       await actions.createComment(input);
+//       setContent('');
+//       form.resetFields();
+//       await loadComments(); // Refresh comments
+//       message.success('Comment posted successfully');
+//     } catch {
+//       message.error('Failed to post comment');
+//     }
 //   };
 
-//   const handleEdit = (comment: Comment) => {
-//     setEditingCommentId(comment.id);
-//     setEditContent(comment.content);
+//   const handleEdit = (commentId: string, currentContent: string) => {
+//     setEditingCommentId(commentId);
+//     setEditContent(currentContent);
 //   };
 
-//   const handleUpdate = () => {
+//   const handleUpdate = async () => {
 //     if (!editingCommentId || !editContent.trim()) return;
-    
-//     setComments(comments.map(comment => 
-//       comment.id === editingCommentId 
-//         ? { ...comment, content: editContent } 
-//         : comment
-//     ));
-    
-//     setEditingCommentId(null);
-//     setEditContent('');
-    
-//     // Here you would call your CommentAppService.UpdateAsync
-//     // await commentAppService.updateAsync(editingCommentId, {
-//     //   content: editContent
-//     // });
+
+//     try {
+//       const input: IUpdateCommentDto = {
+//         content: editContent.trim()
+//       };
+      
+//       await actions.updateComment(editingCommentId, input);
+//       setEditingCommentId(null);
+//       setEditContent('');
+//       await loadComments(); // Refresh comments
+//       message.success('Comment updated successfully');
+//     } catch {
+//       message.error('Failed to update comment');
+//     }
 //   };
 
-//   const handleDelete = (commentId: string) => {
-//     setComments(comments.filter(comment => comment.id !== commentId));
-    
-//     // Here you would call your CommentAppService.DeleteAsync
-//     // await commentAppService.deleteAsync(commentId);
+//   const handleDelete = async (commentId: string) => {
+//     try {
+//       await actions.deleteComment(commentId);
+//       await loadComments(); // Refresh comments
+//       message.success('Comment deleted successfully');
+//     } catch {
+//       message.error('Failed to delete comment');
+//     }
 //   };
 
 //   return (
-//     <Card title="Comments" bordered={false}>
-//       <Form onFinish={handleSubmit}>
-//         <Form.Item>
+//     <Card 
+//       title={title} 
+//       bordered={false}
+//       loading={state.isPending}
+//     >
+//       <Form form={form} onFinish={handleSubmit}>
+//         <Form.Item name="content">
 //           <TextArea
 //             rows={4}
 //             value={content}
@@ -103,6 +127,7 @@
 //             type="primary" 
 //             htmlType="submit" 
 //             icon={<SendOutlined />}
+//             loading={state.isPending}
 //           >
 //             Post Comment
 //           </Button>
@@ -111,30 +136,35 @@
 
 //       <List
 //         itemLayout="horizontal"
-//         dataSource={comments}
+//         dataSource={state.comments}
 //         renderItem={(comment) => (
 //           <List.Item
-//             actions={
-//               comment.isCurrentUser ? [
-//                 <Button 
-//                   key="edit" 
-//                   type="text" 
-//                   icon={<EditOutlined />} 
-//                   onClick={() => handleEdit(comment)}
-//                 />,
-//                 <Popconfirm
-//                   key="delete"
-//                   title="Delete this comment?"
-//                   onConfirm={() => handleDelete(comment.id)}
-//                 >
-//                   <Button type="text" danger icon={<DeleteOutlined />} />
-//                 </Popconfirm>
-//               ] : []
-//             }
+//             actions={[
+//               <Button 
+//                 key="edit" 
+//                 type="text" 
+//                 icon={<EditOutlined />} 
+//                 onClick={() => handleEdit(comment.id, comment.content)}
+//               />,
+//               <Popconfirm
+//                 key="delete"
+//                 title="Delete this comment?"
+//                 onConfirm={() => handleDelete(comment.id)}
+//               >
+//                 <Button type="text" danger icon={<DeleteOutlined />} />
+//               </Popconfirm>
+//             ]}
 //           >
 //             <List.Item.Meta
 //               avatar={<Avatar icon={<UserOutlined />} />}
-//               title={<Text strong>{comment.userName}</Text>}
+//               title={
+//                 <div>
+//                   <Text strong>{comment.userName}</Text>
+//                   <Text type="secondary" style={{ marginLeft: 8 }}>
+//                     ({comment.userType})
+//                   </Text>
+//                 </div>
+//               }
 //               description={
 //                 editingCommentId === comment.id ? (
 //                   <div style={{ marginTop: 8 }}>
@@ -149,6 +179,7 @@
 //                         size="small" 
 //                         onClick={handleUpdate}
 //                         style={{ marginRight: 8 }}
+//                         loading={state.isPending}
 //                       >
 //                         Update
 //                       </Button>
@@ -179,4 +210,4 @@
 //   );
 // };
 
-// export default CommentComponent;
+// export default CommentSection;

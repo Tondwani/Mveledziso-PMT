@@ -45,6 +45,8 @@ import { DutyStatus } from '../../../enums/DutyStatus';
 import { PriorityLevel } from '../../../enums/PriorityLevel';
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
+import { ICreateUserDutyDto } from '@/provider/DutyManagement/context';
+import axios from 'axios';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -108,6 +110,7 @@ const DutiesContent = () => {
   const [isProjectDutyModalVisible, setIsProjectDutyModalVisible] = useState<boolean>(false);
   const [isUserDutyModalVisible, setIsUserDutyModalVisible] = useState<boolean>(false);
   const [editingProjectDuty, setEditingProjectDuty] = useState<IProjectDuty | null>(null);
+  const [isAssigning, setIsAssigning] = useState<boolean>(false);
   // const [selectedUserDutyId, setSelectedUserDutyId] = useState<string | null>(null);
   const [extendedUserDuties, setExtendedUserDuties] = useState<IExtendedUserDuty[]>([]);
   const [pagination, setPagination] = useState({
@@ -335,89 +338,123 @@ const DutiesContent = () => {
   };
 
   const handleUserDutySubmit = async () => {
+    console.log('Assignment button clicked');
+    setIsAssigning(true);
+    
     try {
+      console.log('Validating form fields...');
       const values = await userDutyForm.validateFields();
-      
-      // Debug: Log raw form values
-      console.log('Raw form values:', JSON.stringify(values));
-      console.log('TeamMemberId type:', typeof values.teamMemberId);
-      console.log('ProjectDutyId type:', typeof values.projectDutyId);
+      console.log('Form validation successful:', values);
       
       // Make sure we have values
       if (!values.teamMemberId || !values.projectDutyId) {
         message.error('Please select both a duty and a team member');
+        setIsAssigning(false);
         return;
       }
       
-      // Log the raw values to help debug
-      console.log('TeamMemberId raw:', values.teamMemberId);
-      console.log('ProjectDutyId raw:', values.projectDutyId);
-      
-      // Ensure values are properly formatted strings
-      const submissionData = {
+      // Format the values as proper strings
+      const submissionData: ICreateUserDutyDto = {
         teamMemberId: String(values.teamMemberId).trim(),
         projectDutyId: String(values.projectDutyId).trim()
       };
       
-      // Debug: Log formatted values
-      console.log('Formatted submission data:', JSON.stringify(submissionData));
+      console.log('Submission data:', submissionData);
       
-      // Manually check GUID format before submitting
-      const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const isTeamMemberIdValid = guidRegex.test(submissionData.teamMemberId);
-      const isProjectDutyIdValid = guidRegex.test(submissionData.projectDutyId);
+      // Check if the values are valid GUIDs
+      const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
-      console.log('GUID validation:', {
-        teamMemberIdValid: isTeamMemberIdValid,
-        projectDutyIdValid: isProjectDutyIdValid
-      });
-      
-      if (!isTeamMemberIdValid || !isProjectDutyIdValid) {
-        console.error('Invalid GUID format detected in client-side check:',
-          !isTeamMemberIdValid ? 'TeamMemberId is invalid' : 'ProjectDutyId is invalid');
-        
-        // Try to fix common GUID format issues
-        try {
-          if (!isTeamMemberIdValid) {
-            // Try to convert a number to a valid GUID if needed
-            if (!isNaN(Number(submissionData.teamMemberId))) {
-              message.error('Invalid TeamMemberId format - numeric IDs are not valid GUIDs');
-              return;
-            }
-          }
-          
-          if (!isProjectDutyIdValid) {
-            // Try to convert a number to a valid GUID if needed
-            if (!isNaN(Number(submissionData.projectDutyId))) {
-              message.error('Invalid ProjectDutyId format - numeric IDs are not valid GUIDs');
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('Error during GUID fixing attempt:', e);
-        }
+      if (!guidRegex.test(submissionData.teamMemberId)) {
+        console.error('Invalid TeamMemberId format:', submissionData.teamMemberId);
+        message.error('Invalid Team Member ID format. Please select a valid team member.');
+        setIsAssigning(false);
+        return;
       }
       
-      await createUserDuty(submissionData);
-      message.success('User duty assigned successfully');
+      if (!guidRegex.test(submissionData.projectDutyId)) {
+        console.error('Invalid ProjectDutyId format:', submissionData.projectDutyId);
+        message.error('Invalid Project Duty ID format. Please select a valid duty.');
+        setIsAssigning(false);
+        return;
+      }
       
-      // Reset and reload
-      setIsUserDutyModalVisible(false);
-      userDutyForm.resetFields();
-      if (activeTab === '2') {
-        loadUserDuties({
-          skipCount: (pagination.current - 1) * pagination.pageSize,
-          maxResultCount: pagination.pageSize
-        });
+      console.log('Calling createUserDuty API...');
+      message.loading({ content: 'Assigning duty...', key: 'assignDuty' });
+      
+      try {
+        // Get auth token from session storage for direct API call
+        const token = sessionStorage.getItem("auth_token");
+        
+        // Try direct axios call for debugging
+        console.log('Attempting direct API call...');
+        try {
+          const directResponse = await axios.post(
+            'https://localhost:44311/api/services/app/UserDuty/Create',
+            {
+              teamMemberId: submissionData.teamMemberId,
+              projectDutyId: submissionData.projectDutyId
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": token ? `Bearer ${token}` : undefined
+              },
+              withCredentials: true
+            }
+          );
+          console.log('Direct API call successful:', directResponse);
+          message.success({ content: 'Direct API: User duty assigned successfully', key: 'assignDuty' });
+          
+          // Reset and reload
+          setIsUserDutyModalVisible(false);
+          userDutyForm.resetFields();
+          if (activeTab === '2') {
+            loadUserDuties({
+              skipCount: (pagination.current - 1) * pagination.pageSize,
+              maxResultCount: pagination.pageSize
+            });
+          }
+          return; // Skip the normal flow
+        } catch (directError) {
+          console.error('Direct API call failed:', directError);
+          // Continue with normal flow
+        }
+        
+        // Normal flow using the context function
+        await createUserDuty(submissionData);
+        console.log('API call successful');
+        message.success({ content: 'User duty assigned successfully', key: 'assignDuty' });
+        
+        // Reset and reload
+        setIsUserDutyModalVisible(false);
+        userDutyForm.resetFields();
+        if (activeTab === '2') {
+          loadUserDuties({
+            skipCount: (pagination.current - 1) * pagination.pageSize,
+            maxResultCount: pagination.pageSize
+          });
+        }
+      } catch (apiError) {
+        console.error('API call failed:', apiError);
+        if (apiError instanceof Error) {
+          message.error({ content: `API Error: ${apiError.message}`, key: 'assignDuty' });
+        } else {
+          message.error({ content: 'Failed to assign duty - API error', key: 'assignDuty' });
+        }
+        throw apiError; // Re-throw to be caught by the outer catch
       }
       
     } catch (error) {
-      console.error('Form validation failed:', error);
+      console.error('Form validation or submission failed:', error);
       if (error instanceof Error) {
-        message.error(error.message);
+        message.error(`Error: ${error.message}`);
       } else {
         message.error('Failed to assign duty');
       }
+    } finally {
+      console.log('Assignment process completed');
+      setIsAssigning(false);
     }
   };
 
@@ -797,11 +834,17 @@ const DutiesContent = () => {
         open={isUserDutyModalVisible}
         onCancel={handleUserDutyCancel}
         footer={[
-          <Button key="back" onClick={handleUserDutyCancel}>
+          <Button key="back" onClick={handleUserDutyCancel} disabled={isAssigning}>
             Cancel
           </Button>,
-          <Button key="submit" type="primary" onClick={handleUserDutySubmit}>
-            Assign
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={handleUserDutySubmit}
+            loading={isAssigning}
+            style={{ backgroundColor: isAssigning ? '#1890ff' : undefined }}
+          >
+            {isAssigning ? 'Assigning...' : 'Assign'}
           </Button>
         ]}
       >
@@ -816,24 +859,17 @@ const DutiesContent = () => {
             name="projectDutyId"
             label="Duty"
             rules={[{ required: true, message: 'Please select a duty' }]}
-            getValueFromEvent={(value) => {
-              console.log('projectDutyId value from event:', value, typeof value);
-              return value ? String(value) : '';
-            }}
-            getValueProps={(value) => {
-              console.log('projectDutyId get value props:', value, typeof value);
-              return { value: value };
+            normalize={(value) => {
+              // Ensure value is a properly formatted string
+              return value ? String(value).trim() : '';
             }}
           >
             <Select disabled={!!userDutyForm.getFieldValue('projectDutyId')}>
-              {projectDuties.map(duty => {
-                console.log('Rendering duty option:', duty.id, typeof duty.id);
-                return (
-                  <Option key={duty.id} value={duty.id}>
-                    {duty.title}
-                  </Option>
-                );
-              })}
+              {projectDuties.map(duty => (
+                <Option key={duty.id} value={duty.id}>
+                  {duty.title}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
@@ -841,24 +877,17 @@ const DutiesContent = () => {
             name="teamMemberId"
             label="Team Member"
             rules={[{ required: true, message: 'Please select a team member' }]}
-            getValueFromEvent={(value) => {
-              console.log('teamMemberId value from event:', value, typeof value);
-              return value ? String(value) : '';
-            }}
-            getValueProps={(value) => {
-              console.log('teamMemberId get value props:', value, typeof value);
-              return { value: value };
+            normalize={(value) => {
+              // Ensure value is a properly formatted string
+              return value ? String(value).trim() : '';
             }}
           >
             <Select>
-              {teamMembers.map(member => {
-                console.log('Rendering team member option:', member.id, typeof member.id);
-                return (
-                  <Option key={member.id} value={member.id}>
-                    {`${member.firstName} ${member.lastName}`}
-                  </Option>
-                );
-              })}
+              {teamMembers.map(member => (
+                <Option key={member.id} value={member.id}>
+                  {`${member.firstName} ${member.lastName}`}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
         </Form>
