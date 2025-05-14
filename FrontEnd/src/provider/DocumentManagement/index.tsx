@@ -1,4 +1,4 @@
-import React, { useReducer, useContext, useEffect, useState } from "react";
+import React, { useReducer, useContext, useCallback } from "react";
 import {
   DocumentStateContext,
   DocumentActionContext,
@@ -28,243 +28,151 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({
   const [state, dispatch] = useReducer(DocumentReducer, INITIAL_STATE);
   const api = getAxiosInstance();
 
-  type PendingOperation =
-    | { type: 'create'; payload: ICreateDocumentDto; resolve: (value: IDocument) => void; reject: (error: unknown) => void }
-    | { type: 'update'; payload: { id: string; document: IUpdateDocumentDto }; resolve: (value: IDocument) => void; reject: (error: unknown) => void }
-    | { type: 'delete'; payload: string; resolve: (value: void) => void; reject: (error: unknown) => void }
-    | { type: 'get'; payload: string; resolve: (value: IDocument) => void; reject: (error: unknown) => void }
-    | { type: 'getAll'; payload: IGetDocumentInput; resolve: (value: { items: IDocument[]; totalCount: number }) => void; reject: (error: unknown) => void }
-    | { type: 'upload'; payload: { file: File; projectDutyId?: string }; resolve: (value: IDocument) => void; reject: (error: unknown) => void };
-
-  const [pendingOperation, setPendingOperation] = useState<PendingOperation | null>(null);
-
-  useEffect(() => {
-    const createDocument = async (document: ICreateDocumentDto) => {
-      try {
+  const createDocument = useCallback(
+    (document: ICreateDocumentDto): Promise<IDocument> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        const response = await api.post("/api/services/app/Document/Create", document);
-        const result = response.data.result;
-        dispatch(setDocument(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to create document"));
-        throw error;
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
+        api.post("/api/services/app/Document/Create", document)
+          .then(response => {
+            const result = response.data.result;
+            dispatch(setDocument(result));
+            dispatch(setSuccess(true));
+            resolve(result);
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to create document"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
-    const updateDocument = async (id: string, document: IUpdateDocumentDto) => {
-      try {
+  const updateDocument = useCallback(
+    (id: string, document: IUpdateDocumentDto): Promise<IDocument> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        const response = await api.put(`/api/services/app/Document/Update?id=${id}`, document);
-        const result = response.data.result;
-        dispatch(setDocument(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to update document"));
-        throw error;
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
+        api.put(`/api/services/app/Document/Update?id=${id}`, document)
+          .then(response => {
+            const result = response.data.result;
+            dispatch(setDocument(result));
+            dispatch(setSuccess(true));
+            resolve(result);
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to update document"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
-    const deleteDocument = async (id: string) => {
-      try {
+  const deleteDocument = useCallback(
+    (id: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        await api.delete(`/api/services/app/Document/Delete?id=${id}`);
-        dispatch(setDocument(null));
-        dispatch(setSuccess(true));
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to delete document"));
-        throw error;
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
+        api.delete(`/api/services/app/Document/Delete?id=${id}`)
+          .then(() => {
+            dispatch(setDocument(null));
+            dispatch(setSuccess(true));
+            resolve();
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to delete document"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
-    const getDocument = async (id: string) => {
-      try {
+  const getDocument = useCallback(
+    (id: string): Promise<IDocument> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        const response = await api.get(`/api/services/app/Document/Get?id=${id}`);
-        const result = response.data.result;
-        dispatch(setDocument(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to fetch document"));
-        throw error;
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
+        api.get(`/api/services/app/Document/Get?id=${id}`)
+          .then(response => {
+            const result = response.data.result;
+            dispatch(setDocument(result));
+            dispatch(setSuccess(true));
+            resolve(result);
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to fetch document"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
-    const getDocuments = async (input: IGetDocumentInput) => {
-      try {
+  const getDocuments = useCallback(
+    (input: IGetDocumentInput): Promise<{ items: IDocument[]; totalCount: number }> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        const response = await api.get("/api/services/app/Document/GetAll", {
+        api.get("/api/services/app/Document/GetAll", {
           params: input,
-        });
-        const result = response.data.result;
-        dispatch(setDocuments(result.items));
-        dispatch(setTotalCount(result.totalCount));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        dispatch(setError(axiosError.message || "Failed to fetch documents"));
-        throw error;
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
+        })
+          .then(response => {
+            const result = response.data.result;
+            dispatch(setDocuments(result.items));
+            dispatch(setTotalCount(result.totalCount));
+            dispatch(setSuccess(true));
+            resolve(result);
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to fetch documents"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
-    const uploadDocument = async (file: File, projectDutyId?: string) => {
-      try {
+  const uploadDocument = useCallback(
+    (file: File, projectDutyId?: string): Promise<IDocument> => {
+      return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        console.log('Starting upload for file:', {
-          name: file.name,
-          size: file.size,
-          type: file.type
-        });
-
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error('File size exceeds 10MB limit');
-        }
-
         const formData = new FormData();
         formData.append("file", file);
         if (projectDutyId) {
           formData.append("projectDutyId", projectDutyId);
         }
 
-        console.log('FormData contents:');
-        for (const pair of formData.entries()) {
-          console.log(pair[0], pair[1]);
-        }
-
-        console.log('Sending upload request to:', '/api/services/app/Document/Create');
-        const response = await api.post("/api/services/app/Document/Create", formData, {
-          timeout: 60000,
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              console.log('Upload progress:', percentCompleted);
-            }
-          }
-        });
-
-        console.log('Upload response:', response.data);
-        const result = response.data.result;
-        
-        if (!result) {
-          throw new Error('No document data received from server');
-        }
-
-        dispatch(setDocument(result));
-        dispatch(setSuccess(true));
-        return result;
-      } catch (error) {
-        console.error('Upload error details:', {
-          error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          axiosError: error instanceof AxiosError ? {
-            response: error.response?.data,
-            status: error.response?.status,
-            headers: error.response?.headers
-          } : null
-        });
-
-        const errorMessage = error instanceof Error 
-          ? error.message 
-          : error instanceof AxiosError && error.response?.data?.error?.message
-          ? error.response.data.error.message
-          : "Failed to upload document";
-        
-        dispatch(setError(errorMessage));
-        throw new Error(errorMessage);
-      } finally {
-        dispatch(setPending(false));
-      }
-    };
-
-    if (!pendingOperation) return;
-
-    const handleOperation = async () => {
-      try {
-        switch (pendingOperation.type) {
-          case 'create':
-            const createResult = await createDocument(pendingOperation.payload);
-            pendingOperation.resolve(createResult);
-            break;
-          case 'update':
-            const updateResult = await updateDocument(pendingOperation.payload.id, pendingOperation.payload.document);
-            pendingOperation.resolve(updateResult);
-            break;
-          case 'delete':
-            await deleteDocument(pendingOperation.payload);
-            pendingOperation.resolve();
-            break;
-          case 'get':
-            const getResult = await getDocument(pendingOperation.payload);
-            pendingOperation.resolve(getResult);
-            break;
-          case 'getAll':
-            const getAllResult = await getDocuments(pendingOperation.payload);
-            pendingOperation.resolve(getAllResult);
-            break;
-          case 'upload':
-            const uploadResult = await uploadDocument(pendingOperation.payload.file, pendingOperation.payload.projectDutyId);
-            pendingOperation.resolve(uploadResult);
-            break;
-        }
-      } catch (error) {
-        pendingOperation.reject(error);
-      } finally {
-        setPendingOperation(null);
-      }
-    };
-
-    handleOperation();
-  }, [pendingOperation, api]);
+        api.post("/api/services/app/Document/Upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+          .then(response => {
+            const result = response.data.result;
+            dispatch(setDocument(result));
+            dispatch(setSuccess(true));
+            resolve(result);
+          })
+          .catch(error => {
+            const axiosError = error as AxiosError;
+            dispatch(setError(axiosError.message || "Failed to upload document"));
+            reject(error);
+          });
+      });
+    },
+    [api]
+  );
 
   const actions: IDocumentActionContext = {
-    createDocument: (document) => {
-      return new Promise<IDocument>((resolve, reject) => {
-        setPendingOperation({ type: 'create', payload: document, resolve, reject });
-      });
-    },
-    updateDocument: (id, document) => {
-      return new Promise<IDocument>((resolve, reject) => {
-        setPendingOperation({ type: 'update', payload: { id, document }, resolve, reject });
-      });
-    },
-    deleteDocument: (id) => {
-      return new Promise<void>((resolve, reject) => {
-        setPendingOperation({ type: 'delete', payload: id, resolve, reject });
-      });
-    },
-    getDocument: (id) => {
-      return new Promise<IDocument>((resolve, reject) => {
-        setPendingOperation({ type: 'get', payload: id, resolve, reject });
-      });
-    },
-    getDocuments: (input) => {
-      return new Promise<{ items: IDocument[]; totalCount: number }>((resolve, reject) => {
-        setPendingOperation({ type: 'getAll', payload: input, resolve, reject });
-      });
-    },
-    uploadDocument: (file, projectDutyId) => {
-      return new Promise<IDocument>((resolve, reject) => {
-        setPendingOperation({ type: 'upload', payload: { file, projectDutyId }, resolve, reject });
-      });
-    }
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    getDocument,
+    getDocuments,
+    uploadDocument,
   };
 
   return (

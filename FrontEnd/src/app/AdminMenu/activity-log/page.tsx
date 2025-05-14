@@ -59,14 +59,7 @@ export default function ActivityLogPage() {
     };
 
     loadActivityLogs();
-  }, [
-    filters.action,
-    filters.entityType,
-    filters.userId,
-    filters.startDate,
-    filters.endDate,
-    (filters.skipCount ?? 0)
-  ]);
+  }, [filters, getActivityLogs]);
 
   // Derived data
   const actionTypes = [...new Set(activityLogs.map(log => log.action))];

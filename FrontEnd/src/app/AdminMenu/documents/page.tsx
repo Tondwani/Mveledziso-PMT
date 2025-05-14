@@ -9,6 +9,13 @@ import { AxiosError } from 'axios';
 import type { RangePickerProps } from 'antd/es/date-picker';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { ColumnsType } from 'antd/es/table';
+// import dynamic from 'next/dynamic';
+
+// // Dynamically import DocumentAnalyzer with SSR disabled
+// const DocumentAnalyzer = dynamic(
+//   () => import('@/components/AI/FrontEnd/src/components/AI/DocumentAnalyzer'),
+//   { ssr: false }
+// );
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;

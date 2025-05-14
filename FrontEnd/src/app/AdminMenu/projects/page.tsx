@@ -17,6 +17,8 @@ import {
   IGetProjectDutiesInput
 } from '../../../provider/ProjectManagement/context';
 import { ITeam } from '../../../provider/TeamManagement/context';
+// import ProjectRiskPredictor from '@/components/AI/ProjectRiskPredictor';
+
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
