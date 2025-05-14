@@ -123,7 +123,7 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
       console.log('API URL:', `${API_ENDPOINTS.milestones}/GetList`);
       
       // Log the auth token (masked)
-      const authToken = instance.defaults.headers.common["Authorization"];
+      const authToken = instance.defaults.headers.common[""];
       console.log('Auth token present:', !!authToken);
       
       const response = await instance.get(`${API_ENDPOINTS.milestones}/GetList`, {

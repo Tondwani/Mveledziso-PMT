@@ -25,11 +25,20 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       const message = error.response?.data?.error?.message || error.message;
       
       switch (status) {
-        case 404:
-          dispatch(setError(`Resource not found: ${message}`));
+        case 400:
+          dispatch(setError(`Invalid request: ${message}`));
+          break;
+        case 401:
+          dispatch(setError(`Authentication required: ${message}`));
           break;
         case 403:
           dispatch(setError(`Access denied: ${message}`));
+          break;
+        case 404:
+          dispatch(setError(`Resource not found: ${message}`));
+          break;
+        case 409:
+          dispatch(setError(`Conflict: ${message}`));
           break;
         case 500:
           dispatch(setError(`Server error: ${message}`));
@@ -37,6 +46,8 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
         default:
           dispatch(setError(message || 'An unexpected error occurred'));
       }
+    } else if (error instanceof Error) {
+      dispatch(setError(error.message));
     } else {
       dispatch(setError('An unexpected error occurred'));
     }
@@ -49,7 +60,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       const response = await axios.post('/api/services/app/Timeline/Create', timeline);
       const result = response.data.result;
       dispatch(setTimeline(result));
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline created successfully'));
       return result;
     } catch (error: unknown) {
       handleError(error);
@@ -62,7 +73,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       const response = await axios.put(`/api/services/app/Timeline/Update`, timeline);
       const result = response.data.result;
       dispatch(setTimeline(result));
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline updated successfully'));
       return result;
     } catch (error: unknown) {
       handleError(error);
@@ -73,7 +84,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
     try {
       dispatch(setPending());
       await axios.delete(`/api/services/app/Timeline/Delete?Id=${id}`);
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline deleted successfully'));
     } catch (error: unknown) {
       handleError(error);
     }
@@ -118,7 +129,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       const response = await axios.post('/api/services/app/TimelinePhase/Create', phase);
       const result = response.data.result;
       dispatch(setTimelinePhase(result));
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline phase created successfully'));
       return result;
     } catch (error: unknown) {
       handleError(error);
@@ -131,7 +142,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       const response = await axios.put(`/api/services/app/TimelinePhase/Update`, phase);
       const result = response.data.result;
       dispatch(setTimelinePhase(result));
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline phase updated successfully'));
       return result;
     } catch (error: unknown) {
       handleError(error);
@@ -142,7 +153,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
     try {
       dispatch(setPending());
       await axios.delete(`/api/services/app/TimelinePhase/Delete?Id=${id}`);
-      dispatch(setSuccess());
+      dispatch(setSuccess('Timeline phase deleted successfully'));
     } catch (error: unknown) {
       handleError(error);
     }
@@ -171,6 +182,7 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
       return result;
     } catch (error: unknown) {
       handleError(error);
+      return [];
     }
   };
 

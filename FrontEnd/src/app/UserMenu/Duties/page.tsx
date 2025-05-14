@@ -1,211 +1,376 @@
 "use client";
 
-import { Table, Tag, Space, Button, Card, Typography, Modal, Form, Select, message } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, ProjectOutlined, EditOutlined } from '@ant-design/icons';
-import { useContext, useState, useEffect } from 'react';
-import { ProjectActionContext, IProjectDuty, DutyStatus, Priority } from '@/provider/ProjectManagement/context';
-import { useAuthState } from '@/provider/CurrentUserProvider';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Table, 
+  Card, 
+  Space, 
+  Tag, 
+  message, 
+  Typography, 
+  Tooltip,
+  Spin,
+  Button,
+  Modal,
+  Form,
+  Select,
+  Row,
+  Col
+} from 'antd';
+import type { ColumnType } from 'antd/es/table';
+import type { TablePaginationConfig } from 'antd/es/table';
+import { 
+  CheckOutlined, 
+  ClockCircleOutlined, 
+  HighlightOutlined, 
+  ExclamationCircleOutlined,
+  SyncOutlined
+} from '@ant-design/icons';
+import { useProjectState, useProjectActions } from '../../../provider/ProjectManagement';
+import { useUserDutyState, useUserDutyActions } from '../../../provider/DutyManagement';
+// import { useSession } from 'next-auth/react';
+import { IProjectDuty } from '../../../provider/ProjectManagement/context';
+import { IUserDuty } from '../../../provider/DutyManagement/context';
+import { DutyStatus } from '../../../enums/DutyStatus';
+import { PriorityLevel } from '../../../enums/PriorityLevel';
+import dayjs from 'dayjs';
 
 const { Title } = Typography;
+const { Option } = Select;
 
-// Helper function to validate GUID format
-const isValidGuid = (value: unknown): boolean => {
-  if (!value) return false;
-  const guid = String(value).trim();
-  const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return guidRegex.test(guid);
+// Helper function to convert enums to human-readable format
+const formatDutyStatus = (status: DutyStatus): { text: string; color: string } => {
+  switch (status) {
+    case DutyStatus.ToDo:
+      return { text: 'To Do', color: 'default' };
+    case DutyStatus.InProgress:
+      return { text: 'In Progress', color: 'processing' };
+    case DutyStatus.Review:
+      return { text: 'Review', color: 'warning' };
+    case DutyStatus.Done:
+      return { text: 'Done', color: 'success' };
+    default:
+      return { text: 'Unknown', color: 'default' };
+  }
 };
 
-export default function TeamMemberDutiesPage() {
-  const projectActions = useContext(ProjectActionContext);
-  const { currentUser } = useAuthState();
-  const [loading, setLoading] = useState(true);
-  const [myDuties, setMyDuties] = useState<IProjectDuty[]>([]);
-  const [editingDuty, setEditingDuty] = useState<IProjectDuty | null>(null);
-  const [form] = Form.useForm();
+const formatPriorityLevel = (priority: PriorityLevel): { text: string; color: string } => {
+  switch (priority) {
+    case PriorityLevel.Low:
+      return { text: 'Low', color: 'green' };
+    case PriorityLevel.Medium:
+      return { text: 'Medium', color: 'blue' };
+    case PriorityLevel.High:
+      return { text: 'High', color: 'orange' };
+    case PriorityLevel.Urgent:
+      return { text: 'Urgent', color: 'red' };
+    default:
+      return { text: 'Unknown', color: 'default' };
+  }
+};
 
-  useEffect(() => {
-    const loadDuties = async () => {
-      try {
-        if (currentUser?.id) {
-          // Validate the currentUser.id is a valid GUID
-          if (!isValidGuid(currentUser.id)) {
-            console.error('Invalid user ID format:', currentUser.id);
-            message.error('Invalid user ID format');
-            return;
-          }
+// Interface to combine user duty with project duty details
+interface IExtendedUserDuty extends IUserDuty {
+  projectDuty?: IProjectDuty;
+}
 
-          const duties = await projectActions.getProjectDuties({
-            filter: `assignedUserId eq ${currentUser.id}`
-          });
-          setMyDuties(duties);
-        }
-      } catch (error) {
-        console.error('Failed to load duties:', error);
-        message.error('Failed to load duties');
-      } finally {
-        setLoading(false);
-      }
-    };
+const DutiesContent = () => {
+  // States
+  const [extendedUserDuties, setExtendedUserDuties] = useState<IExtendedUserDuty[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<DutyStatus | null>(null);
+  const [dutyStatusModalVisible, setDutyStatusModalVisible] = useState(false);
+  const [selectedDuty, setSelectedDuty] = useState<IProjectDuty | null>(null);
+  const [statusForm] = Form.useForm();
+  
 
-    loadDuties();
-  }, [currentUser?.id, projectActions]);
+  const { userDuties, isPending: userDutiesIsPending, totalCount: userDutiesTotalCount } = useUserDutyState();
+  const { projectDuties } = useProjectState();
+  
+  const { getUserDuties } = useUserDutyActions();
+  const { getProjectDuties, updateDutyStatus } = useProjectActions();
 
-  const handleEditDuty = async (values: { status: DutyStatus }) => {
+  const loadAllData = useCallback(async () => {
+    setLoading(true);
     try {
-      if (!editingDuty) return;
-      
-      // Validate the duty ID is a valid GUID
-      if (!isValidGuid(editingDuty.id)) {
-        console.error('Invalid duty ID format:', editingDuty.id);
-        message.error('Invalid duty ID format');
-        return;
-      }
+      // First, load all project duties
+      await getProjectDuties({});
 
-      await projectActions.updateDutyStatus(editingDuty.id, values.status);
+      await getUserDuties({
+        skipCount: (pagination.current - 1) * pagination.pageSize,
+        maxResultCount: pagination.pageSize
+      });
       
-      // Refresh duties
-      const updatedDuties = myDuties.map(duty => 
-        duty.id === editingDuty.id 
-          ? { ...duty, status: values.status }
-          : duty
-      );
-      setMyDuties(updatedDuties);
-      setEditingDuty(null);
-      message.success('Duty status updated successfully');
+      setPagination(prev => ({
+        ...prev,
+        total: userDutiesTotalCount
+      }));
     } catch (error) {
-      console.error('Failed to update duty:', error);
+      console.error('Failed to load duties:', error);
+      message.error('Failed to load your assigned duties');
+    } finally {
+      setLoading(false);
+    }
+  }, [getProjectDuties, getUserDuties, pagination.current, pagination.pageSize, userDutiesTotalCount]);
+
+  // Create extended duties by combining user duties with project duty details
+  const createExtendedDuties = useCallback(() => {
+    const extended = userDuties.map(userDuty => {
+      const projectDuty = projectDuties.find(pd => pd.id === userDuty.projectDutyId);
+      return {
+        ...userDuty,
+        projectDuty
+      };
+    });
+    
+    // Apply status filter if active
+    const filtered = statusFilter 
+      ? extended.filter(duty => duty.projectDuty?.status === statusFilter)
+      : extended;
+      
+    setExtendedUserDuties(filtered);
+  }, [userDuties, projectDuties, statusFilter]);
+
+  // Effect for initial load
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  // Effect to create extended duties when dependencies change
+  useEffect(() => {
+    if (userDuties.length > 0 && projectDuties.length > 0) {
+      createExtendedDuties();
+    }
+  }, [userDuties, projectDuties, createExtendedDuties]);
+
+  // Handle table pagination change
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    setPagination(prev => ({
+      ...prev,
+      current: pagination.current || 1,
+      pageSize: pagination.pageSize || 10
+    }));
+  };
+
+  // Handle status filter change
+  const handleStatusFilterChange = (value: DutyStatus | null) => {
+    setStatusFilter(value);
+  };
+
+  // Show status update modal
+  const showStatusUpdateModal = (duty: IProjectDuty) => {
+    setSelectedDuty(duty);
+    statusForm.setFieldsValue({
+      status: duty.status
+    });
+    setDutyStatusModalVisible(true);
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async () => {
+    try {
+      const values = await statusForm.validateFields();
+      if (selectedDuty) {
+        await updateDutyStatus(selectedDuty.id, values.status);
+        message.success('Duty status updated successfully');
+        loadAllData(); // Reload data
+        setDutyStatusModalVisible(false);
+      }
+    } catch (error) {
+      console.error('Failed to update duty status:', error);
       message.error('Failed to update duty status');
     }
   };
 
-  const columns = [
+  // Table columns
+  const columns: ColumnType<IExtendedUserDuty>[] = [
     {
       title: 'Title',
-      dataIndex: 'title',
+      dataIndex: ['projectDuty', 'title'],
       key: 'title',
+      render: (text, record) => (
+        <Tooltip title={record.projectDuty?.description || 'No description'}>
+          <span>{text}</span>
+        </Tooltip>
+      )
     },
     {
       title: 'Project',
-      dataIndex: 'projectName',
-      key: 'projectName',
-      render: (text: string) => (
-        <Space>
-          <ProjectOutlined />
-          <span>{text}</span>
-        </Space>
-      ),
+      dataIndex: ['projectDuty', 'projectName'],
+      key: 'project',
     },
     {
       title: 'Status',
-      dataIndex: 'status',
+      dataIndex: ['projectDuty', 'status'],
       key: 'status',
-      render: (status: DutyStatus) => {
-        const statusConfig = {
-          [DutyStatus.Done]: { color: 'success', icon: <CheckCircleOutlined /> },
-          [DutyStatus.InProgress]: { color: 'processing', icon: <ClockCircleOutlined /> },
-          [DutyStatus.Review]: { color: 'warning', icon: <ClockCircleOutlined /> },
-          [DutyStatus.ToDo]: { color: 'default', icon: <ClockCircleOutlined /> },
-        };
-        return (
-          <Tag color={statusConfig[status].color} icon={statusConfig[status].icon}>
-            {status}
-          </Tag>
-        );
+      render: (status) => {
+        if (!status) return null;
+        
+        const { text, color } = formatDutyStatus(status);
+        return <Tag color={color}>{text}</Tag>;
       },
+      filters: [
+        { text: 'To Do', value: DutyStatus.ToDo },
+        { text: 'In Progress', value: DutyStatus.InProgress },
+        { text: 'Review', value: DutyStatus.Review },
+        { text: 'Done', value: DutyStatus.Done }
+      ],
+      onFilter: (value, record) => record.projectDuty?.status === value
     },
     {
       title: 'Priority',
-      dataIndex: 'priority',
+      dataIndex: ['projectDuty', 'priority'],
       key: 'priority',
-      render: (priority: Priority) => {
-        const priorityConfig = {
-          [Priority.Urgent]: { color: 'red' },
-          [Priority.High]: { color: 'orange' },
-          [Priority.Medium]: { color: 'blue' },
-          [Priority.low]: { color: 'green' },
-        };
-        return <Tag color={priorityConfig[priority].color}>{Priority[priority]}</Tag>;
+      render: (priority) => {
+        if (!priority) return null;
+        
+        const { text, color } = formatPriorityLevel(priority);
+        return <Tag color={color}>{text}</Tag>;
       },
+      filters: [
+        { text: 'Low', value: PriorityLevel.Low },
+        { text: 'Medium', value: PriorityLevel.Medium },
+        { text: 'High', value: PriorityLevel.High },
+        { text: 'Urgent', value: PriorityLevel.Urgent }
+      ],
+      onFilter: (value, record) => record.projectDuty?.priority === value
     },
     {
-      title: 'Due Date',
-      dataIndex: 'deadline',
+      title: 'Deadline',
+      dataIndex: ['projectDuty', 'deadline'],
       key: 'deadline',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : 'No deadline',
+      render: (deadline) => deadline ? dayjs(deadline).format('YYYY-MM-DD') : '-'
     },
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: unknown, record: IProjectDuty) => (
-        <Button 
-          type="link" 
-          icon={<EditOutlined />}
-          onClick={() => {
-            if (!isValidGuid(record.id)) {
-              console.error('Invalid duty ID format:', record.id);
-              message.error('Invalid duty ID format');
-              return;
-            }
-            setEditingDuty(record);
-            form.setFieldsValue({ status: record.status });
-          }}
-        >
-          Update Status
-        </Button>
-      ),
-    },
+      render: (_, record) => (
+        <Space size="small">
+          {record.projectDuty && (
+            <Button 
+              type="primary" 
+              size="small" 
+              icon={<SyncOutlined />} 
+              onClick={() => showStatusUpdateModal(record.projectDuty!)}
+            >
+              Update Status
+            </Button>
+          )}
+        </Space>
+      )
+    }
   ];
 
   return (
     <div className="p-6">
+      <Title level={2}>Duties</Title>
+      
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col span={24}>
+          <Card title="Filters" size="small">
+            <Form layout="inline">
+              <Form.Item label="Status">
+                <Select 
+                  placeholder="Filter by status" 
+                  allowClear 
+                  style={{ width: 200 }}
+                  onChange={handleStatusFilterChange}
+                >
+                  <Option value={DutyStatus.ToDo}>To Do</Option>
+                  <Option value={DutyStatus.InProgress}>In Progress</Option>
+                  <Option value={DutyStatus.Review}>Review</Option>
+                  <Option value={DutyStatus.Done}>Done</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item>
+                <Button 
+                  type="primary" 
+                  onClick={() => loadAllData()}
+                  icon={<SyncOutlined />}
+                >
+                  Refresh
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
+      
       <Card>
-        <Title level={2}>My Duties</Title>
-        <Table 
-          loading={loading}
-          columns={columns} 
-          dataSource={myDuties} 
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
+        <Spin spinning={loading || userDutiesIsPending}>
+          <Table
+            columns={columns}
+            dataSource={extendedUserDuties}
+            rowKey={record => record.id}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} items`
+            }}
+            onChange={handleTableChange}
+          />
+        </Spin>
       </Card>
-
+      
+      {/* Status Update Modal */}
       <Modal
         title="Update Duty Status"
-        open={!!editingDuty}
-        onCancel={() => setEditingDuty(null)}
-        footer={null}
+        open={dutyStatusModalVisible}
+        onOk={handleStatusUpdate}
+        onCancel={() => setDutyStatusModalVisible(false)}
       >
-        <Form 
-          form={form}
-          layout="vertical" 
-          onFinish={handleEditDuty}
-        >
+        <Form form={statusForm} layout="vertical">
           <Form.Item
             name="status"
             label="Status"
             rules={[{ required: true, message: 'Please select a status' }]}
           >
             <Select>
-              <Select.Option value={DutyStatus.ToDo}>To Do</Select.Option>
-              <Select.Option value={DutyStatus.InProgress}>In Progress</Select.Option>
-              <Select.Option value={DutyStatus.Review}>Review</Select.Option>
-              <Select.Option value={DutyStatus.Done}>Done</Select.Option>
+              <Option value={DutyStatus.ToDo}>
+                <Space>
+                  <ClockCircleOutlined />
+                  To Do
+                </Space>
+              </Option>
+              <Option value={DutyStatus.InProgress}>
+                <Space>
+                  <HighlightOutlined />
+                  In Progress
+                </Space>
+              </Option>
+              <Option value={DutyStatus.Review}>
+                <Space>
+                  <ExclamationCircleOutlined />
+                  Review
+                </Space>
+              </Option>
+              <Option value={DutyStatus.Done}>
+                <Space>
+                  <CheckOutlined />
+                  Done
+                </Space>
+              </Option>
             </Select>
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                Update
-              </Button>
-              <Button onClick={() => setEditingDuty(null)}>
-                Cancel
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>
     </div>
   );
-}
+};
+
+const DutiesPage = () => {
+  return (
+    <div className="duties-page">
+      <DutiesContent />
+    </div>
+  );
+};
+
+export default DutiesPage;

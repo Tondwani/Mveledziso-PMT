@@ -39,32 +39,39 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
 
   const basePath = getBasePath();
 
+  // Get user roles
+  const userRoles = currentUser?.roles || [];
+  const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
+
   const menuItems: MenuProps["items"] = [
     {
       key: `${basePath}/dashboard`,
       icon: <DashboardOutlined />,
       label: <Link href={`${basePath}/dashboard`}>Mveledziso</Link>,
     },
-    {
+    // Only show projects for ProjectManager
+    ...(isProjectManager ? [{
       key: `${basePath}/projects`,
       icon: <FolderOpenOutlined />,
       label: <Link href={`${basePath}/projects`}>Projects</Link>,
-    },
+    }] : []),
     {
       key: `${basePath}/Duties`,
       icon: <FileTextOutlined />,
       label: <Link href={`${basePath}/Duties`}>Duties</Link>,
     },
-    {
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `${basePath}/milestones`,
       icon: <FlagOutlined />,
       label: <Link href={`${basePath}/milestones`}>Milestones</Link>,
-    },
-    {
+    }] : []),
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `${basePath}/timelines`,
       icon: <CalendarOutlined />,
       label: <Link href={`${basePath}/timelines`}>Timelines</Link>,
-    },
+    }] : []),
     {
       key: `${basePath}/documents`,
       icon: <FileTextOutlined />,
@@ -75,11 +82,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       icon: <TeamOutlined />,
       label: <Link href={`${basePath}/teams`}>Teams / Users</Link>,
     },
-    {
-      key: `${basePath}/activity-log`,
+    // Only show activity log for ProjectManager and only in AdminMenu
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `/AdminMenu/activity-log`,
       icon: <HistoryOutlined />,
-      label: <Link href={`${basePath}/activity-log`}>Activity Log</Link>,
-    },
+      label: <Link href={`/AdminMenu/activity-log`}>Activity Log</Link>,
+    }] : []),
     {
       key: `${basePath}/help`,
       icon: <QuestionCircleOutlined />,

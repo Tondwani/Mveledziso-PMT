@@ -331,30 +331,7 @@ export default function TeamsPage() {
         // Force refresh the UI
         setRefreshKey(prev => prev + 1);
       }
-      
-      // Get team members for this team directly - keep for debugging
-      const fetchTeamUsers = async (teamId: string) => {
-        try {
-          const api = getAxiosInstance();
-          console.log('Fetching team members for team ID:', teamId);
-          const response = await api.get('/api/services/app/UserTeam/GetByTeamId', {
-            params: { teamId }
-          });
-          console.log('Team members response:', response.data);
-          if (response.data && response.data.result) {
-            return response.data.result.items || [];
-          }
-          return [];
-        } catch (error) {
-          console.error('Error fetching team members:', error);
-          return [];
-        }
-      };
-      
-      // Fetch updated team members
-      const updatedTeamUsers = await fetchTeamUsers(currentTeam.id);
-      console.log('Updated team users:', updatedTeamUsers);
-      
+  
       // Refresh the component (force re-render)
       if (currentTeam) {
         // Instead of using getUserTeams with wrong parameters, we'll just reload the team members
