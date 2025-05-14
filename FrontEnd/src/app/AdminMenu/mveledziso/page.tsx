@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Alert, Space, Divider, Tag, List } from 'antd';
-import { WarningOutlined, CheckCircleOutlined, ClockCircleOutlined, KeyOutlined } from '@ant-design/icons';
+import { WarningOutlined, CheckCircleOutlined, ClockCircleOutlined} from '@ant-design/icons';
 const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
 // Initialize the Google Generative AI with your API key
