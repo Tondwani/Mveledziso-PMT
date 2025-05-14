@@ -2,7 +2,7 @@
 
 import { Layout, Menu } from "antd";
 import {
-  DashboardOutlined,
+  // DashboardOutlined,
   FileTextOutlined,
   CalendarOutlined,
   TeamOutlined,
@@ -44,11 +44,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
 
   const menuItems: MenuProps["items"] = [
-    {
-      key: `${basePath}/dashboard`,
-      icon: <DashboardOutlined />,
-      label: <Link href={`${basePath}/dashboard`}>Mveledziso</Link>,
-    },
+    // {
+    //   key: `${basePath}/mveledziso`,
+    //   // icon: <DashboardOutlined />,
+    //   label: <Link href={`${basePath}/mveledziso`}></Link>,
+    // },
     // Only show projects for ProjectManager
     ...(isProjectManager ? [{
       key: `${basePath}/projects`,
@@ -81,6 +81,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       key: `${basePath}/teams`,
       icon: <TeamOutlined />,
       label: <Link href={`${basePath}/teams`}>Teams / Users</Link>,
+    },
+    {
+      key: `${basePath}/mveledziso`,
+      icon: <TeamOutlined />,
+      label: <Link href={`${basePath}/mveledziso`}>Mveledziso</Link>,
     },
     // Only show activity log for ProjectManager and only in AdminMenu
     ...(isProjectManager && basePath === "/AdminMenu" ? [{
