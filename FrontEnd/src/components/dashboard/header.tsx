@@ -3,7 +3,6 @@ import { Layout, Dropdown, Avatar } from "antd";
 import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import NotificationComponent from "../notification/page";
 import { useAuthState } from "@/provider/CurrentUserProvider";
 import { toast } from "react-hot-toast";
 
@@ -52,11 +51,6 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           key: "profile", 
           label: "Profile",
           onClick: () => handleNavigation(`/${getBasePath()}/profile`)
-        }, 
-        { 
-          key: "settings", 
-          label: "Settings",
-          onClick: () => handleNavigation(`/${getBasePath()}/settings`)
         }, 
         { 
           key: "logout", 
@@ -129,14 +123,13 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           gap: isMobile ? "12px" : "20px" 
         }}
       >
-        <NotificationComponent isMobile={isMobile} />
         <Dropdown menu={userMenu} placement="bottomRight">
           <Avatar 
             icon={<UserOutlined />}
             size={isMobile ? "small" : "default"}
             style={{ 
               cursor: "pointer",
-              backgroundColor: '#1890ff'  // Blue background for avatar
+              backgroundColor: '#1890ff'  
             }} 
           />
         </Dropdown>

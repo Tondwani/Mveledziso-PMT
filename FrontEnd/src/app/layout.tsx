@@ -4,7 +4,6 @@ import { AuthProvider } from "../provider/CurrentUserProvider";
 import { ProjectProvider } from "../provider/ProjectManagement";
 import { TeamProvider } from "../provider/TeamManagement";
 import { MilestoneProvider } from "../provider/MilestoneManagement";
-import { NotificationProvider } from "../provider/NotificationManagement";
 import { ProjectManagerProvider } from "../provider/ProjectManagerManagement";
 import { UserDutyProvider } from "../provider/DutyManagement";
 import { TeamMemberProvider } from "../provider/TeamMemberManagement";
@@ -41,9 +40,7 @@ export default function RootLayout({
                 <TeamMemberProvider>
                   <UserDutyProvider>
                     <MilestoneProvider>
-                      <NotificationProvider>
                         {children}
-                      </NotificationProvider>
                     </MilestoneProvider>
                   </UserDutyProvider>
                 </TeamMemberProvider>

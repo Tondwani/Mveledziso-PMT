@@ -31,14 +31,12 @@ interface TimelineFormValues {
 }
 
 export default function TimelinesPage() {
-  // State Management
   const { createTimeline, updateTimeline, deleteTimeline } = useTimelineActions();
   const { projects } = useProjectState();
-  const [isPending, setIsPending] = useState(false); // Loading state for form submissions
+  const [isPending, setIsPending] = useState(false); 
   const [manualTimelines, setManualTimelines] = useState<ITimeline[]>([]);
-  const timelines = manualTimelines; // Alias for compatibility
-  
-  // Local State
+  const timelines = manualTimelines;
+
   const [timelineModalVisible, setTimelineModalVisible] = useState(false);
   const [phaseModalVisible, setPhaseModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -51,16 +49,13 @@ export default function TimelinesPage() {
   const [phaseForm] = Form.useForm<PhaseFormValues>();
   const [timelineForm] = Form.useForm<TimelineFormValues>();
 
-  // Direct API call to fetch timelines
   const fetchTimelinesDirect = async () => {
     try {
       setLoading(true);
-      
-      // Try using fetch API directly first
       try {
         const token = sessionStorage.getItem("auth_token");
         
-        const fetchResponse = await fetch('https://localhost:44311/api/services/app/Timeline/GetAll?maxResultCount=100&skipCount=0', {
+        const fetchResponse = await fetch('https://mveledziso-pmt.onrender.com/api/services/app/Timeline/GetAll?maxResultCount=100&skipCount=0', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -161,8 +156,6 @@ export default function TimelinesPage() {
   const handleCreatePhase = async (values: PhaseFormValues) => {
     try {
       setIsPending(true);
-      // Phase creation logic will be implemented here
-      // This is a placeholder for future implementation
       console.log('Creating phase with values:', values);
       message.success('Phase created successfully');
       setPhaseModalVisible(false);
