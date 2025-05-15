@@ -208,7 +208,6 @@ const TimelineProvider: React.FC<Props> = ({ children }) => {
   );
 };
 
-// Custom hooks
 export const useTimelineState = () => {
   const context = useContext(TimelineStateContext);
   if (context === undefined) {

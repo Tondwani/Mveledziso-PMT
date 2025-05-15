@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create a singleton axios instance
 const axiosInstance = axios.create({
-  baseURL: 'https://localhost:44311',
+  baseURL: 'https://mveledziso-pmt.onrender.com',
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json"

@@ -319,19 +319,6 @@ export default function MilestonesPage() {
         title="Milestone Management"
         extra={
           <Space>
-            {/* <Select
-              placeholder="Filter by timeline"
-              style={{ width: 200 }}
-              onChange={(value) => setCurrentTimelineFilter(value)}
-              allowClear
-            >
-              {timelines?.map(timeline => (
-                <Select.Option key={timeline.id} value={timeline.id}>
-                  {timeline.name}
-                </Select.Option>
-              ))}
-            </Select> */}
-            
             <Select
               placeholder="Filter by status"
               style={{ width: 150 }}
