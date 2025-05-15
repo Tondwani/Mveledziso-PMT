@@ -186,14 +186,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Creating project manager account...');
       
-      // Use the ProjectManager/Create endpoint with role
+      
       const registerResponse = await getAxiosInstance().post("/api/services/app/ProjectManager/Create", {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         userName: data.userName || data.email,
         password: data.password,
-        roleNames: ['ProjectManager'] // Specify the ABP role name
+        roleNames: ['ProjectManager'] 
       });
 
       console.log('ProjectManager creation response:', registerResponse.data);
@@ -207,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        roles: ['ProjectManager'] // Use the ABP role name
+        roles: ['ProjectManager'] 
       } as IProjectManager;
 
       dispatch(createProjectManagerSuccess(projectManager));
@@ -247,7 +247,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// Custom hooks for easy access to context
 export const useAuthState = () => {
   const context = useContext(AuthStateContext);
   if (!context) {

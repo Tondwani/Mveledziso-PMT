@@ -389,7 +389,7 @@ const DutiesContent = () => {
         console.log('Attempting direct API call...');
         try {
           const directResponse = await axios.post(
-            'https://localhost:44311/api/services/app/UserDuty/Create',
+            'https://mveledziso-pmt.onrender.com/api/services/app/UserDuty/Create',
             {
               teamMemberId: submissionData.teamMemberId,
               projectDutyId: submissionData.projectDutyId

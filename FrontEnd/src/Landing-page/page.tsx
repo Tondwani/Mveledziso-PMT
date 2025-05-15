@@ -145,7 +145,6 @@ export default function Home() {
     return positions
   }
 
-  // Generate positions only on the client side
   useEffect(() => {
     setIconPositions(generateIconPositions());
   }, []);
