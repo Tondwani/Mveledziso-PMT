@@ -52,7 +52,7 @@ export default function MilestonesPage() {
 
   // Local State
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentTimelineFilter, setCurrentTimelineFilter] = useState<string | undefined>();
+  const [currentTimelineFilter, ] = useState<string | undefined>();
   const [currentCompletionFilter, setCurrentCompletionFilter] = useState<boolean | undefined>();
   const [editingMilestone, setEditingMilestone] = useState<IMilestone | null>(null);
   const [form] = Form.useForm();
@@ -319,7 +319,7 @@ export default function MilestonesPage() {
         title="Milestone Management"
         extra={
           <Space>
-            <Select
+            {/* <Select
               placeholder="Filter by timeline"
               style={{ width: 200 }}
               onChange={(value) => setCurrentTimelineFilter(value)}
@@ -330,7 +330,7 @@ export default function MilestonesPage() {
                   {timeline.name}
                 </Select.Option>
               ))}
-            </Select>
+            </Select> */}
             
             <Select
               placeholder="Filter by status"

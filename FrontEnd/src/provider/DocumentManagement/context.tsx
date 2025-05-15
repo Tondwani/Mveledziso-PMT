@@ -77,4 +77,4 @@ export const DocumentActionContext = createContext<IDocumentActionContext>({
   getDocument: () => Promise.resolve({} as IDocument),
   getDocuments: () => Promise.resolve({ items: [], totalCount: 0 }),
   uploadDocument: () => Promise.resolve({} as IDocument)
-});
+} as IDocumentActionContext);

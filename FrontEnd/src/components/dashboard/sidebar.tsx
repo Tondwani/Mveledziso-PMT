@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
     ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `/AdminMenu/activity-log`,
       icon: <HistoryOutlined />,
-      label: <Link href={`/AdminMenu/activity-log`}>Activity Log</Link>,
+      label: <Link href={`/AdminMenu/Task Scheduler`}>Task Scheduler</Link>,
     }] : []),
     {
       key: `${basePath}/help`,

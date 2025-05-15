@@ -27,6 +27,7 @@ import { useTeamMemberActions } from '@/provider/TeamMemberManagement';
 import type { ColumnsType } from 'antd/es/table';
 import type { ITeam, IUserTeam } from '@/provider/TeamManagement/context';
 import { TeamRole } from '@/enums/TeamRole';
+import GanttChart from '@/components/dashboard/ganntChart';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -108,7 +109,7 @@ export default function UserTeamsPage() {
         const result = await getUserTeams({
           teamMemberId: userId,
           skipCount: 0, 
-          maxResultCount: 100 // Set reasonable limits
+          maxResultCount: 100 
         });
         
         if (result.items && result.items.length > 0) {
@@ -325,6 +326,9 @@ export default function UserTeamsPage() {
           )}
         </Spin>
       </Card>
+
+      {/* Add Gantt Chart */}
+      {!loading && filteredTeams.length > 0 && <GanttChart />}
     </div>
   );
 }

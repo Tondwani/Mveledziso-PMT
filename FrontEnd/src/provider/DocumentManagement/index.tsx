@@ -115,20 +115,91 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({
     (input: IGetDocumentInput): Promise<{ items: IDocument[]; totalCount: number }> => {
       return new Promise((resolve, reject) => {
         dispatch(setPending(true));
-        api.get("/api/services/app/Document/GetAll", {
+        console.log('Fetching documents with params:', input);
+        
+        api.get<{
+          result: {
+            items: IDocument[];
+            totalCount: number;
+          };
+        }>("/api/services/app/Document/GetAll", {
           params: input,
+          paramsSerializer: params => {
+            return Object.entries(params)
+              .filter(([, value]) => value !== undefined && value !== '')
+              .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+              .join('&');
+          },
         })
           .then(response => {
-            const result = response.data.result;
-            dispatch(setDocuments(result.items));
-            dispatch(setTotalCount(result.totalCount));
+            console.log('Documents API response:', response);
+            
+            if (!response.data || !response.data.result) {
+              throw new Error('Invalid response format from server');
+            }
+            
+            const { items, totalCount } = response.data.result;
+            
+            if (!Array.isArray(items)) {
+              console.error('Expected items to be an array, received:', items);
+              throw new Error('Invalid data format: expected items to be an array');
+            }
+            
+            console.log(`Fetched ${items.length} documents, total count: ${totalCount}`);
+            
+            dispatch(setDocuments(items));
+            dispatch(setTotalCount(totalCount || items.length));
             dispatch(setSuccess(true));
-            resolve(result);
+            
+            return { items, totalCount };
           })
-          .catch(error => {
-            const axiosError = error as AxiosError;
-            dispatch(setError(axiosError.message || "Failed to fetch documents"));
-            reject(error);
+          .then(result => {
+            resolve(result);
+            return result;
+          })
+          .catch((error: unknown) => {
+            const axiosError = error as AxiosError<{
+              error?: {
+                message?: string;
+                details?: string;
+              };
+              message?: string;
+            }>;
+            
+            console.error('Error fetching documents:', axiosError);
+            
+            let errorMessage = 'Failed to fetch documents';
+            
+            if (axiosError.response) {
+              console.error('Response data:', axiosError.response.data);
+              console.error('Response status:', axiosError.response.status);
+              
+              const responseData = axiosError.response.data;
+              
+              if (responseData?.error) {
+                errorMessage = responseData.error.message || 
+                              responseData.error.details || 
+                              errorMessage;
+              } else if (responseData?.message) {
+                errorMessage = responseData.message;
+              } else {
+                errorMessage = `Request failed with status ${axiosError.response.status}`;
+              }
+            } else if (axiosError.request) {
+              // The request was made but no response was received
+              console.error('No response received:', axiosError.request);
+              errorMessage = 'No response from server. Please check your connection.';
+            } else {
+              // Something happened in setting up the request that triggered an Error
+              console.error('Request error:', axiosError.message);
+              errorMessage = axiosError.message || errorMessage;
+            }
+            
+            dispatch(setDocuments([]));
+            dispatch(setTotalCount(0));
+            dispatch(setError(errorMessage));
+            
+            reject(new Error(errorMessage));
           });
       });
     },
@@ -136,34 +207,98 @@ export const DocumentProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const uploadDocument = useCallback(
-    (file: File, projectDutyId?: string): Promise<IDocument> => {
+    async (file: File, projectDutyId?: string): Promise<IDocument> => {
       return new Promise((resolve, reject) => {
         dispatch(setPending(true));
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append('file', file);
+
         if (projectDutyId) {
-          formData.append("projectDutyId", projectDutyId);
+          formData.append('projectDutyId', projectDutyId);
         }
 
-        api.post("/api/services/app/Document/Upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+        console.log('Uploading file:', file.name);
+
+        api
+          .post('/api/services/app/Document/Upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Accept': 'application/json'
+            },
+          })
           .then(response => {
+            console.log('Upload response:', response);
+            
+            if (!response.data || !response.data.result) {
+              throw new Error('Invalid response format from server');
+            }
+            
             const result = response.data.result;
+            console.log('Upload successful, document:', result);
+            
+            // Update the document in the state
             dispatch(setDocument(result));
+            
+            // Also add to the documents list if needed
+            if (Array.isArray(state.documents)) {
+              dispatch(setDocuments([...state.documents, result]));
+            }
+            
             dispatch(setSuccess(true));
             resolve(result);
           })
-          .catch(error => {
-            const axiosError = error as AxiosError;
-            dispatch(setError(axiosError.message || "Failed to upload document"));
-            reject(error);
+          .catch((error: unknown) => {
+            const axiosError = error as AxiosError<{
+              error?: {
+                message?: string;
+                details?: string;
+                validationErrors?: Array<{
+                  message: string;
+                  members: string[];
+                }>;
+              };
+              message?: string;
+            }>;
+            
+            console.error('Upload error:', axiosError);
+            
+            let errorMessage = "Failed to upload document";
+            
+            if (axiosError.response) {
+              console.error('Response data:', axiosError.response.data);
+              console.error('Response status:', axiosError.response.status);
+              
+              const responseData = axiosError.response.data;
+              
+              if (responseData?.error) {
+                errorMessage = responseData.error.message || 
+                              responseData.error.details || 
+                              errorMessage;
+                              
+                // Handle validation errors if present
+                if (responseData.error.validationErrors?.length) {
+                  errorMessage = responseData.error.validationErrors
+                    .map(err => err.message)
+                    .join('; ');
+                }
+              } else if (responseData?.message) {
+                errorMessage = responseData.message;
+              }
+            } else if (axiosError.request) {
+              console.error('No response received:', axiosError.request);
+              errorMessage = 'No response from server. Please check your connection.';
+            } else {
+              console.error('Request error:', axiosError.message);
+              errorMessage = axiosError.message || errorMessage;
+            }
+            
+            dispatch(setError(errorMessage));
+            reject(new Error(errorMessage));
           });
       });
     },
-    [api]
+    [api, state.documents]
   );
 
   const actions: IDocumentActionContext = {
