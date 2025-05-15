@@ -1,21 +1,43 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Table, Card, Space, Button, Tag, Typography, Upload, message, Input, DatePicker, Row, Col, Modal, Form } from 'antd';
-import { UploadOutlined, FileOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-import { useDocumentState, useDocumentActions } from '../../../provider/DocumentManagement';
-import { IDocument, IGetDocumentInput, IUpdateDocumentDto } from '../../../provider/DocumentManagement/context';
+import React, { useCallback, useEffect, useState } from 'react';
+import { 
+  Table, 
+  Card, 
+  Space, 
+  Button, 
+  Tag, 
+  Typography, 
+  Upload, 
+  message, 
+  Input, 
+  DatePicker, 
+  Row, 
+  Col, 
+  Modal, 
+  Form, 
+  Spin, 
+  Alert, 
+  Empty 
+} from 'antd';
+import { RangePickerProps } from 'antd/es/date-picker';
+import { 
+  UploadOutlined, 
+  FileOutlined, 
+  DeleteOutlined, 
+  DownloadOutlined, 
+  EyeOutlined 
+} from '@ant-design/icons';
+import { 
+  useDocumentState, 
+  useDocumentActions 
+} from '../../../provider/DocumentManagement';
+import { 
+  IDocument, 
+  IGetDocumentInput 
+} from '../../../provider/DocumentManagement/context';
 import { AxiosError } from 'axios';
-import type { RangePickerProps } from 'antd/es/date-picker';
-import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { ColumnsType } from 'antd/es/table';
-// import dynamic from 'next/dynamic';
-
-// // Dynamically import DocumentAnalyzer with SSR disabled
-// const DocumentAnalyzer = dynamic(
-//   () => import('@/components/AI/FrontEnd/src/components/AI/DocumentAnalyzer'),
-//   { ssr: false }
-// );
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -36,41 +58,113 @@ export default function DocumentsPage() {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [form] = Form.useForm();
 
+  const loadDocuments = useCallback(async (customFilters?: Partial<IGetDocumentInput>) => {
+    try {
+      const effectiveFilters = { ...filters, ...customFilters };
+      console.log('Loading documents with filters:', effectiveFilters);
+      const result = await getDocuments(effectiveFilters);
+      console.log('Documents loaded successfully. Count:', result.items.length);
+      return result;
+    } catch (error) {
+      const axiosError = error as AxiosError & { message: string };
+      console.error('Error loading documents:', axiosError);
+      
+      // Only show error message if it's not a manual cancellation
+      if (axiosError.message !== 'canceled') {
+        message.error(axiosError.message || 'Failed to load documents');
+      }
+      
+      // Re-throw the error to be handled by the caller if needed
+      throw error;
+    }
+  }, [filters, getDocuments]);
+
   useEffect(() => {
-    console.log('Current filters:', filters);
-    loadDocuments();
-  }, [filters]);
+    const loadInitialData = async () => {
+      try {
+        // Initial load with default pagination
+        await loadDocuments({
+          skipCount: 0,
+          maxResultCount: 10,
+          // Add any additional filters here if needed
+        });
+      } catch (error) {
+        console.error('Failed to load documents:', error);
+      }
+    };
+
+    loadInitialData();
+  }, [loadDocuments]);
 
   useEffect(() => {
     console.log('Documents state:', { documents, totalCount, isPending, isError, errorMessage });
   }, [documents, totalCount, isPending, isError, errorMessage]);
 
-  const loadDocuments = async () => {
-    try {
-      console.log('Loading documents with filters:', filters);
-      const result = await getDocuments(filters);
-      console.log('Documents loaded:', result);
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Error loading documents:', axiosError);
-      message.error(axiosError.message || 'Failed to load documents');
-    }
-  };
-
   const handleUpload = async (file: File) => {
     try {
       console.log('Uploading file:', file.name);
-      const formData = new FormData();
-      formData.append('file', file);
       
-      const result = await uploadDocument(file);
-      console.log('Upload result:', result);
-      message.success('Document uploaded successfully');
-      loadDocuments();
+      // Check file size (e.g., 10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        message.error('File size must be less than 10MB');
+        return Upload.LIST_IGNORE; // Prevent the file from being added to the upload list
+      }
+
+      // Check file type
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+      const isAllowedByExtension = [
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'
+      ].includes(fileExtension);
+      
+      if (!allowedTypes.includes(file.type) && !isAllowedByExtension) {
+        message.error('Only PDF, Word, Excel, and text files are allowed');
+        return Upload.LIST_IGNORE; // Prevent the file from being added to the upload list
+      }
+      
+      // Show loading message
+      const uploadKey = `upload_${Date.now()}`;
+      message.loading({ content: `Uploading ${file.name}...`, key: uploadKey, duration: 0 });
+
+      try {
+        // Upload the file directly
+        const uploadedDoc = await uploadDocument(file);
+        
+        if (uploadedDoc) {
+          message.success({ 
+            content: `${file.name} uploaded successfully`,
+            key: uploadKey,
+            duration: 2
+          });
+          // Refresh the documents list
+          await loadDocuments();
+          return false; // Prevent default upload behavior
+        }
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        message.error({ 
+          content: `Upload failed: ${axiosError.message || 'Unknown error'}`,
+          key: uploadKey,
+          duration: 3
+        });
+        return Upload.LIST_IGNORE;
+      }
     } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Upload error:', axiosError);
-      message.error(axiosError.message || 'Failed to upload document');
+      console.error('Unexpected error in handleUpload:', error);
+      message.error({
+        content: 'An unexpected error occurred during upload',
+        key: 'upload_error',
+        duration: 5
+      });
+      return Upload.LIST_IGNORE;
     }
   };
 
@@ -96,7 +190,7 @@ export default function DocumentsPage() {
     });
   };
 
-  const handleEdit = async (values: IUpdateDocumentDto) => {
+  const handleEdit = async (values: IDocument) => {
     if (!selectedDocument) return;
 
     try {
@@ -120,6 +214,24 @@ export default function DocumentsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Pagination handler
+  const handlePageChange = (page: number, pageSize: number) => {
+    setFilters(prev => ({
+      ...prev,
+      skipCount: (page - 1) * pageSize,
+      maxResultCount: pageSize,
+    }));
+  };
+
+  // Page size change handler
+  const handlePageSizeChange = (_: number, size: number) => {
+    setFilters(prev => ({
+      ...prev,
+      skipCount: 0,
+      maxResultCount: size,
+    }));
   };
 
   const handleSearch = (value: string) => {
@@ -152,6 +264,11 @@ export default function DocumentsPage() {
     });
   };
 
+  const handleRetry = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    loadDocuments();
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -165,71 +282,74 @@ export default function DocumentsPage() {
       title: 'File Name',
       dataIndex: 'fileName',
       key: 'fileName',
-      render: (text: string) => (
+      render: (text) => (
         <Space>
-          <FileOutlined />
-          {text}
+          <FileOutlined style={{ color: '#1890ff' }} />
+          <Typography.Text ellipsis={{ tooltip: text }} style={{ maxWidth: 200 }}>
+            {text}
+          </Typography.Text>
         </Space>
       ),
-      responsive: ['xs', 'sm', 'md', 'lg', 'xl'] as Breakpoint[],
-    },
-    {
-      title: 'Size',
-      dataIndex: 'fileSize',
-      key: 'fileSize',
-      render: (size: number) => formatFileSize(size),
-      responsive: ['sm', 'md', 'lg', 'xl'] as Breakpoint[],
     },
     {
       title: 'Type',
       dataIndex: 'fileType',
       key: 'fileType',
-      render: (type: string) => <Tag>{type?.toUpperCase() || 'N/A'}</Tag>,
-      responsive: ['md', 'lg', 'xl'] as Breakpoint[],
+      width: 120,
+      render: (fileType) => (
+        <Tag color="blue" style={{ textTransform: 'uppercase' }}>
+          {fileType?.replace('application/', '') || 'N/A'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Size',
+      dataIndex: 'fileSize',
+      key: 'fileSize',
+      width: 120,
+      render: (size) => {
+        if (!size) return 'N/A';
+        const sizeInKB = Math.round(size / 1024);
+        return `${sizeInKB} KB`;
+      },
     },
     {
       title: 'Uploaded',
       dataIndex: 'creationTime',
       key: 'creationTime',
-      render: (date: string) => new Date(date).toLocaleString(),
-      responsive: ['lg', 'xl'] as Breakpoint[],
+      width: 180,
+      render: (date) => (
+        <span>{date ? new Date(date).toLocaleString() : 'N/A'}</span>
+      ),
     },
     {
-      title: 'Action',
-      key: 'action',
-      fixed: 'right' as const,
-      responsive: ['xs', 'sm', 'md', 'lg', 'xl'] as Breakpoint[],
-      render: (_: unknown, record: IDocument) => (
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      render: (_, record) => (
         <Space size="middle">
-          <Button 
-            type="text" 
+          <Button
+            type="text"
             icon={<EyeOutlined />}
             onClick={() => {
               console.log('Viewing document:', record);
               setSelectedDocument(record);
               setIsViewModalVisible(true);
             }}
+            title="View"
           />
-          <Button 
-            type="text" 
-            icon={<EditOutlined />}
-            onClick={() => {
-              console.log('Editing document:', record);
-              setSelectedDocument(record);
-              form.setFieldsValue(record);
-              setIsEditModalVisible(true);
-            }}
-          />
-          <Button 
-            type="text" 
-            icon={<DownloadOutlined />} 
+          <Button
+            type="text"
+            icon={<DownloadOutlined />}
             onClick={() => handleDownload(record.fileUrl, record.fileName)}
+            title="Download"
           />
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
+            title="Delete"
           />
         </Space>
       ),
@@ -239,23 +359,67 @@ export default function DocumentsPage() {
   const skipCount = filters.skipCount ?? 0;
   const maxResultCount = filters.maxResultCount ?? 10;
 
+  // Show loading state for initial load
+  if (isPending && !documents.length) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Title level={2}>Documents</Title>
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+            <Spin size="large" tip="Loading documents..." />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if there was an error loading documents
+  if (isError) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Title level={2}>Documents</Title>
+        <Card>
+          <Alert
+            message="Error Loading Documents"
+            description={errorMessage || 'An error occurred while loading documents. Please try again.'}
+            type="error"
+            showIcon
+            action={
+              <Button 
+                type="primary" 
+                onClick={handleRetry} 
+                loading={isPending}
+              >
+                Retry
+              </Button>
+            }
+          />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: 24 }}>
       <Title level={2}>Documents</Title>
-      
+
       <Card
         title="Document Management"
         extra={
           <Upload
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+            beforeUpload={handleUpload}
             showUploadList={false}
-            beforeUpload={(file) => {
-              handleUpload(file);
-              return false;
-            }}
-            accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx,.csv,.json"
+            multiple={false}
+            disabled={isPending}
           >
-            <Button icon={<UploadOutlined />} type="primary">
-              Upload Document
+            <Button
+              icon={<UploadOutlined />}
+              type="primary"
+              loading={isPending}
+              disabled={isPending}
+            >
+              {isPending ? 'Uploading...' : 'Upload Document'}
             </Button>
           </Upload>
         }
@@ -285,24 +449,46 @@ export default function DocumentsPage() {
             {errorMessage}
           </div>
         )}
-        
+
         <Table
           columns={columns}
           dataSource={documents}
           rowKey="id"
-          loading={isPending}
           pagination={{
-            total: totalCount,
-            pageSize: maxResultCount,
             current: Math.floor(skipCount / maxResultCount) + 1,
-            onChange: (page) => {
-              setFilters(prev => ({
-                ...prev,
-                skipCount: (page - 1) * (prev.maxResultCount ?? 10)
-              }));
-            }
+            pageSize: maxResultCount,
+            total: totalCount,
+            showSizeChanger: true,
+            onChange: handlePageChange,
+            onShowSizeChange: handlePageSizeChange,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
           }}
+          loading={isPending}
           scroll={{ x: 'max-content' }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  isError ? (
+                    <span style={{ color: '#ff4d4f' }}>Failed to load documents. Please try again.</span>
+                  ) : (
+                    'No documents found'
+                  )
+                }
+              >
+                {isError && (
+                  <Button 
+                    type="primary" 
+                    onClick={handleRetry} 
+                    loading={isPending}
+                  >
+                    Retry
+                  </Button>
+                )}
+              </Empty>
+            ),
+          }}
         />
       </Card>
 

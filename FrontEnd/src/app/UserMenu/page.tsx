@@ -1,6 +1,6 @@
 "use client";
 
-import StatCards from "@/components/dashboard/statCards";
+import StatCards from "@/components/dashboard/ganntChart";
 import { Typography } from "antd";
 
 const { Title } = Typography;
