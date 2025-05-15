@@ -11,6 +11,7 @@ export interface IProject {
   teamId: string;
   timeline?: ITimeline;
   duties?: IProjectDuty[];
+  progress?: number;  // Computed property based on duties completion
 }
 
 export interface ITimeline {
@@ -56,7 +57,8 @@ export interface IProjectDuty {
   status: DutyStatus;
   priority: Priority;
   projectId: string;
-  dueDate?: string;
+  deadline?: string;
+  projectName?: string;
   assignedUserId?: string;
 }
 
@@ -68,6 +70,7 @@ export interface ICreateProjectDto {
   startDate: string;
   endDate: string;
   isCollaborationEnabled: boolean;
+  projectManagerId: string;
 }
 
 export interface IUpdateProjectDto {
@@ -113,11 +116,11 @@ export interface IProjectStateContext {
   isPending: boolean;
   isSuccess: boolean;
   isError: boolean;
-  project?: IProject;
-  projects?: IProject[];
-  projectDuty?: IProjectDuty;
-  projectDuties?: IProjectDuty[];
-  message?: string;
+  errorMessage: string | undefined;
+  project: IProject | null;
+  projects: IProject[];
+  projectDuty: IProjectDuty | null;
+  projectDuties: IProjectDuty[];
 }
 
 // Initial State
@@ -125,6 +128,11 @@ export const INITIAL_STATE: IProjectStateContext = {
   isPending: false,
   isSuccess: false,
   isError: false,
+  errorMessage: undefined,
+  project: null,
+  projects: [],
+  projectDuty: null,
+  projectDuties: []
 };
 
 // Actions Interface
@@ -146,6 +154,22 @@ export interface IProjectActionContext {
   getDutiesByProject: (projectId: string) => Promise<IProjectDuty[]>;
 }
 
-// Contexts
+// Create contexts
 export const ProjectStateContext = createContext<IProjectStateContext>(INITIAL_STATE);
-export const ProjectActionContext = createContext<IProjectActionContext | undefined>(undefined);
+export const ProjectActionContext = createContext<IProjectActionContext>({
+  // Project Actions
+  createProject: () => Promise.resolve({} as IProject),
+  updateProject: () => Promise.resolve({} as IProject),
+  getProject: () => Promise.resolve({} as IProject),
+  getProjects: () => Promise.resolve([]),
+  getProjectsByTeam: () => Promise.resolve([]),
+  getProjectWithDetails: () => Promise.resolve({} as IProject),
+
+  // Project Duty Actions
+  createProjectDuty: () => Promise.resolve({} as IProjectDuty),
+  updateProjectDuty: () => Promise.resolve({} as IProjectDuty),
+  updateDutyStatus: () => Promise.resolve(),
+  getProjectDuty: () => Promise.resolve({} as IProjectDuty),
+  getProjectDuties: () => Promise.resolve([]),
+  getDutiesByProject: () => Promise.resolve([])
+});

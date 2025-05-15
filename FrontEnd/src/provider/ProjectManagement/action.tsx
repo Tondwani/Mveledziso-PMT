@@ -1,72 +1,74 @@
 import { IProject, IProjectDuty } from "./context";
 
 export enum ProjectActionEnum {
-  // Project Actions
-  PROJECT_PENDING = "PROJECT_PENDING",
-  PROJECT_SUCCESS = "PROJECT_SUCCESS",
-  PROJECT_ERROR = "PROJECT_ERROR",
-  PROJECTS_LOADED = "PROJECTS_LOADED",
-
-  // Project Duty Actions
-  DUTY_PENDING = "DUTY_PENDING",
-  DUTY_SUCCESS = "DUTY_SUCCESS",
-  DUTY_ERROR = "DUTY_ERROR",
-  DUTIES_LOADED = "DUTIES_LOADED",
+  SET_PENDING = "SET_PROJECT_PENDING",
+  SET_SUCCESS = "SET_PROJECT_SUCCESS",
+  SET_ERROR = "SET_PROJECT_ERROR",
+  SET_PROJECT = "SET_PROJECT",
+  SET_PROJECTS = "SET_PROJECTS",
+  SET_PROJECT_DUTY = "SET_PROJECT_DUTY",
+  SET_PROJECT_DUTIES = "SET_PROJECT_DUTIES",
+  RESET_STATE = "RESET_PROJECT_STATE"
 }
 
 // Base Actions
-export const projectPending = () => ({
-  type: ProjectActionEnum.PROJECT_PENDING,
-  payload: { isPending: true, isSuccess: false, isError: false }
+export const setPending = () => ({
+  type: ProjectActionEnum.SET_PENDING,
+  payload: { isPending: true, isSuccess: false, isError: false, errorMessage: undefined }
 });
 
-const projectSuccess = (message: string) => ({
-  type: ProjectActionEnum.PROJECT_SUCCESS,
-  payload: { isPending: false, isSuccess: true, message }
+export const setSuccess = (message?: string) => ({
+  type: ProjectActionEnum.SET_SUCCESS,
+  payload: { isPending: false, isSuccess: true, isError: false, errorMessage: undefined, message }
 });
 
-export const projectError = (message: string) => ({
-  type: ProjectActionEnum.PROJECT_ERROR,
-  payload: { isPending: false, isError: true, message }
+export const setError = (errorMessage: string) => ({
+  type: ProjectActionEnum.SET_ERROR,
+  payload: { isPending: false, isSuccess: false, isError: true, errorMessage }
+});
+
+export const resetState = () => ({
+  type: ProjectActionEnum.RESET_STATE
 });
 
 // Project Actions
-export const createProjectSuccess = (project: IProject) => ({
-  type: ProjectActionEnum.PROJECT_SUCCESS,
+export const setProject = (project: IProject) => ({
+  type: ProjectActionEnum.SET_PROJECT,
   payload: { 
-    ...projectSuccess("Project created successfully").payload,
     project,
-    projects: [project]
+    isPending: false,
+    isSuccess: true,
+    isError: false
   }
 });
 
-export const loadProjectsSuccess = (projects: IProject[]) => ({
-  type: ProjectActionEnum.PROJECTS_LOADED,
+export const setProjects = (projects: IProject[]) => ({
+  type: ProjectActionEnum.SET_PROJECTS,
   payload: { 
-    ...projectSuccess("Projects loaded successfully").payload,
-    projects 
+    projects,
+    isPending: false,
+    isSuccess: true,
+    isError: false
   }
 });
 
-// Duty Actions
-export const dutyPending = () => ({
-  type: ProjectActionEnum.DUTY_PENDING,
-  payload: { isPending: true, isSuccess: false, isError: false }
-});
-
-export const createDutySuccess = (duty: IProjectDuty) => ({
-  type: ProjectActionEnum.DUTY_SUCCESS,
+// Project Duty Actions
+export const setProjectDuty = (duty: IProjectDuty) => ({
+  type: ProjectActionEnum.SET_PROJECT_DUTY,
   payload: {
-    ...projectSuccess("Duty created successfully").payload,
     projectDuty: duty,
-    projectDuties: [duty]
+    isPending: false,
+    isSuccess: true,
+    isError: false
   }
 });
 
-export const loadDutiesSuccess = (duties: IProjectDuty[]) => ({
-  type: ProjectActionEnum.DUTIES_LOADED,
+export const setProjectDuties = (duties: IProjectDuty[]) => ({
+  type: ProjectActionEnum.SET_PROJECT_DUTIES,
   payload: {
-    ...projectSuccess("Duties loaded successfully").payload,
-    projectDuties: duties
+    projectDuties: duties,
+    isPending: false,
+    isSuccess: true,
+    isError: false
   }
 });

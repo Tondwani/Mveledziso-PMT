@@ -1,9 +1,12 @@
 "use client";
-import { Layout, Dropdown, Menu, Avatar, Badge } from "antd";
-import { BellOutlined, UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { Layout, Dropdown, Avatar } from "antd";
+import { UserOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import type { MenuInfo } from 'rc-menu/lib/interface'; 
+import NotificationComponent from "../notification/page";
+import { useAuthState } from "@/provider/CurrentUserProvider";
+import { toast } from "react-hot-toast";
+
 const { Header } = Layout;
 
 interface HeaderProps {
@@ -14,53 +17,58 @@ interface HeaderProps {
 const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const { currentUser } = useAuthState();
   
   useEffect(() => {
-    // Handle responsive layout
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
-    // Initial check
     checkScreenSize();
-    
-    // Add event listener
     window.addEventListener('resize', checkScreenSize);
-    
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
-  
-  const notificationItems = [
-    { key: "1", label: "New comment on Milestone Alpha" },
-    { key: "2", label: "Project X deadline updated" },
-  ];
 
-  const handleMenuClick = (e: MenuInfo) => {
-    if (e.key === "profile") { 
-      router.push('UserMenu/profile'); 
+  const getBasePath = () => {
+    const roles = currentUser?.roles || [];
+    if (roles.includes("Admin") || roles.includes("ProjectManager")) {
+      return "AdminMenu";
     }
-   
-    if (e.key === "settings") {
-      router.push('UserMenu/settings'); 
-      console.log("Settings clicked");
-    }
-    
-    if (e.key === "logout") {
-      router.push('/login'); 
-      console.log("Logout clicked");
+    return "UserMenu";
+  };
+
+  const handleNavigation = async (path: string) => {
+    try {
+      await router.push(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Failed to navigate. Please try again.');
     }
   };
 
-  const userMenu = (
-    <Menu
-      onClick={handleMenuClick} 
-      items={[
-        { key: "profile", label: "Profile" }, 
-        { key: "settings", label: "Settings" }, 
-        { key: "logout", label: "Logout" }, 
-      ]}
-    />
-  );
+  const userMenu = {
+    items: [
+        { 
+          key: "profile", 
+          label: "Profile",
+          onClick: () => handleNavigation(`/${getBasePath()}/profile`)
+        }, 
+        { 
+          key: "settings", 
+          label: "Settings",
+          onClick: () => handleNavigation(`/${getBasePath()}/settings`)
+        }, 
+        { 
+          key: "logout", 
+          label: "Logout",
+          style: { color: '#ff4d4f' },
+          onClick: () => {
+            sessionStorage.clear();
+            window.location.href = '/login';
+          }
+        }, 
+    ]
+  };
 
   return (
     <Header
@@ -110,6 +118,7 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           whiteSpace: "nowrap" 
         }}
       >
+        {currentUser?.name || 'Welcome'}
       </div>
 
       <div 
@@ -120,16 +129,15 @@ const AppHeader: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
           gap: isMobile ? "12px" : "20px" 
         }}
       >
-        <Dropdown overlay={<Menu items={notificationItems} />} placement="bottomRight" arrow>
-          <Badge count={notificationItems.length}>
-            <BellOutlined style={{ fontSize: isMobile ? "18px" : "20px", color: "#000", cursor: "pointer" }} />
-          </Badge>
-        </Dropdown>
-        <Dropdown overlay={userMenu} placement="bottomRight">
-        <Avatar 
+        <NotificationComponent isMobile={isMobile} />
+        <Dropdown menu={userMenu} placement="bottomRight">
+          <Avatar 
             icon={<UserOutlined />}
             size={isMobile ? "small" : "default"}
-            style={{ cursor: "pointer" }} 
+            style={{ 
+              cursor: "pointer",
+              backgroundColor: '#1890ff'  // Blue background for avatar
+            }} 
           />
         </Dropdown>
       </div>

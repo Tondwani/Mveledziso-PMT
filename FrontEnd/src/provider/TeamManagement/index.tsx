@@ -1,3 +1,5 @@
+"use client";
+
 import { useContext, useReducer } from "react";
 import { getAxiosInstance } from "../../utils/axiosInstance";
 import { 

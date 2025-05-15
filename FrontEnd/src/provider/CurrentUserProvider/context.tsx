@@ -56,6 +56,8 @@ export interface IAuthState {
   isSuccess: boolean;
   isError: boolean;
   errorMessage: string | undefined;
+  teamMembers?: ITeamMember[];
+  projectManagers?: IProjectManager[];
 }
 
 // Auth actions interface
@@ -75,6 +77,8 @@ export const INITIAL_STATE: IAuthState = {
   isSuccess: false,
   isError: false,
   errorMessage: undefined,
+  teamMembers: [],
+  projectManagers: []
 };
 
 // Create contexts

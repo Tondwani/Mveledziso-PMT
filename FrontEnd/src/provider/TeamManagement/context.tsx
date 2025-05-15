@@ -68,6 +68,7 @@ export interface ITeamStateContext {
   userTeam?: IUserTeam;
   userTeams?: IUserTeam[];
   message?: string;
+  errorMessage?: string;
 }
 
 // Initial State
@@ -75,6 +76,7 @@ export const INITIAL_STATE: ITeamStateContext = {
   isPending: false,
   isSuccess: false,
   isError: false,
+  errorMessage: undefined
 };
 
 // Actions Interface

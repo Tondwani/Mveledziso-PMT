@@ -22,20 +22,4 @@
   .site-layout .ant-layout-content {
     /* Further refine content area styling if needed */
   }
-  .title-animated {
-    color: #66ccff; /* Light blue */
-    transition: color 2s ease, transform 0.2s ease;
-    cursor: pointer;
-  }
-  
-  /* Hover effect: fade to navy blue */
-  .title-animated:hover {
-    color: #001f3f; /* Dark navy blue */
-  }
-  
-  /* Press effect: scale down slightly */
-  .title-animated:active {
-    transform: scale(0.96);
-  }
-  
   

@@ -1,112 +1,376 @@
 "use client";
 
-import { Table, Tag, Space } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Table, 
+  Card, 
+  Space, 
+  Tag, 
+  message, 
+  Typography, 
+  Tooltip,
+  Spin,
+  Button,
+  Modal,
+  Form,
+  Select,
+  Row,
+  Col
+} from 'antd';
+import type { ColumnType } from 'antd/es/table';
+import type { TablePaginationConfig } from 'antd/es/table';
+import { 
+  CheckOutlined, 
+  ClockCircleOutlined, 
+  HighlightOutlined, 
+  ExclamationCircleOutlined,
+  SyncOutlined
+} from '@ant-design/icons';
+import { useProjectState, useProjectActions } from '../../../provider/ProjectManagement';
+import { useUserDutyState, useUserDutyActions } from '../../../provider/DutyManagement';
+// import { useSession } from 'next-auth/react';
+import { IProjectDuty } from '../../../provider/ProjectManagement/context';
+import { IUserDuty } from '../../../provider/DutyManagement/context';
+import { DutyStatus } from '../../../enums/DutyStatus';
+import { PriorityLevel } from '../../../enums/PriorityLevel';
+import dayjs from 'dayjs';
 
-type Status = 'Completed' | 'InProgress' | 'NotStarted';
+const { Title } = Typography;
+const { Option } = Select;
 
-export default function DutiesPage() {
-  const duties = [
-    {
-      id: '1',
-      title: 'Implement authentication',
-      userId: 'user1',
-      projectDutyId: 'project1',
-      status: 'InProgress',
-      priority: 'High',
-      dueDate: '2023-03-15',
-      creationTime: '2023-01-10T08:30:00',
-    },
-    {
-      id: '2',
-      title: 'Design dashboard UI',
-      userId: 'user2',
-      projectDutyId: 'project2',
-      status: 'Completed',
-      priority: 'Medium',
-      dueDate: '2023-02-28',
-      creationTime: '2023-01-05T10:15:00',
-    },
-    {
-      id: '3',
-      title: 'Write API documentation',
-      userId: 'user3',
-      projectDutyId: 'project3',
-      status: 'NotStarted',
-      priority: 'Low',
-      dueDate: '2023-04-10',
-      creationTime: '2023-02-01T14:20:00',
-    },
-  ];
+// Helper function to convert enums to human-readable format
+const formatDutyStatus = (status: DutyStatus): { text: string; color: string } => {
+  switch (status) {
+    case DutyStatus.ToDo:
+      return { text: 'To Do', color: 'default' };
+    case DutyStatus.InProgress:
+      return { text: 'In Progress', color: 'processing' };
+    case DutyStatus.Review:
+      return { text: 'Review', color: 'warning' };
+    case DutyStatus.Done:
+      return { text: 'Done', color: 'success' };
+    default:
+      return { text: 'Unknown', color: 'default' };
+  }
+};
 
-  const statusMap: Record<Status, { color: string; icon?: React.ReactNode }> = {
-    Completed: { color: 'green', icon: <CheckCircleOutlined /> },
-    InProgress: { color: 'blue', icon: <ClockCircleOutlined /> },
-    NotStarted: { color: 'orange' },
+const formatPriorityLevel = (priority: PriorityLevel): { text: string; color: string } => {
+  switch (priority) {
+    case PriorityLevel.Low:
+      return { text: 'Low', color: 'green' };
+    case PriorityLevel.Medium:
+      return { text: 'Medium', color: 'blue' };
+    case PriorityLevel.High:
+      return { text: 'High', color: 'orange' };
+    case PriorityLevel.Urgent:
+      return { text: 'Urgent', color: 'red' };
+    default:
+      return { text: 'Unknown', color: 'default' };
+  }
+};
+
+// Interface to combine user duty with project duty details
+interface IExtendedUserDuty extends IUserDuty {
+  projectDuty?: IProjectDuty;
+}
+
+const DutiesContent = () => {
+  // States
+  const [extendedUserDuties, setExtendedUserDuties] = useState<IExtendedUserDuty[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<DutyStatus | null>(null);
+  const [dutyStatusModalVisible, setDutyStatusModalVisible] = useState(false);
+  const [selectedDuty, setSelectedDuty] = useState<IProjectDuty | null>(null);
+  const [statusForm] = Form.useForm();
+  
+
+  const { userDuties, isPending: userDutiesIsPending, totalCount: userDutiesTotalCount } = useUserDutyState();
+  const { projectDuties } = useProjectState();
+  
+  const { getUserDuties } = useUserDutyActions();
+  const { getProjectDuties, updateDutyStatus } = useProjectActions();
+
+  const loadAllData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // First, load all project duties
+      await getProjectDuties({});
+
+      await getUserDuties({
+        skipCount: (pagination.current - 1) * pagination.pageSize,
+        maxResultCount: pagination.pageSize
+      });
+      
+      setPagination(prev => ({
+        ...prev,
+        total: userDutiesTotalCount
+      }));
+    } catch (error) {
+      console.error('Failed to load duties:', error);
+      message.error('Failed to load your assigned duties');
+    } finally {
+      setLoading(false);
+    }
+  }, [getProjectDuties, getUserDuties, pagination.current, pagination.pageSize, userDutiesTotalCount]);
+
+  // Create extended duties by combining user duties with project duty details
+  const createExtendedDuties = useCallback(() => {
+    const extended = userDuties.map(userDuty => {
+      const projectDuty = projectDuties.find(pd => pd.id === userDuty.projectDutyId);
+      return {
+        ...userDuty,
+        projectDuty
+      };
+    });
+    
+    // Apply status filter if active
+    const filtered = statusFilter 
+      ? extended.filter(duty => duty.projectDuty?.status === statusFilter)
+      : extended;
+      
+    setExtendedUserDuties(filtered);
+  }, [userDuties, projectDuties, statusFilter]);
+
+  // Effect for initial load
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  // Effect to create extended duties when dependencies change
+  useEffect(() => {
+    if (userDuties.length > 0 && projectDuties.length > 0) {
+      createExtendedDuties();
+    }
+  }, [userDuties, projectDuties, createExtendedDuties]);
+
+  // Handle table pagination change
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    setPagination(prev => ({
+      ...prev,
+      current: pagination.current || 1,
+      pageSize: pagination.pageSize || 10
+    }));
   };
 
-  const columns = [
+  // Handle status filter change
+  const handleStatusFilterChange = (value: DutyStatus | null) => {
+    setStatusFilter(value);
+  };
+
+  // Show status update modal
+  const showStatusUpdateModal = (duty: IProjectDuty) => {
+    setSelectedDuty(duty);
+    statusForm.setFieldsValue({
+      status: duty.status
+    });
+    setDutyStatusModalVisible(true);
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async () => {
+    try {
+      const values = await statusForm.validateFields();
+      if (selectedDuty) {
+        await updateDutyStatus(selectedDuty.id, values.status);
+        message.success('Duty status updated successfully');
+        loadAllData(); // Reload data
+        setDutyStatusModalVisible(false);
+      }
+    } catch (error) {
+      console.error('Failed to update duty status:', error);
+      message.error('Failed to update duty status');
+    }
+  };
+
+  // Table columns
+  const columns: ColumnType<IExtendedUserDuty>[] = [
     {
       title: 'Title',
-      dataIndex: 'title',
+      dataIndex: ['projectDuty', 'title'],
       key: 'title',
+      render: (text, record) => (
+        <Tooltip title={record.projectDuty?.description || 'No description'}>
+          <span>{text}</span>
+        </Tooltip>
+      )
+    },
+    {
+      title: 'Project',
+      dataIndex: ['projectDuty', 'projectName'],
+      key: 'project',
     },
     {
       title: 'Status',
-      dataIndex: 'status',
+      dataIndex: ['projectDuty', 'status'],
       key: 'status',
-      render: (status: string) => {
-        const typedStatus = status as Status;
-        return (
-          <Tag color={statusMap[typedStatus].color} icon={statusMap[typedStatus].icon}>
-            {status}
-          </Tag>
-        );
+      render: (status) => {
+        if (!status) return null;
+        
+        const { text, color } = formatDutyStatus(status);
+        return <Tag color={color}>{text}</Tag>;
       },
+      filters: [
+        { text: 'To Do', value: DutyStatus.ToDo },
+        { text: 'In Progress', value: DutyStatus.InProgress },
+        { text: 'Review', value: DutyStatus.Review },
+        { text: 'Done', value: DutyStatus.Done }
+      ],
+      onFilter: (value, record) => record.projectDuty?.status === value
     },
     {
       title: 'Priority',
-      dataIndex: 'priority',
+      dataIndex: ['projectDuty', 'priority'],
       key: 'priority',
-      render: (priority: string) => {
-        const color = priority === 'High' ? 'red' : priority === 'Medium' ? 'orange' : 'green';
-        return <Tag color={color}>{priority}</Tag>;
+      render: (priority) => {
+        if (!priority) return null;
+        
+        const { text, color } = formatPriorityLevel(priority);
+        return <Tag color={color}>{text}</Tag>;
       },
+      filters: [
+        { text: 'Low', value: PriorityLevel.Low },
+        { text: 'Medium', value: PriorityLevel.Medium },
+        { text: 'High', value: PriorityLevel.High },
+        { text: 'Urgent', value: PriorityLevel.Urgent }
+      ],
+      onFilter: (value, record) => record.projectDuty?.priority === value
     },
     {
-      title: 'Due Date',
-      dataIndex: 'dueDate',
-      key: 'dueDate',
+      title: 'Deadline',
+      dataIndex: ['projectDuty', 'deadline'],
+      key: 'deadline',
+      render: (deadline) => deadline ? dayjs(deadline).format('YYYY-MM-DD') : '-'
     },
     {
-      title: 'Created',
-      dataIndex: 'creationTime',
-      key: 'creationTime',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: () => (
-        <Space size="middle">
-          <a>View</a>
-          <a>Edit</a>
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space size="small">
+          {record.projectDuty && (
+            <Button 
+              type="primary" 
+              size="small" 
+              icon={<SyncOutlined />} 
+              onClick={() => showStatusUpdateModal(record.projectDuty!)}
+            >
+              Update Status
+            </Button>
+          )}
         </Space>
-      ),
-    },
+      )
+    }
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Duties</h1>
-      <Table 
-        columns={columns} 
-        dataSource={duties} 
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-        bordered
-      />
+    <div className="p-6">
+      <Title level={2}>Duties</Title>
+      
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col span={24}>
+          <Card title="Filters" size="small">
+            <Form layout="inline">
+              <Form.Item label="Status">
+                <Select 
+                  placeholder="Filter by status" 
+                  allowClear 
+                  style={{ width: 200 }}
+                  onChange={handleStatusFilterChange}
+                >
+                  <Option value={DutyStatus.ToDo}>To Do</Option>
+                  <Option value={DutyStatus.InProgress}>In Progress</Option>
+                  <Option value={DutyStatus.Review}>Review</Option>
+                  <Option value={DutyStatus.Done}>Done</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item>
+                <Button 
+                  type="primary" 
+                  onClick={() => loadAllData()}
+                  icon={<SyncOutlined />}
+                >
+                  Refresh
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
+      
+      <Card>
+        <Spin spinning={loading || userDutiesIsPending}>
+          <Table
+            columns={columns}
+            dataSource={extendedUserDuties}
+            rowKey={record => record.id}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} items`
+            }}
+            onChange={handleTableChange}
+          />
+        </Spin>
+      </Card>
+      
+      {/* Status Update Modal */}
+      <Modal
+        title="Update Duty Status"
+        open={dutyStatusModalVisible}
+        onOk={handleStatusUpdate}
+        onCancel={() => setDutyStatusModalVisible(false)}
+      >
+        <Form form={statusForm} layout="vertical">
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: 'Please select a status' }]}
+          >
+            <Select>
+              <Option value={DutyStatus.ToDo}>
+                <Space>
+                  <ClockCircleOutlined />
+                  To Do
+                </Space>
+              </Option>
+              <Option value={DutyStatus.InProgress}>
+                <Space>
+                  <HighlightOutlined />
+                  In Progress
+                </Space>
+              </Option>
+              <Option value={DutyStatus.Review}>
+                <Space>
+                  <ExclamationCircleOutlined />
+                  Review
+                </Space>
+              </Option>
+              <Option value={DutyStatus.Done}>
+                <Space>
+                  <CheckOutlined />
+                  Done
+                </Space>
+              </Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
-}
+};
+
+const DutiesPage = () => {
+  return (
+    <div className="duties-page">
+      <DutiesContent />
+    </div>
+  );
+};
+
+export default DutiesPage;

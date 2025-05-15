@@ -1,81 +1,159 @@
 "use client";
 import { ICurrentUser, ITeamMember, IProjectManager } from "./context";
-import { createAction } from "redux-actions";
 
 export enum AuthActionEnums {
+  // Login
   loginPending = "LOGIN_PENDING",
   loginSuccess = "LOGIN_SUCCESS",
   loginError = "LOGIN_ERROR",
   
-  logoutPending = "LOGOUT_PENDING",
+  // Logout
   logoutSuccess = "LOGOUT_SUCCESS",
   
+  // Current User Info
   getCurrentLoginInfoPending = "GET_CURRENT_LOGIN_INFO_PENDING",
   getCurrentLoginInfoSuccess = "GET_CURRENT_LOGIN_INFO_SUCCESS",
   getCurrentLoginInfoError = "GET_CURRENT_LOGIN_INFO_ERROR",
   
+  // Team Member
   createTeamMemberPending = "CREATE_TEAM_MEMBER_PENDING",
   createTeamMemberSuccess = "CREATE_TEAM_MEMBER_SUCCESS",
   createTeamMemberError = "CREATE_TEAM_MEMBER_ERROR",
 
+  // Project Manager
   createProjectManagerPending = "CREATE_PROJECT_MANAGER_PENDING",
   createProjectManagerSuccess = "CREATE_PROJECT_MANAGER_SUCCESS",
   createProjectManagerError = "CREATE_PROJECT_MANAGER_ERROR",
 }
 
-// Login actions
-export const loginPending = createAction<undefined>(
-  AuthActionEnums.loginPending
-);
+// Login Actions
+export const loginPending = () => ({
+  type: AuthActionEnums.loginPending,
+  payload: {
+    isPending: true,
+    isSuccess: false,
+    isError: false
+  }
+});
 
-export const loginSuccess = createAction<string>(
-  AuthActionEnums.loginSuccess
-);
+export const loginSuccess = (token: string) => ({
+  type: AuthActionEnums.loginSuccess,
+  payload: {
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    token
+  }
+});
 
-export const loginError = createAction<string>(
-  AuthActionEnums.loginError
-);
+export const loginError = (message: string = "Login failed") => ({
+  type: AuthActionEnums.loginError,
+  payload: {
+    isPending: false,
+    isSuccess: false,
+    isError: true,
+    errorMessage: message
+  }
+});
 
-// Logout action
-export const logoutSuccess = createAction<undefined>(
-  AuthActionEnums.logoutSuccess
-);
+// Logout Action
+export const logoutSuccess = () => ({
+  type: AuthActionEnums.logoutSuccess,
+  payload: {
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    token: undefined,
+    currentUser: undefined
+  }
+});
 
-// Current user info actions
-export const getCurrentLoginInfoPending = createAction<undefined>(
-  AuthActionEnums.getCurrentLoginInfoPending
-);
+// Current User Info Actions
+export const getCurrentLoginInfoPending = () => ({
+  type: AuthActionEnums.getCurrentLoginInfoPending,
+  payload: {
+    isPending: true,
+    isSuccess: false,
+    isError: false
+  }
+});
 
-export const getCurrentLoginInfoSuccess = createAction<ICurrentUser>(
-  AuthActionEnums.getCurrentLoginInfoSuccess
-);
+export const getCurrentLoginInfoSuccess = (currentUser: ICurrentUser) => ({
+  type: AuthActionEnums.getCurrentLoginInfoSuccess,
+  payload: {
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    currentUser
+  }
+});
 
-export const getCurrentLoginInfoError = createAction<undefined>(
-  AuthActionEnums.getCurrentLoginInfoError
-);
+export const getCurrentLoginInfoError = () => ({
+  type: AuthActionEnums.getCurrentLoginInfoError,
+  payload: {
+    isPending: false,
+    isSuccess: false,
+    isError: true,
+    errorMessage: "Failed to fetch user info"
+  }
+});
 
-// Team Member actions
-export const createTeamMemberPending = createAction<undefined>(
-  AuthActionEnums.createTeamMemberPending
-);
+// Team Member Actions
+export const createTeamMemberPending = () => ({
+  type: AuthActionEnums.createTeamMemberPending,
+  payload: {
+    isPending: true,
+    isSuccess: false,
+    isError: false
+  }
+});
 
-export const createTeamMemberSuccess = createAction<ITeamMember>(
-  AuthActionEnums.createTeamMemberSuccess
-);
+export const createTeamMemberSuccess = (teamMember: ITeamMember) => ({
+  type: AuthActionEnums.createTeamMemberSuccess,
+  payload: {
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    teamMember
+  }
+});
 
-export const createTeamMemberError = createAction<string>(
-  AuthActionEnums.createTeamMemberError
-);
+export const createTeamMemberError = (message: string = "Failed to create team member") => ({
+  type: AuthActionEnums.createTeamMemberError,
+  payload: {
+    isPending: false,
+    isSuccess: false,
+    isError: true,
+    errorMessage: message
+  }
+});
 
-// Project Manager actions
-export const createProjectManagerPending = createAction<undefined>(
-  AuthActionEnums.createProjectManagerPending
-);
+// Project Manager Actions
+export const createProjectManagerPending = () => ({
+  type: AuthActionEnums.createProjectManagerPending,
+  payload: {
+    isPending: true,
+    isSuccess: false,
+    isError: false
+  }
+});
 
-export const createProjectManagerSuccess = createAction<IProjectManager>(
-  AuthActionEnums.createProjectManagerSuccess
-);
+export const createProjectManagerSuccess = (projectManager: IProjectManager) => ({
+  type: AuthActionEnums.createProjectManagerSuccess,
+  payload: {
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    projectManager
+  }
+});
 
-export const createProjectManagerError = createAction<string>(
-  AuthActionEnums.createProjectManagerError
-);
+export const createProjectManagerError = (message: string = "Failed to create project manager") => ({
+  type: AuthActionEnums.createProjectManagerError,
+  payload: {
+    isPending: false,
+    isSuccess: false,
+    isError: true,
+    errorMessage: message
+  }
+});

@@ -29,11 +29,20 @@ interface AbpErrorResponse {
   };
 }
 
+// Function to decode JWT token
+function parseJwt(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 
   const getCurrentLoginInfo = useCallback(async () => {
-    dispatch(getCurrentLoginInfoPending(undefined));
+    dispatch(getCurrentLoginInfoPending());
     
     try {
       console.log('Fetching current user info...');
@@ -42,15 +51,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = response.data.result.user;
       console.log('Raw user data:', userData);
       
+      // Get token from storage
+      const token = sessionStorage.getItem("auth_token");
+      let roles: string[] = [];
+      
+      if (token) {
+        const decodedToken = parseJwt(token);
+        console.log('Decoded token:', decodedToken);
+        
+        // Extract role from token claims
+        const roleClaim = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        if (roleClaim) {
+          roles = Array.isArray(roleClaim) ? roleClaim : [roleClaim];
+          console.log('Roles from token:', roles);
+        }
+      }
+      
       const user: ICurrentUser = {
         ...userData,
-        roles: userData.roles || [] 
+        roles: roles
       };
-      console.log('Processed user with roles:', user);
+      console.log('Final user object with roles:', user);
       dispatch(getCurrentLoginInfoSuccess(user));
     } catch (error) {
       console.error('Error getting current user:', error);
-      dispatch(getCurrentLoginInfoError(undefined));
+      dispatch(getCurrentLoginInfoError());
       // If getting current user fails, assume token is invalid and logout
       logout();
     }
@@ -62,10 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       getCurrentLoginInfo();
     }
-  }, []);
+  }, [getCurrentLoginInfo]);
 
   const login = async (userNameOrEmail: string, password: string) => {
-    dispatch(loginPending(undefined));
+    dispatch(loginPending());
     
     try {
       const response = await getAxiosInstance().post(`/api/TokenAuth/Authenticate`, {
@@ -99,22 +124,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     sessionStorage.removeItem("auth_token");
     delete getAxiosInstance().defaults.headers.common["Authorization"];
-    dispatch(logoutSuccess(undefined));
+    dispatch(logoutSuccess());
   };
 
   const createTeamMember = useCallback(async (data: ICreateTeamMember) => {
     try {
-      dispatch(createTeamMemberPending(undefined));
+      dispatch(createTeamMemberPending());
       
       console.log('Creating team member account...');
 
-      // Create request payload without role - backend will use default Member role (0)
+      // Create request payload
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         userName: data.userName || data.email,
-        password: data.password
+        password: data.password,
+        roleNames: ['TeamMember'] // Specify the ABP role name
       };
 
       // Use the TeamMember endpoint
@@ -131,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        role: 0 // Default Member role
+        roles: ['TeamMember'] // Use the ABP role name
       } as ITeamMember;
 
       dispatch(createTeamMemberSuccess(teamMember));
@@ -156,17 +182,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createProjectManager = useCallback(async (data: ICreateProjectManager) => {
     try {
-      dispatch(createProjectManagerPending(undefined));
+      dispatch(createProjectManagerPending());
       
       console.log('Creating project manager account...');
       
-      // Use the ProjectManager/Create endpoint
+      // Use the ProjectManager/Create endpoint with role
       const registerResponse = await getAxiosInstance().post("/api/services/app/ProjectManager/Create", {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         userName: data.userName || data.email,
-        password: data.password
+        password: data.password,
+        roleNames: ['ProjectManager'] // Specify the ABP role name
       });
 
       console.log('ProjectManager creation response:', registerResponse.data);
@@ -179,7 +206,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...registerResponse.data.result,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email
+        email: data.email,
+        roles: ['ProjectManager'] // Use the ABP role name
       } as IProjectManager;
 
       dispatch(createProjectManagerSuccess(projectManager));

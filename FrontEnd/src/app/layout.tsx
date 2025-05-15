@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AuthProvider } from "../provider/CurrentUserProvider"; 
+import { AuthProvider } from "../provider/CurrentUserProvider";
+import { ProjectProvider } from "../provider/ProjectManagement";
+import { TeamProvider } from "../provider/TeamManagement";
+import { MilestoneProvider } from "../provider/MilestoneManagement";
+import { NotificationProvider } from "../provider/NotificationManagement";
+import { ProjectManagerProvider } from "../provider/ProjectManagerManagement";
+import { UserDutyProvider } from "../provider/DutyManagement";
+import { TeamMemberProvider } from "../provider/TeamMemberManagement";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,8 +34,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider> {/* Wrap children with AuthProvider */}
-          {children}
+        <AuthProvider>
+          <ProjectManagerProvider>
+            <TeamProvider>
+              <ProjectProvider>
+                <TeamMemberProvider>
+                  <UserDutyProvider>
+                    <MilestoneProvider>
+                      <NotificationProvider>
+                        {children}
+                      </NotificationProvider>
+                    </MilestoneProvider>
+                  </UserDutyProvider>
+                </TeamMemberProvider>
+              </ProjectProvider>
+            </TeamProvider>
+          </ProjectManagerProvider>
         </AuthProvider>
       </body>
     </html>

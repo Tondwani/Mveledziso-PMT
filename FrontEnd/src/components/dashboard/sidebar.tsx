@@ -2,7 +2,7 @@
 
 import { Layout, Menu } from "antd";
 import {
-  DashboardOutlined,
+  // DashboardOutlined,
   FileTextOutlined,
   CalendarOutlined,
   TeamOutlined,
@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { MenuProps } from "antd";
 import React from "react";
+import { useAuthState } from "@/provider/CurrentUserProvider";
 
 const { Sider } = Layout;
 
@@ -25,52 +26,77 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   const pathname = usePathname();
+  const { currentUser } = useAuthState();
+  
+  // Determine the base path based on user role
+  const getBasePath = () => {
+    const roles = currentUser?.roles || [];
+    if (roles.includes("Admin") || roles.includes("ProjectManager")) {
+      return "/AdminMenu";
+    }
+    return "/UserMenu";
+  };
+
+  const basePath = getBasePath();
+
+  // Get user roles
+  const userRoles = currentUser?.roles || [];
+  const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
 
   const menuItems: MenuProps["items"] = [
-    {
-      key: "/dashboard",
-      icon: <DashboardOutlined />,
-      label: <Link href="/UserMenu/dashboard">Mveledziso</Link>,
-    },
-    {
-      key: "/projects",
+    // {
+    //   key: `${basePath}/mveledziso`,
+    //   // icon: <DashboardOutlined />,
+    //   label: <Link href={`${basePath}/mveledziso`}></Link>,
+    // },
+    // Only show projects for ProjectManager
+    ...(isProjectManager ? [{
+      key: `${basePath}/projects`,
       icon: <FolderOpenOutlined />,
-      label: <Link href="/UserMenu/projects">Projects</Link>,
-    },
+      label: <Link href={`${basePath}/projects`}>Projects</Link>,
+    }] : []),
     {
-      key: "/Duties",
+      key: `${basePath}/Duties`,
       icon: <FileTextOutlined />,
-      label: <Link href="/UserMenu/Duties">Duties</Link>,
+      label: <Link href={`${basePath}/Duties`}>Duties</Link>,
     },
-    {
-      key: "/milestones",
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `${basePath}/milestones`,
       icon: <FlagOutlined />,
-      label: <Link href="/UserMenu/milestones">Milestones</Link>,
-    },
-    {
-      key: "/timelines",
+      label: <Link href={`${basePath}/milestones`}>Milestones</Link>,
+    }] : []),
+
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `${basePath}/timelines`,
       icon: <CalendarOutlined />,
-      label: <Link href="/UserMenu/timelines">Timelines</Link>,
-    },
+      label: <Link href={`${basePath}/timelines`}>Timelines</Link>,
+    }] : []),
     {
-      key: "/documents",
+      key: `${basePath}/documents`,
       icon: <FileTextOutlined />,
-      label: <Link href="/UserMenu/documents">Documents</Link>,
+      label: <Link href={`${basePath}/documents`}>Documents</Link>,
     },
     {
-      key: "/teams",
+      key: `${basePath}/teams`,
       icon: <TeamOutlined />,
-      label: <Link href="/UserMenu/teams">Teams / Users</Link>,
+      label: <Link href={`${basePath}/teams`}>Teams / Users</Link>,
     },
     {
-      key: "/activity-log",
+      key: `${basePath}/mveledziso`,
+      icon: <TeamOutlined />,
+      label: <Link href={`${basePath}/mveledziso`}>Mveledziso</Link>,
+    },
+    // Only show activity log for ProjectManager and only in AdminMenu
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `/AdminMenu/activity-log`,
       icon: <HistoryOutlined />,
-      label: <Link href="/UserMenu/activity-log">Activity Log</Link>,
-    },
+      label: <Link href={`/AdminMenu/Task Scheduler`}>Task Scheduler</Link>,
+    }] : []),
     {
-      key: "/help",
+      key: `${basePath}/help`,
       icon: <QuestionCircleOutlined />,
-      label: <Link href="/UserMenu/help">Help</Link>,
+      label: <Link href={`${basePath}/help`}>Help</Link>,
     },
   ];
 
@@ -81,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       breakpoint="lg"
       collapsedWidth={80}
       width={220}
-      theme="dark"
+      theme="light"
       style={{
         overflow: "auto",
         height: "100vh",
@@ -90,6 +116,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
         top: 0,
         bottom: 0,
         zIndex: 100,
+        backgroundColor: "#f8fafc",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)"
       }}
       onCollapse={(collapsed) => onCollapse?.(collapsed)}
       trigger={null}
@@ -99,18 +127,43 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
         style={{ 
           height: 32, 
           margin: 16, 
-          background: 'rgba(255, 255, 255, 0.2)', 
+          background: "#f8fafc",
           borderRadius: 6,
           display: collapsed ? 'none' : 'block'
         }}
       />
       <Menu
-        theme="dark"
+        theme="light"
         mode="inline"
         selectedKeys={[pathname]}
         items={menuItems}
         inlineCollapsed={collapsed}
+        style={{
+          backgroundColor: "#f8fafc",
+          borderRight: "none"
+        }}
+        className="custom-sidebar-menu"
       />
+      <style jsx global>{`
+        .custom-sidebar-menu .ant-menu-item-selected {
+          background-color: #dbeafe !important;
+        }
+        .custom-sidebar-menu .ant-menu-item:hover {
+          background-color: #eff6ff !important;
+        }
+        .custom-sidebar-menu .ant-menu-item {
+          color: #475569 !important;
+        }
+        .custom-sidebar-menu .ant-menu-item-selected {
+          color: #2563eb !important;
+        }
+        .custom-sidebar-menu .anticon {
+          color: #64748b !important;
+        }
+        .custom-sidebar-menu .ant-menu-item::after {
+          border-right: 3px solid #2563eb !important;
+        }
+      `}</style>
     </Sider>
   );
 };

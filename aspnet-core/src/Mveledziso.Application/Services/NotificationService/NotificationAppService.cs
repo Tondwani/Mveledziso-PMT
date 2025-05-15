@@ -3,6 +3,7 @@ using Abp.Domain.Repositories;
 using Abp.Linq.Extensions;
 using Abp.Runtime.Session;
 using Abp.UI;
+using Microsoft.EntityFrameworkCore;
 using Mveledziso.Authorization.Users;
 using Mveledziso.Domain.Entities;
 using Mveledziso.Services.NotificationService.Dto;
@@ -46,11 +47,32 @@ namespace Mveledziso.Services.NotificationService
                 UserId = input.UserId,
                 EntityType = input.EntityType,
                 EntityId = input.EntityId,
-                CreatorUserId = _abpSession.UserId // Sender = current user
+                CreatorUserId = _abpSession.UserId, // Sender = current user
+                IsRead = false // Ensure new notifications start as unread
             };
 
-            await _notificationRepository.InsertAsync(notification);
-            return await GetAsync(notification.Id);
+            notification = await _notificationRepository.InsertAsync(notification);
+            await CurrentUnitOfWork.SaveChangesAsync(); // Ensure changes are saved
+
+            // Return DTO directly from created entity
+            var sender = notification.CreatorUserId.HasValue ?
+                await _userRepository.GetAsync(notification.CreatorUserId.Value) :
+                null;
+
+            return new NotificationDto
+            {
+                Id = notification.Id,
+                Message = notification.Message,
+                Type = notification.Type,
+                IsRead = notification.IsRead,
+                UserId = notification.UserId,
+                RecipientName = recipient.UserName,
+                EntityType = notification.EntityType,
+                EntityId = notification.EntityId,
+                CreationTime = notification.CreationTime,
+                SenderUserId = notification.CreatorUserId ?? 0,
+                SenderUserName = sender?.UserName
+            };
         }
 
         public async Task<NotificationDto> UpdateAsync(Guid id, UpdateNotificationDto input)
@@ -95,14 +117,42 @@ namespace Mveledziso.Services.NotificationService
 
         public async Task<List<NotificationDto>> GetListAsync(NotificationListInputDto input)
         {
-            var query = _notificationRepository.GetAll()
-                .Where(n => n.UserId == input.UserId)
-                .WhereIf(input.IsRead.HasValue, n => n.IsRead == input.IsRead)
-                .OrderByDescending(n => n.CreationTime)
+            Logger.Info($"Getting notifications with UserId: {input.UserId}, IsRead: {input.IsRead}");
+
+            var query = _notificationRepository.GetAll();
+
+            // If no specific user is requested, use the current user's ID
+            var userId = input.UserId > 0 ? input.UserId : _abpSession.UserId;
+            
+            if (userId.HasValue)
+            {
+                query = query.Where(n => n.UserId == userId.Value);
+                Logger.Info($"Filtering for user: {userId.Value}");
+            }
+            else
+            {
+                Logger.Warn("No user ID provided or found in session");
+                return new List<NotificationDto>();
+            }
+
+            if (input.IsRead.HasValue)
+            {
+                query = query.Where(n => n.IsRead == input.IsRead.Value);
+                Logger.Info($"Filtering for IsRead: {input.IsRead.Value}");
+            }
+
+            query = query.OrderByDescending(n => n.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount);
 
-            var notifications = await Task.FromResult(query.ToList());
+            var notifications = await query.ToListAsync();
+            Logger.Info($"Found {notifications.Count} notifications");
+
+            if (!notifications.Any())
+            {
+                return new List<NotificationDto>();
+            }
+
             var userIds = notifications
                 .Select(n => n.UserId)
                 .Concat(notifications.Where(n => n.CreatorUserId.HasValue)
@@ -110,9 +160,10 @@ namespace Mveledziso.Services.NotificationService
                 .Distinct()
                 .ToList();
 
-            var users = _userRepository.GetAll()
+            Logger.Info($"Fetching user details for {userIds.Count} users");
+            var users = await _userRepository.GetAll()
                 .Where(u => userIds.Contains(u.Id))
-                .ToList();
+                .ToListAsync();
 
             return notifications.Select(n => new NotificationDto
             {
@@ -130,6 +181,42 @@ namespace Mveledziso.Services.NotificationService
                     users.FirstOrDefault(u => u.Id == n.CreatorUserId.Value)?.UserName :
                     null
             }).ToList();
+        }
+
+        public async Task<int> GetUnreadCountAsync()
+        {
+            var userId = _abpSession.UserId;
+            if (!userId.HasValue)
+            {
+                Logger.Warn("No user ID found in session for GetUnreadCount");
+                return 0;
+            }
+
+            return await _notificationRepository.GetAll()
+                .Where(n => n.UserId == userId.Value && !n.IsRead)
+                .CountAsync();
+        }
+
+        public async Task MarkAllAsReadAsync()
+        {
+            var userId = _abpSession.UserId;
+            if (!userId.HasValue)
+            {
+                Logger.Warn("No user ID found in session for MarkAllAsRead");
+                return;
+            }
+
+            var unreadNotifications = await _notificationRepository.GetAll()
+                .Where(n => n.UserId == userId.Value && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var notification in unreadNotifications)
+            {
+                notification.IsRead = true;
+                await _notificationRepository.UpdateAsync(notification);
+            }
+
+            await CurrentUnitOfWork.SaveChangesAsync();
         }
     }
 }

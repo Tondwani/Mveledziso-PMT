@@ -1,307 +1,334 @@
 "use client";
 
-import { Table, Tag, Space, Button, Card, Typography, Modal, Form, Input, Select, Avatar } from 'antd';
-import { TeamOutlined, UserOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+  Table, 
+  Typography, 
+  Tag, 
+  Space, 
+  Card, 
+  Button, 
+  Spin, 
+  Tooltip,
+  Input,
+  Avatar,
+  Empty,
+  message
+} from 'antd';
+import { 
+  TeamOutlined, 
+  SearchOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined
+} from '@ant-design/icons';
+import { useAuthState } from '@/provider/CurrentUserProvider';
+import { useTeamActions } from '@/provider/TeamManagement';
+import { useTeamMemberActions } from '@/provider/TeamMemberManagement';
+import type { ColumnsType } from 'antd/es/table';
+import type { ITeam, IUserTeam } from '@/provider/TeamManagement/context';
+import { TeamRole } from '@/enums/TeamRole';
+import GanttChart from '@/components/dashboard/ganntChart';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Search } = Input;
 
-interface Team {
-  id: string;
-  name: string;
-  description: string;
-  creationTime: string;
-  projectCount: number;
+// Extended team interface to include user's role in the team
+interface ExtendedTeam extends ITeam {
+  userRole?: string;
+  memberCount?: number;
 }
 
-interface UserTeam {
+// Interface for team member user team type
+interface TeamMemberUserTeam {
   id: string;
-  userId: number;
-  userName: string;
   teamId: string;
-  teamName: string;
-  role: string;
+  teamMemberId: string;
+  role: string | number | TeamRole;
 }
 
-export default function TeamsPage() {
-  // Static data matching your ABP service structure
-  const [teams, setTeams] = useState<Team[]>([
-    {
-      id: 'team1',
-      name: 'Development Team',
-      description: 'Frontend and backend developers',
-      creationTime: '2023-01-10T08:30:00',
-      projectCount: 5
-    },
-    {
-      id: 'team2',
-      name: 'Design Team',
-      description: 'UI/UX designers',
-      creationTime: '2023-02-15T10:20:00',
-      projectCount: 3
-    },
-    {
-      id: 'team3',
-      name: 'Marketing Team',
-      description: 'Digital marketing specialists',
-      creationTime: '2023-03-05T14:15:00',
-      projectCount: 2
-    }
-  ]);
-
-  const [userTeams, setUserTeams] = useState<UserTeam[]>([
-    {
-      id: 'ut1',
-      userId: 1,
-      userName: 'john.doe',
-      teamId: 'team1',
-      teamName: 'Development Team',
-      role: 'Team Lead'
-    },
-    {
-      id: 'ut2',
-      userId: 2,
-      userName: 'jane.smith',
-      teamId: 'team1',
-      teamName: 'Development Team',
-      role: 'Developer'
-    },
-    {
-      id: 'ut3',
-      userId: 3,
-      userName: 'mike.johnson',
-      teamId: 'team2',
-      teamName: 'Design Team',
-      role: 'Design Lead'
-    }
-  ]);
-
-  const [isTeamModalVisible, setIsTeamModalVisible] = useState(false);
-  const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
-  const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
+export default function UserTeamsPage() {
+  const [loading, setLoading] = useState(true);
+  const [myTeams, setMyTeams] = useState<ExtendedTeam[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  const { currentUser } = useAuthState();
+  const { getUserTeams, getTeam } = useTeamActions();
+  const { getUserTeams: getMemberTeams } = useTeamMemberActions();
 
-  const filteredTeams = teams.filter(team => 
-    team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    team.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Force a refresh of the component
+  const forceRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    setErrorMsg(null);
+  };
 
-  const teamColumns = [
+  // Function to handle team data loading
+  const loadTeamDetails = async (teamId: string): Promise<ExtendedTeam | null> => {
+    try {
+      // Get team details
+      const team = await getTeam(teamId);
+      
+      // Get members count - using proper API format for GetList
+      const teamMembersResult = await getUserTeams({
+        teamId: teamId,
+        skipCount: 0,
+        maxResultCount: 1000 // Large enough to get all members
+      });
+      
+      const memberCount = teamMembersResult.items.length;
+      
+      return {
+        ...team,
+        memberCount
+      };
+    } catch (err) {
+      console.error(`Error fetching details for team ${teamId}:`, err);
+      return null;
+    }
+  };
+
+  const loadUserTeams = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    
+    try {
+      if (!currentUser?.id) {
+        setMyTeams([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Get the string version of the user ID
+      const userId = typeof currentUser.id === 'number' 
+        ? currentUser.id.toString() 
+        : currentUser.id;
+      
+      // First attempt - using TeamManagement provider
+      try {
+        const result = await getUserTeams({
+          teamMemberId: userId,
+          skipCount: 0, 
+          maxResultCount: 100 
+        });
+        
+        if (result.items && result.items.length > 0) {
+          // Process each team to get details
+          const teamPromises = result.items.map(async (userTeam: IUserTeam) => {
+            const team = await loadTeamDetails(userTeam.teamId);
+            if (team) {
+              // Format role to string
+              let roleString: string;
+              if (typeof userTeam.role === 'number') {
+                roleString = TeamRole[userTeam.role] || String(userTeam.role);
+              } else if (typeof userTeam.role === 'string') {
+                roleString = userTeam.role;
+              } else {
+                roleString = String(userTeam.role);
+              }
+              
+              return {
+                ...team,
+                userRole: roleString
+              };
+            }
+            return null;
+          });
+          
+          const teams = await Promise.all(teamPromises);
+          setMyTeams(teams.filter(Boolean) as ExtendedTeam[]);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn("Primary team loading method failed, trying fallback", error);
+      }
+      
+      // Fallback - using TeamMemberManagement provider
+      try {
+        const memberTeams = await getMemberTeams(userId);
+        
+        if (memberTeams && memberTeams.length > 0) {
+          // Process each team to get details
+          const teamPromises = memberTeams.map(async (userTeam: TeamMemberUserTeam) => {
+            const team = await loadTeamDetails(userTeam.teamId);
+            if (team) {
+              // Determine the role string
+              const roleValue = userTeam.role;
+              let roleString: string;
+              
+              if (typeof roleValue === 'string') {
+                roleString = roleValue;
+              } else if (typeof roleValue === 'number') {
+                roleString = TeamRole[roleValue] || String(roleValue);
+              } else {
+                roleString = String(roleValue);
+              }
+              
+              return {
+                ...team,
+                userRole: roleString
+              };
+            }
+            return null;
+          });
+          
+          const teams = await Promise.all(teamPromises);
+          setMyTeams(teams.filter(Boolean) as ExtendedTeam[]);
+        } else {
+          setMyTeams([]);
+        }
+      } catch (error) {
+        console.error("Both team loading methods failed", error);
+        setErrorMsg("Could not load your teams. Please try again later.");
+        message.error("Could not load your teams. Please try again later.");
+      }
+    } catch (err) {
+      console.error('Failed to load teams:', err);
+      setErrorMsg("Could not load your teams. Please try again later.");
+      message.error('Could not load your teams. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, getUserTeams, getTeam, getMemberTeams]);
+  
+  // Load teams on initial render and when refresh key changes
+  useEffect(() => {
+    loadUserTeams();
+  }, [loadUserTeams, refreshKey]);
+  
+  // Filter teams based on search term
+  const filteredTeams = useMemo(() => {
+    if (!searchTerm) return myTeams;
+    
+    const term = searchTerm.toLowerCase();
+    return myTeams.filter(team => 
+      team.name.toLowerCase().includes(term) ||
+      (team.description && team.description.toLowerCase().includes(term))
+    );
+  }, [myTeams, searchTerm]);
+  
+  // Define columns for the table
+  const columns: ColumnsType<ExtendedTeam> = [
     {
-      title: 'Team Name',
+      title: 'Team',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: Team) => (
+      render: (text) => (
         <Space>
-          <TeamOutlined />
-          <a onClick={() => setCurrentTeam(record)}>{text}</a>
+          <Avatar icon={<TeamOutlined />} style={{ backgroundColor: '#1890ff' }} />
+          <Text strong>{text}</Text>
         </Space>
-      ),
+      )
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
+      ellipsis: true,
+      render: (text) => text || '-'
+    },
+    {
+      title: 'Your Role',
+      dataIndex: 'userRole',
+      key: 'userRole',
+      render: (role) => <Tag color="blue">{role}</Tag>
+    },
+    {
+      title: 'Members',
+      dataIndex: 'memberCount',
+      key: 'memberCount',
+      render: (count) => count || 0
     },
     {
       title: 'Projects',
       dataIndex: 'projectCount',
       key: 'projectCount',
-      render: (count: number) => <Tag color="blue">{count} projects</Tag>,
-    },
-    {
-      title: 'Created',
-      dataIndex: 'creationTime',
-      key: 'creationTime',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_: unknown, record: Team) => (
-        <Space size="middle">
-          <Button size="small" onClick={() => {
-            setCurrentTeam(record);
-            setIsMemberModalVisible(true);
-          }}>
-            View Members
-          </Button>
-          <Button size="small">Edit</Button>
-          <Button size="small" danger>Delete</Button>
-        </Space>
-      ),
-    },
-  ];
-
-  const memberColumns = [
-    {
-      title: 'Member',
-      dataIndex: 'userName',
-      key: 'userName',
-      render: (text: string) => (
-        <Space>
-          <Avatar size="small" icon={<UserOutlined />} />
-          <span>{text}</span>
-        </Space>
-      ),
-    },
-    {
-      title: 'Role',
-      dataIndex: 'role',
-      key: 'role',
-      render: (role: string) => <Tag color="purple">{role}</Tag>,
+      render: (count) => count || 0
     },
     {
       title: 'Action',
       key: 'action',
       render: () => (
-        <Space size="middle">
-          <Button size="small">Edit Role</Button>
-          <Button size="small" danger>Remove</Button>
-        </Space>
-      ),
-    },
-  ];
-
-  const handleCreateTeam = (values: Omit<Team, 'id' | 'creationTime' | 'projectCount'>) => {
-    const newTeam: Team = {
-      id: `team${teams.length + 1}`,
-      ...values,
-      creationTime: new Date().toISOString(),
-      projectCount: 0
-    };
-    setTeams([...teams, newTeam]);
-    setIsTeamModalVisible(false);
-  };
-
-  const handleAddMember = (values: { userId: number, role: string }) => {
-    if (!currentTeam) return;
-    
-    const newUserTeam: UserTeam = {
-      id: `ut${userTeams.length + 1}`,
-      userId: values.userId,
-      userName: `user${values.userId}`,
-      teamId: currentTeam.id,
-      teamName: currentTeam.name,
-      role: values.role
-    };
-    setUserTeams([...userTeams, newUserTeam]);
-    setIsMemberModalVisible(false);
-  };
-
-  const currentTeamMembers = currentTeam 
-    ? userTeams.filter(ut => ut.teamId === currentTeam.id)
-    : [];
-
-  return (
-    <div style={{ padding: 24 }}>
-      <Title level={2}>Teams</Title>
-      
-      <Card 
-        title="Team Management"
-        extra={
-          <Space>
-            <Search
-              placeholder="Search teams"
-              prefix={<SearchOutlined />}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: 250 }}
-            />
+        <Space>
+          <Tooltip title="View Team Details">
             <Button 
               type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => setIsTeamModalVisible(true)}
+              size="small" 
+              icon={<InfoCircleOutlined />}
             >
-              New Team
+              Details
+            </Button>
+          </Tooltip>
+        </Space>
+      )
+    }
+  ];
+
+  return (
+    <div className="p-6">
+      <Card>
+        <div className="flex justify-between items-center mb-4">
+          <Title level={4} className="m-0">
+            <TeamOutlined className="mr-2" /> My Teams
+          </Title>
+          <Space>
+            <Search 
+              placeholder="Search teams..." 
+              allowClear 
+              onSearch={(value) => setSearchTerm(value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: 200 }}
+              prefix={<SearchOutlined />}
+            />
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={forceRefresh}
+              loading={loading}
+            >
+              Refresh
             </Button>
           </Space>
-        }
-      >
-        <Table 
-          columns={teamColumns} 
-          dataSource={filteredTeams} 
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
+        </div>
+
+        <Spin spinning={loading}>
+          {errorMsg && !loading && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded">
+              {errorMsg}
+            </div>
+          )}
+          
+          {!loading && filteredTeams.length > 0 ? (
+            <Table 
+              columns={columns}
+              dataSource={filteredTeams}
+              rowKey="id"
+              pagination={{
+                pageSize: 5,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `Total ${total} items`,
+              }}
+            />
+          ) : (
+            !loading && !errorMsg && (
+              <div className="py-12 flex justify-center">
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                  description={
+                    <Text strong>
+                      You are not currently a member of any teams
+                    </Text>
+                  }
+                />
+              </div>
+            )
+          )}
+        </Spin>
       </Card>
 
-      {/* Create Team Modal */}
-      <Modal
-        title="Create New Team"
-        open={isTeamModalVisible}
-        onCancel={() => setIsTeamModalVisible(false)}
-        footer={null}
-      >
-        <Form layout="vertical" onFinish={handleCreateTeam}>
-          <Form.Item 
-            label="Team Name" 
-            name="name" 
-            rules={[{ required: true, message: 'Please input team name!' }]}
-          >
-            <Input />
-          </Form.Item>
-          
-          <Form.Item label="Description" name="description">
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Create Team
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Team Members Modal */}
-      <Modal
-        title={currentTeam ? `${currentTeam.name} Members` : 'Team Members'}
-        open={isMemberModalVisible}
-        onCancel={() => setIsMemberModalVisible(false)}
-        width={800}
-        footer={null}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Form layout="inline" onFinish={handleAddMember}>
-            <Form.Item 
-              name="userId" 
-              rules={[{ required: true, message: 'Please select user!' }]}
-            >
-              <Select placeholder="Select user" style={{ width: 200 }}>
-                <Select.Option value={1}>John Doe</Select.Option>
-                <Select.Option value={2}>Jane Smith</Select.Option>
-                <Select.Option value={3}>Mike Johnson</Select.Option>
-              </Select>
-            </Form.Item>
-            
-            <Form.Item 
-              name="role" 
-              rules={[{ required: true, message: 'Please select role!' }]}
-            >
-              <Select placeholder="Select role" style={{ width: 150 }}>
-                <Select.Option value="Team Lead">Team Lead</Select.Option>
-                <Select.Option value="Developer">Developer</Select.Option>
-                <Select.Option value="Designer">Designer</Select.Option>
-              </Select>
-            </Form.Item>
-            
-            <Form.Item>
-              <Button type="primary" htmlType="submit" icon={<PlusOutlined />}>
-                Add Member
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-        
-        <Table 
-          columns={memberColumns} 
-          dataSource={currentTeamMembers} 
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-        />
-      </Modal>
+      {/* Add Gantt Chart */}
+      {!loading && filteredTeams.length > 0 && <GanttChart />}
     </div>
   );
 }
