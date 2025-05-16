@@ -8,7 +8,7 @@ const axiosInstance = axios.create({
     "Accept": "application/json"
   },
   timeout: 60000,
-  withCredentials: true // Enable sending cookies in CORS requests
+  withCredentials: true 
 });
 
 // Initialize auth token from session storage

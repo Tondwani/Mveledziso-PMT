@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Col, Row, Progress, Statistic, Typography } from "antd";
+import { Card, Col, Row, Statistic, Typography } from "antd";
 import {
   ProjectOutlined,
   TeamOutlined,
@@ -231,12 +231,12 @@ const StatCards = () => {
             value={stats.totalProjects}
             loading={loading}
           />
-          <Progress
+          {/* <Progress
             type="circle"
             percent={Math.round((stats.completedProjects / stats.totalProjects) * 100) || 0}
             width={80}
             strokeColor="#1890ff"
-          />
+          /> */}
         </div>
       ),
       color: "#e6f7ff",
@@ -251,12 +251,12 @@ const StatCards = () => {
             value={stats.totalDuties}
             loading={loading}
           />
-          <Progress
+          {/* <Progress
             type="circle"
             percent={Math.round((stats.completedDuties / stats.totalDuties) * 100) || 0}
             width={80}
             strokeColor="#52c41a"
-          />
+          /> */}
         </div>
       ),
       color: "#f6ffed",
@@ -271,11 +271,11 @@ const StatCards = () => {
             value={stats.totalTeams}
             loading={loading}
           />
-          <Statistic
+          {/* <Statistic
             title="Team Members"
             value={stats.totalTeamMembers}
             loading={loading}
-          />
+          /> */}
         </div>
       ),
       color: "#f9f0ff",

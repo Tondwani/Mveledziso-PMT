@@ -442,7 +442,7 @@ const DutiesContent = () => {
         } else {
           message.error({ content: 'Failed to assign duty - API error', key: 'assignDuty' });
         }
-        throw apiError; // Re-throw to be caught by the outer catch
+        throw apiError; 
       }
       
     } catch (error) {
