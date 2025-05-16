@@ -17,13 +17,11 @@ import {
   IGetProjectDutiesInput
 } from '../../../provider/ProjectManagement/context';
 import { ITeam } from '../../../provider/TeamManagement/context';
-// import ProjectRiskPredictor from '@/components/AI/ProjectRiskPredictor';
 
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// UI Status mapping
 const ProjectUIStatus = {
   NotStarted: 'NotStarted',
   InProgress: 'InProgress',
@@ -33,7 +31,6 @@ const ProjectUIStatus = {
 
 type ProjectStatusType = keyof typeof ProjectUIStatus;
 
-// UI mappings for status and priority
 const STATUS_MAP = {
   [DutyStatus.ToDo]: { color: 'default', text: 'Pending' },
   [DutyStatus.InProgress]: { color: 'processing', text: 'In Progress' },
@@ -48,7 +45,6 @@ const PRIORITY_MAP: Record<Priority, { color: string; text: string }> = {
   [Priority.Urgent]: { color: 'red', text: 'Critical' }
 };
 
-// Form interfaces
 interface FormValues {
   name: string;
   description?: string;
@@ -65,7 +61,6 @@ interface DutyFormValues {
 }
 
 const ProjectsPage = () => {
-  // Provider state and actions
   const { projects, projectDuties, isPending } = useProjectState();
   const { getProjects, createProject, getProjectDuties, createProjectDuty } = useProjectActions();
   const teamActions = useTeamActions();
@@ -73,7 +68,7 @@ const ProjectsPage = () => {
   const { projectManager } = useProjectManagerState(); 
   const { getCurrentProjectManager } = useProjectManagerActions();
 
-  // Local state
+
   const [isProjectModalVisible, setIsProjectModalVisible] = useState(false);
   const [isDutyModalVisible, setIsDutyModalVisible] = useState(false);
   const [currentProject, setCurrentProject] = useState<IProject | null>(null);
@@ -82,26 +77,21 @@ const ProjectsPage = () => {
   const [teams, setTeams] = useState<ITeam[]>([]);
   const [teamMap, setTeamMap] = useState<Record<string, string>>({});
 
-  // Load projects, teams, and project manager on mount
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // Load projects
         const input: IGetProjectsInput = {};
         await getProjects(input);
-        
-        // Load teams
         const teamsResponse = await teamActions.getTeams({});
         setTeams(teamsResponse);
         
-        // Create a mapping of team IDs to team names for easy lookup
         const mapping: Record<string, string> = {};
         teamsResponse.forEach(team => {
           mapping[team.id] = team.name;
         });
         setTeamMap(mapping);
 
-        // Get project manager ID if user is logged in
         if (currentUser?.id) {
           getCurrentProjectManager(currentUser.id);
         }
@@ -112,7 +102,6 @@ const ProjectsPage = () => {
     loadInitialData();
   }, []);
 
-  // Load duties when current project changes
   useEffect(() => {
     const loadProjectDuties = async () => {
       if (currentProject?.id) {
@@ -123,14 +112,13 @@ const ProjectsPage = () => {
     loadProjectDuties();
   }, [currentProject?.id, getProjectDuties]);
 
-  // Memoize project progress calculation
+
   const getProjectProgress = React.useCallback((projectId: string): number => {
     const projectDutiesForProject = projectDuties.filter(duty => duty.projectId === projectId);
     const completedDuties = projectDutiesForProject.filter(duty => duty.status === DutyStatus.Done).length;
     return projectDutiesForProject.length > 0 ? (completedDuties / projectDutiesForProject.length) * 100 : 0;
   }, [projectDuties]);
 
-  // Filter projects based on search and status
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
@@ -138,17 +126,13 @@ const ProjectsPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Form handlers
   const handleCreateProject = async (values: FormValues) => {
     try {
-      // Add debug output to see the current user and project manager
-      console.log('Current user:', currentUser);
-      console.log('Current project manager:', projectManager);
+      console.error('Current user:', currentUser);
+      console.error('Current project manager:', projectManager);
       
-      // For debugging - print all values
-      console.log('Form values:', values);
+      console.error('Form values:', values);
       
-      // Check if we have a valid projectManagerId
       if (!currentUser?.id) {
         console.error('No valid user ID found. You must be logged in to create projects.');
         alert('Error: You must be logged in to create projects.');
@@ -157,7 +141,6 @@ const ProjectsPage = () => {
 
       if (!projectManager?.id) {
         console.error('No valid project manager found for current user');
-        // Try to get project manager ID
         if (currentUser?.id) {
           await getCurrentProjectManager(currentUser.id);
           if (!projectManager?.id) {
@@ -170,7 +153,6 @@ const ProjectsPage = () => {
         }
       }
       
-      // The backend expects Guid values for IDs and properly formatted DateTime objects
       const projectData: ICreateProjectDto = {
         name: values.name,
         description: values.description || '',
@@ -178,10 +160,10 @@ const ProjectsPage = () => {
         startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
         endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : '',
         isCollaborationEnabled: true,
-        projectManagerId: projectManager.id // Use the actual project manager ID
+        projectManagerId: projectManager.id 
       };
       
-      console.log('Creating project with data:', projectData);
+      console.error('Creating project with data:', projectData);
       await createProject(projectData);
       setIsProjectModalVisible(false);
     } catch (error) {

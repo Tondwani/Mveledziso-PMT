@@ -20,7 +20,6 @@ import {
   createProjectManagerError,
 } from "./action";
 
-// Define type for ABP API error response
 interface AbpErrorResponse {
   error?: {
     message?: string;
@@ -29,7 +28,6 @@ interface AbpErrorResponse {
   };
 }
 
-// Function to decode JWT token
 function parseJwt(token: string) {
   try {
     return JSON.parse(atob(token.split('.')[1]));
@@ -45,25 +43,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch(getCurrentLoginInfoPending());
     
     try {
-      console.log('Fetching current user info...');
+      console.error('Fetching current user info...');
       const response = await getAxiosInstance().get(`/api/services/app/Session/GetCurrentLoginInformations`);
-      console.log('Current user API response:', response.data);
+      console.error('Current user API response:', response.data);
       const userData = response.data.result.user;
-      console.log('Raw user data:', userData);
+      console.error('Raw user data:', userData);
       
-      // Get token from storage
       const token = sessionStorage.getItem("auth_token");
       let roles: string[] = [];
       
       if (token) {
         const decodedToken = parseJwt(token);
-        console.log('Decoded token:', decodedToken);
+        console.error('Decoded token:', decodedToken);
         
-        // Extract role from token claims
         const roleClaim = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
         if (roleClaim) {
           roles = Array.isArray(roleClaim) ? roleClaim : [roleClaim];
-          console.log('Roles from token:', roles);
+          console.error('Roles from token:', roles);
         }
       }
       
@@ -71,17 +67,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...userData,
         roles: roles
       };
-      console.log('Final user object with roles:', user);
+      console.error('Final user object with roles:', user);
       dispatch(getCurrentLoginInfoSuccess(user));
     } catch (error) {
       console.error('Error getting current user:', error);
       dispatch(getCurrentLoginInfoError());
-      // If getting current user fails, assume token is invalid and logout
       logout();
     }
   }, []);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const token = sessionStorage.getItem("auth_token");
     if (token) {
@@ -131,22 +125,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       dispatch(createTeamMemberPending());
       
-      console.log('Creating team member account...');
+      console.error('Creating team member account...');
 
-      // Create request payload
       const payload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         userName: data.userName || data.email,
         password: data.password,
-        roleNames: ['TeamMember'] // Specify the ABP role name
+        roleNames: ['TeamMember'] 
       };
 
-      // Use the TeamMember endpoint
       const registerResponse = await getAxiosInstance().post("/api/services/app/TeamMember/Create", payload);
 
-      console.log('TeamMember creation response:', registerResponse.data);
+      console.error('TeamMember creation response:', registerResponse.data);
 
       if (!registerResponse.data.success) {
         throw new Error(registerResponse.data.error?.message || "Failed to create team member");
@@ -157,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        roles: ['TeamMember'] // Use the ABP role name
+        roles: ['TeamMember'] 
       } as ITeamMember;
 
       dispatch(createTeamMemberSuccess(teamMember));
@@ -184,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       dispatch(createProjectManagerPending());
       
-      console.log('Creating project manager account...');
+      console.error('Creating project manager account...');
       
       
       const registerResponse = await getAxiosInstance().post("/api/services/app/ProjectManager/Create", {
@@ -196,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         roleNames: ['ProjectManager'] 
       });
 
-      console.log('ProjectManager creation response:', registerResponse.data);
+      console.error('ProjectManager creation response:', registerResponse.data);
 
       if (!registerResponse.data.success) {
         throw new Error(registerResponse.data.error?.message || "Failed to create project manager");

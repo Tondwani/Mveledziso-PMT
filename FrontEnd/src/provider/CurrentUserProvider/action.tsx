@@ -2,31 +2,29 @@
 import { ICurrentUser, ITeamMember, IProjectManager } from "./context";
 
 export enum AuthActionEnums {
-  // Login
   loginPending = "LOGIN_PENDING",
   loginSuccess = "LOGIN_SUCCESS",
   loginError = "LOGIN_ERROR",
   
-  // Logout
+
   logoutSuccess = "LOGOUT_SUCCESS",
   
-  // Current User Info
   getCurrentLoginInfoPending = "GET_CURRENT_LOGIN_INFO_PENDING",
   getCurrentLoginInfoSuccess = "GET_CURRENT_LOGIN_INFO_SUCCESS",
   getCurrentLoginInfoError = "GET_CURRENT_LOGIN_INFO_ERROR",
   
-  // Team Member
+
   createTeamMemberPending = "CREATE_TEAM_MEMBER_PENDING",
   createTeamMemberSuccess = "CREATE_TEAM_MEMBER_SUCCESS",
   createTeamMemberError = "CREATE_TEAM_MEMBER_ERROR",
 
-  // Project Manager
+
   createProjectManagerPending = "CREATE_PROJECT_MANAGER_PENDING",
   createProjectManagerSuccess = "CREATE_PROJECT_MANAGER_SUCCESS",
   createProjectManagerError = "CREATE_PROJECT_MANAGER_ERROR",
 }
 
-// Login Actions
+
 export const loginPending = () => ({
   type: AuthActionEnums.loginPending,
   payload: {
@@ -56,7 +54,6 @@ export const loginError = (message: string = "Login failed") => ({
   }
 });
 
-// Logout Action
 export const logoutSuccess = () => ({
   type: AuthActionEnums.logoutSuccess,
   payload: {
@@ -68,7 +65,6 @@ export const logoutSuccess = () => ({
   }
 });
 
-// Current User Info Actions
 export const getCurrentLoginInfoPending = () => ({
   type: AuthActionEnums.getCurrentLoginInfoPending,
   payload: {
@@ -98,7 +94,6 @@ export const getCurrentLoginInfoError = () => ({
   }
 });
 
-// Team Member Actions
 export const createTeamMemberPending = () => ({
   type: AuthActionEnums.createTeamMemberPending,
   payload: {
@@ -128,7 +123,6 @@ export const createTeamMemberError = (message: string = "Failed to create team m
   }
 });
 
-// Project Manager Actions
 export const createProjectManagerPending = () => ({
   type: AuthActionEnums.createProjectManagerPending,
   payload: {

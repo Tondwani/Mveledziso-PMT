@@ -1,22 +1,18 @@
 import { ITeam, IUserTeam, PagedResultDto } from "./context";
 
 export enum TeamActionEnum {
-  // Team Actions
   teamPending = "TEAM_PENDING",
   teamSuccess = "TEAM_SUCCESS",
   teamError = "TEAM_ERROR",
   
-  // UserTeam Actions
   userTeamPending = "USER_TEAM_PENDING",
   userTeamSuccess = "USER_TEAM_SUCCESS",
   userTeamError = "USER_TEAM_ERROR",
-  
-  // List Actions
+
   teamsLoaded = "TEAMS_LOADED",
   userTeamsLoaded = "USER_TEAMS_LOADED",
 }
 
-// Base Actions
 export const basePending = () => ({
   type: TeamActionEnum.teamPending,
   payload: {
@@ -46,7 +42,6 @@ export const baseError = (message: string) => ({
   }
 });
 
-// Team Actions
 export const teamPending = () => basePending();
 
 export const teamError = (message: string) => baseError(message);
@@ -79,7 +74,6 @@ export const loadTeamsSuccess = (teams: ITeam[]) => ({
   }
 });
 
-// UserTeam Actions
 export const userTeamPending = () => ({
   ...basePending(),
   type: TeamActionEnum.userTeamPending

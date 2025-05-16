@@ -7,7 +7,6 @@ export enum MilestoneActionEnum {
   milestonesLoaded = "MILESTONES_LOADED",
 }
 
-// Base Actions
 export const basePending = () => ({
   type: MilestoneActionEnum.milestonePending,
   payload: {
@@ -60,7 +59,7 @@ export const updateMilestoneSuccess = (milestone: IMilestone, message: string) =
 });
 
 export const loadMilestonesSuccess = (result: PagedResultDto<IMilestone>) => {
-  console.log('Creating loadMilestonesSuccess action with result:', result);
+  console.error('Creating loadMilestonesSuccess action with result:', result);
   return {
     type: MilestoneActionEnum.milestonesLoaded,
     payload: {

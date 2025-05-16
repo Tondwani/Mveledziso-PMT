@@ -11,7 +11,6 @@ export enum TimelineActionEnum {
   RESET_STATE = "RESET_TIMELINE_STATE"
 }
 
-// Base Actions
 export const setPending = () => ({
   type: TimelineActionEnum.SET_PENDING,
   payload: { isPending: true, isSuccess: false, isError: false, errorMessage: undefined }
@@ -31,7 +30,6 @@ export const resetState = () => ({
   type: TimelineActionEnum.RESET_STATE
 });
 
-// Timeline Specific Actions
 export const setTimeline = (timeline: ITimeline) => ({
   type: TimelineActionEnum.SET_TIMELINE,
   payload: { timeline, isPending: false, isSuccess: true, isError: false }
@@ -42,7 +40,7 @@ export const setTimelines = (timelines: ITimeline[]) => ({
   payload: { timelines, isPending: false, isSuccess: true, isError: false }
 });
 
-// Timeline Phase Specific Actions
+
 export const setTimelinePhase = (timelinePhase: ITimelinePhase) => ({
   type: TimelineActionEnum.SET_TIMELINE_PHASE,
   payload: { timelinePhase, isPending: false, isSuccess: true, isError: false }

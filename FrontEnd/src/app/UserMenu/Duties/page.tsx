@@ -28,7 +28,7 @@ import {
 } from '@ant-design/icons';
 import { useProjectState, useProjectActions } from '../../../provider/ProjectManagement';
 import { useUserDutyState, useUserDutyActions } from '../../../provider/DutyManagement';
-// import { useSession } from 'next-auth/react';
+
 import { IProjectDuty } from '../../../provider/ProjectManagement/context';
 import { IUserDuty } from '../../../provider/DutyManagement/context';
 import { DutyStatus } from '../../../enums/DutyStatus';
@@ -38,7 +38,7 @@ import dayjs from 'dayjs';
 const { Title } = Typography;
 const { Option } = Select;
 
-// Helper function to convert enums to human-readable format
+
 const formatDutyStatus = (status: DutyStatus): { text: string; color: string } => {
   switch (status) {
     case DutyStatus.ToDo:
@@ -69,13 +69,11 @@ const formatPriorityLevel = (priority: PriorityLevel): { text: string; color: st
   }
 };
 
-// Interface to combine user duty with project duty details
 interface IExtendedUserDuty extends IUserDuty {
   projectDuty?: IProjectDuty;
 }
 
 const DutiesContent = () => {
-  // States
   const [extendedUserDuties, setExtendedUserDuties] = useState<IExtendedUserDuty[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -98,7 +96,6 @@ const DutiesContent = () => {
   const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
-      // First, load all project duties
       await getProjectDuties({});
 
       await getUserDuties({
@@ -118,7 +115,7 @@ const DutiesContent = () => {
     }
   }, [getProjectDuties, getUserDuties, pagination.current, pagination.pageSize, userDutiesTotalCount]);
 
-  // Create extended duties by combining user duties with project duty details
+
   const createExtendedDuties = useCallback(() => {
     const extended = userDuties.map(userDuty => {
       const projectDuty = projectDuties.find(pd => pd.id === userDuty.projectDutyId);
@@ -128,7 +125,6 @@ const DutiesContent = () => {
       };
     });
     
-    // Apply status filter if active
     const filtered = statusFilter 
       ? extended.filter(duty => duty.projectDuty?.status === statusFilter)
       : extended;
@@ -136,19 +132,16 @@ const DutiesContent = () => {
     setExtendedUserDuties(filtered);
   }, [userDuties, projectDuties, statusFilter]);
 
-  // Effect for initial load
   useEffect(() => {
     loadAllData();
   }, []);
 
-  // Effect to create extended duties when dependencies change
   useEffect(() => {
     if (userDuties.length > 0 && projectDuties.length > 0) {
       createExtendedDuties();
     }
   }, [userDuties, projectDuties, createExtendedDuties]);
 
-  // Handle table pagination change
   const handleTableChange = (pagination: TablePaginationConfig) => {
     setPagination(prev => ({
       ...prev,
@@ -156,13 +149,10 @@ const DutiesContent = () => {
       pageSize: pagination.pageSize || 10
     }));
   };
-
-  // Handle status filter change
   const handleStatusFilterChange = (value: DutyStatus | null) => {
     setStatusFilter(value);
   };
 
-  // Show status update modal
   const showStatusUpdateModal = (duty: IProjectDuty) => {
     setSelectedDuty(duty);
     statusForm.setFieldsValue({
@@ -171,14 +161,13 @@ const DutiesContent = () => {
     setDutyStatusModalVisible(true);
   };
 
-  // Handle status update
   const handleStatusUpdate = async () => {
     try {
       const values = await statusForm.validateFields();
       if (selectedDuty) {
         await updateDutyStatus(selectedDuty.id, values.status);
         message.success('Duty status updated successfully');
-        loadAllData(); // Reload data
+        loadAllData(); 
         setDutyStatusModalVisible(false);
       }
     } catch (error) {
@@ -187,7 +176,6 @@ const DutiesContent = () => {
     }
   };
 
-  // Table columns
   const columns: ColumnType<IExtendedUserDuty>[] = [
     {
       title: 'Title',

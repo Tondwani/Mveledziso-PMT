@@ -92,13 +92,3 @@ const Profile = ({
 };
 
 export default Profile as React.FC;
-
-{/* <Button
-type="primary"
-onClick={async () => {
-  await updatePatientProfile(); 
-  window.location.reload();      
-}}
->
-Save Changes
-</Button> */}
