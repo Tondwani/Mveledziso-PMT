@@ -2,14 +2,13 @@
 
 import { Layout, Menu } from "antd";
 import {
-  // DashboardOutlined,
   FileTextOutlined,
   CalendarOutlined,
   TeamOutlined,
   FlagOutlined,
   QuestionCircleOutlined,
   FolderOpenOutlined,
-  HistoryOutlined,
+  SisternodeOutlined
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,6 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
     const roles = currentUser?.roles || [];
     if (roles.includes("Admin") || roles.includes("ProjectManager")) {
       return "/AdminMenu";
+    } else if (roles.includes("TeamMember") || roles.includes("User")) {
+      return "/UserMenu";
     }
     return "/UserMenu";
   };
@@ -42,14 +43,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   // Get user roles
   const userRoles = currentUser?.roles || [];
   const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
+  const isTeamMember = userRoles.includes("TeamMember") || userRoles.includes("User");
 
   const menuItems: MenuProps["items"] = [
-    // {
-    //   key: `${basePath}/mveledziso`,
-    //   // icon: <DashboardOutlined />,
-    //   label: <Link href={`${basePath}/mveledziso`}></Link>,
-    // },
-    // Only show projects for ProjectManager
     ...(isProjectManager ? [{
       key: `${basePath}/projects`,
       icon: <FolderOpenOutlined />,
@@ -60,38 +56,30 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       icon: <FileTextOutlined />,
       label: <Link href={`${basePath}/Duties`}>Duties</Link>,
     },
-
-    ...(isProjectManager && basePath === "/AdminMenu" ? [{
-      key: `${basePath}/milestones`,
-      icon: <FlagOutlined />,
-      label: <Link href={`${basePath}/milestones`}>Milestones</Link>,
-    }] : []),
-
     ...(isProjectManager && basePath === "/AdminMenu" ? [{
       key: `${basePath}/timelines`,
       icon: <CalendarOutlined />,
       label: <Link href={`${basePath}/timelines`}>Timelines</Link>,
     }] : []),
-    {
-      key: `${basePath}/documents`,
-      icon: <FileTextOutlined />,
-      label: <Link href={`${basePath}/documents`}>Documents</Link>,
-    },
+    ...(isProjectManager && basePath === "/AdminMenu" ? [{
+      key: `${basePath}/milestones`,
+      icon: <FlagOutlined />,
+      label: <Link href={`${basePath}/milestones`}>Milestones</Link>,
+    }] : []),
     {
       key: `${basePath}/teams`,
       icon: <TeamOutlined />,
       label: <Link href={`${basePath}/teams`}>Teams / Users</Link>,
     },
-    {
-      key: `${basePath}/mveledziso`,
-      icon: <TeamOutlined />,
-      label: <Link href={`${basePath}/mveledziso`}>Mveledziso</Link>,
-    },
-    // Only show activity log for ProjectManager and only in AdminMenu
     ...(isProjectManager && basePath === "/AdminMenu" ? [{
-      key: `/AdminMenu/activity-log`,
-      icon: <HistoryOutlined />,
-      label: <Link href={`/AdminMenu/Task Scheduler`}>Task Scheduler</Link>,
+      key: `${basePath}/mveledziso`,
+      icon: <FlagOutlined />,
+      label: <Link href={`${basePath}/mveledziso`}>Risk Analyzer</Link>,
+    }] : []),
+    ...(isTeamMember && basePath === "/UserMenu" ? [{
+      key: `${basePath}/task-analyzer`,
+      icon: <SisternodeOutlined />,
+      label: <Link href={`${basePath}/task-analyzer`}>Task Analyzer</Link>,
     }] : []),
     {
       key: `${basePath}/help`,

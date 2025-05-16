@@ -53,15 +53,15 @@ interface FormValues {
   name: string;
   description?: string;
   teamId: string;
-  startDate?: { format(format: string): string }; // Antd DatePicker object
-  endDate?: { format(format: string): string }; // Antd DatePicker object
+  startDate?: { format(format: string): string }; 
+  endDate?: { format(format: string): string }; 
 }
 
 interface DutyFormValues {
   title: string;
   description?: string;
   priority: Priority;
-  dueDate?: { format(format: string): string }; // Antd DatePicker object
+  dueDate?: { format(format: string): string }; 
 }
 
 const ProjectsPage = () => {
