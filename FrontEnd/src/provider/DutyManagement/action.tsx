@@ -9,7 +9,7 @@ export enum UserDutyActionEnum {
   RESET_STATE = "RESET_DUTY_STATE"
 }
 
-// Base Actions
+
 export const setPending = () => ({
   type: UserDutyActionEnum.SET_PENDING,
   payload: { isPending: true, isSuccess: false, isError: false, errorMessage: undefined }
@@ -29,7 +29,6 @@ export const resetState = () => ({
   type: UserDutyActionEnum.RESET_STATE
 });
 
-// Specific Actions
 export const setUserDuty = (userDuty: IUserDuty) => ({
   type: UserDutyActionEnum.SET_USER_DUTY,
   payload: { userDuty, isPending: false, isSuccess: true, isError: false }

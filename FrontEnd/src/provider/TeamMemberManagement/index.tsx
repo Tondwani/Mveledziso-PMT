@@ -51,7 +51,7 @@ export const TeamMemberProvider: React.FC<{ children: React.ReactNode }> = ({
           params: input,
         });
         const result = response.data.result;
-        console.log('Team members loaded:', result); // Debug log
+        console.error('Team members loaded:', result); // Debug log
         dispatch(setTeamMembers(result.items));
         dispatch(setTotalCount(result.totalCount));
         dispatch(setSuccess(true));

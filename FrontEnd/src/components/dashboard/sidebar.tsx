@@ -8,7 +8,7 @@ import {
   FlagOutlined,
   QuestionCircleOutlined,
   FolderOpenOutlined,
-  // SisternodeOutlined
+  SisternodeOutlined
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
   // Get user roles
   const userRoles = currentUser?.roles || [];
   const isProjectManager = userRoles.includes("ProjectManager") || userRoles.includes("Admin");
-  // const isTeamMember = userRoles.includes("TeamMember") || userRoles.includes("User");
+  const isTeamMember = userRoles.includes("TeamMember") || userRoles.includes("User");
 
   const menuItems: MenuProps["items"] = [
     ...(isProjectManager ? [{
@@ -76,11 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
       icon: <FlagOutlined />,
       label: <Link href={`${basePath}/mveledziso`}>Risk Analyzer</Link>,
     }] : []),
-    // ...(isTeamMember && basePath === "/UserMenu" ? [{
-    //   key: `${basePath}/task-analyzer`,
-    //   icon: <SisternodeOutlined />,
-    //   label: <Link href={`${basePath}/task-analyzer`}>Task Analyzer</Link>,
-    // }] : []),
+    ...(isTeamMember && basePath === "/UserMenu" ? [{
+      key: `${basePath}/task-analyzer`,
+      icon: <SisternodeOutlined />,
+      label: <Link href={`${basePath}/task-analyzer`}>Task Analyzer</Link>,
+    }] : []),
     {
       key: `${basePath}/help`,
       icon: <QuestionCircleOutlined />,

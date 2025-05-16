@@ -9,7 +9,7 @@ const { Title } = Typography;
 
 const MveledzisoPage = () => {
   const { currentUser } = useAuthState();
-  console.log("Current User:", currentUser);
+  console.error("Current User:", currentUser);
    // Get current user from context
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);

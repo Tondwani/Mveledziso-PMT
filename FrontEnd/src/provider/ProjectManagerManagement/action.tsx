@@ -1,7 +1,6 @@
 "use client";
 import { IProjectManager } from "./context";
 
-// Action Types
 export enum ProjectManagerActionEnum {
   SET_PENDING = "PROJECT_MANAGER_SET_PENDING",
   SET_ERROR = "PROJECT_MANAGER_SET_ERROR",
@@ -12,7 +11,6 @@ export enum ProjectManagerActionEnum {
   RESET_STATE = "PROJECT_MANAGER_RESET_STATE"
 }
 
-// Action Interfaces
 export interface ISetPendingAction {
   type: typeof ProjectManagerActionEnum.SET_PENDING;
   payload: {
@@ -62,7 +60,6 @@ export interface ISetTotalCountAction {
   };
 }
 
-// Union Action Types
 export type ProjectManagerActionTypes =
   | ISetPendingAction
   | ISetErrorAction
@@ -71,7 +68,7 @@ export type ProjectManagerActionTypes =
   | ISetProjectManagersAction
   | ISetTotalCountAction;
 
-// Action Creators
+
 export const setPending = (isPending: boolean) => ({
   type: ProjectManagerActionEnum.SET_PENDING,
   payload: {

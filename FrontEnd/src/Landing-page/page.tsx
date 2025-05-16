@@ -33,7 +33,6 @@ import {
 import '@/app/globals.css'; 
 import { useRouter } from 'next/navigation' 
 
-// Define the type for icon positions
 interface IconPosition {
   x: number;
   y: number;
@@ -55,20 +54,17 @@ export default function Home() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Set canvas dimensions
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 
-    // Draw background
+
     const drawBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Grey background
-      ctx.fillStyle = "#e0e5eb" // Light grey background
+      ctx.fillStyle = "#e0e5eb" 
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // Draw subtle pattern of tiny dots in BLACK
-      ctx.fillStyle = "rgba(0, 0, 0, 0.1)" // Black with low opacity
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)" 
 
       for (let i = 0; i < canvas.width; i += 15) {
         for (let j = 0; j < canvas.height; j += 15) {
@@ -82,7 +78,6 @@ export default function Home() {
       }
     }
 
-    // Redraw on resize
     const handleResize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
@@ -95,7 +90,6 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // Icons for the background pattern - using black instead of blue
   const icons = [
     <BarChart3 key="barchart" className="text-black opacity-15" />,
     <Calendar key="calendar" className="text-black opacity-15" />,
@@ -126,19 +120,18 @@ export default function Home() {
     <Tablet key="tablet" className="text-black opacity-15" />,
   ]
 
-  // Generate random positions for background icons
   const generateIconPositions = () => {
     const positions: IconPosition[] = []
-    const iconCount = 80 // More icons for visual interest
+    const iconCount = 80 
 
     for (let i = 0; i < iconCount; i++) {
       positions.push({
-        x: Math.random() * 100, // percentage of viewport width
-        y: Math.random() * 100, // percentage of viewport height
-        size: 16 + Math.random() * 24, // varying sizes for more visual interest
-        rotate: Math.random() * 360, // random rotation
+        x: Math.random() * 100, 
+        y: Math.random() * 100, 
+        size: 16 + Math.random() * 24, 
+        rotate: Math.random() * 360, 
         icon: Math.floor(Math.random() * icons.length),
-        opacity: 0.1 + Math.random() * 0.2, // varying opacity
+        opacity: 0.1 + Math.random() * 0.2, 
       })
     }
 

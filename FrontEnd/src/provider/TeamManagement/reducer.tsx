@@ -6,7 +6,6 @@ import { TeamActionEnum } from "./action";
 
 export const TeamReducer = handleActions<ITeamStateContext, any>(
   {
-    // Base team actions
     [TeamActionEnum.teamPending]: (state) => ({
       ...state,
       isPending: true,
@@ -29,7 +28,6 @@ export const TeamReducer = handleActions<ITeamStateContext, any>(
       ...action.payload,
     }),
 
-    // Teams list
     [TeamActionEnum.teamsLoaded]: (state, action) => ({
       ...state,
       isPending: false,
@@ -62,7 +60,6 @@ export const TeamReducer = handleActions<ITeamStateContext, any>(
       ...action.payload,
     }),
 
-    // UserTeams list
     [TeamActionEnum.userTeamsLoaded]: (state, action) => ({
       ...state,
       isPending: false,

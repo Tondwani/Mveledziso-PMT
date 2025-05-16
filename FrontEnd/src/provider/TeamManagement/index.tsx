@@ -57,7 +57,6 @@ export const TeamProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(TeamReducer, INITIAL_STATE);
   const instance = getAxiosInstance();
 
-  // Team Actions
   const createTeam = async (team: ICreateTeamDto) => {
     dispatch(basePending());
     try {
@@ -117,8 +116,6 @@ export const TeamProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     }
   };
-
-  // UserTeam Actions
   const createUserTeam = async (input: ICreateUserTeamDto) => {
     dispatch(userTeamPending());
     try {

@@ -41,9 +41,9 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
   const createMilestone = async (milestone: ICreateMilestoneDto) => {
     dispatch(basePending());
     try {
-      console.log('Creating milestone:', milestone);
+      console.error('Creating milestone:', milestone);
       const response = await instance.post(`${API_ENDPOINTS.milestones}/Create`, milestone);
-      console.log('Create response:', response.data);
+      console.error('Create response:', response.data);
       const createdMilestone: IMilestone = response.data.result;
       dispatch(createMilestoneSuccess(createdMilestone, "Milestone created successfully"));
       return createdMilestone;
@@ -59,9 +59,9 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
   const updateMilestone = async (milestone: IUpdateMilestoneDto) => {
     dispatch(basePending());
     try {
-      console.log('Updating milestone:', milestone);
+      console.error('Updating milestone:', milestone);
       const response = await instance.put(`${API_ENDPOINTS.milestones}/Update?id=${milestone.id}`, milestone);
-      console.log('Update response:', response.data);
+      console.error('Update response:', response.data);
       const updatedMilestone: IMilestone = response.data.result;
       dispatch(updateMilestoneSuccess(updatedMilestone, "Milestone updated successfully"));
       return updatedMilestone;
@@ -77,9 +77,9 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
   const deleteMilestone = async (id: string) => {
     dispatch(basePending());
     try {
-      console.log('Deleting milestone:', id);
+      console.error('Deleting milestone:', id);
       await instance.delete(`${API_ENDPOINTS.milestones}/Delete?id=${id}`);
-      console.log('Delete successful');
+      console.error('Delete successful');
       dispatch({
         type: "MILESTONE_SUCCESS",
         payload: {
@@ -101,9 +101,9 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
   const getMilestone = async (id: string) => {
     dispatch(basePending());
     try {
-      console.log('Getting milestone:', id);
+      console.error('Getting milestone:', id);
       const response = await instance.get(`${API_ENDPOINTS.milestones}/Get?id=${id}`);
-      console.log('Get response:', response.data);
+      console.error('Get response:', response.data);
       const milestone: IMilestone = response.data.result;
       dispatch(createMilestoneSuccess(milestone, "Milestone loaded successfully"));
       return milestone;
@@ -119,12 +119,12 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
   const getMilestones = async (input: IGetMilestonesInput) => {
     dispatch(basePending());
     try {
-      console.log('Starting getMilestones API call with input:', input);
-      console.log('API URL:', `${API_ENDPOINTS.milestones}/GetList`);
+      console.error('Starting getMilestones API call with input:', input);
+      console.error('API URL:', `${API_ENDPOINTS.milestones}/GetList`);
       
       // Log the auth token (masked)
       const authToken = instance.defaults.headers.common[""];
-      console.log('Auth token present:', !!authToken);
+      console.error('Auth token present:', !!authToken);
       
       const response = await instance.get(`${API_ENDPOINTS.milestones}/GetList`, {
         params: {
@@ -135,7 +135,7 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
         }
       });
       
-      console.log('GetList API Response:', {
+      console.error('GetList API Response:', {
         status: response.status,
         statusText: response.statusText,
         data: response.data
@@ -152,7 +152,7 @@ export const MilestoneProvider = ({ children }: { children: React.ReactNode }) =
         totalCount: response.data.result.length
       };
 
-      console.log('Parsed milestones result:', result);
+      console.error('Parsed milestones result:', result);
       
       dispatch(loadMilestonesSuccess(result));
       return result;

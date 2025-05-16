@@ -71,8 +71,7 @@ export const ProjectManagerProvider: React.FC<{ children: React.ReactNode }> = (
     async (userId: number): Promise<IProjectManager | null> => {
       try {
         dispatch(setPending(true));
-        
-        // First attempt to get from local storage to avoid unnecessary API calls
+      
         const cachedData = localStorage.getItem(`project_manager_${userId}`);
         if (cachedData) {
           try {
@@ -81,20 +80,16 @@ export const ProjectManagerProvider: React.FC<{ children: React.ReactNode }> = (
             dispatch(setSuccess(true));
             return projectManager;
           } catch {
-            // Invalid cached data, continue with API call
             localStorage.removeItem(`project_manager_${userId}`);
           }
         }
-
-        // Make API call to find the project manager by user ID
         const response = await api.get(`/api/services/app/ProjectManager/GetByUserId`, {
           params: { userId }
         });
 
         if (response.data.success && response.data.result) {
           const projectManager = response.data.result;
-          
-          // Cache the result
+        
           localStorage.setItem(`project_manager_${userId}`, JSON.stringify(projectManager));
           
           dispatch(setProjectManager(projectManager));
@@ -128,7 +123,6 @@ export const ProjectManagerProvider: React.FC<{ children: React.ReactNode }> = (
   );
 };
 
-// Custom hooks for consuming the context
 export const useProjectManagerState = (): IProjectManagerStateContext => {
   const context = useContext(ProjectManagerStateContext);
   if (context === undefined) {

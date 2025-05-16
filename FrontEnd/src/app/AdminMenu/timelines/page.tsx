@@ -156,7 +156,7 @@ export default function TimelinesPage() {
   const handleCreatePhase = async (values: PhaseFormValues) => {
     try {
       setIsPending(true);
-      console.log('Creating phase with values:', values);
+      console.error('Creating phase with values:', values);
       message.success('Phase created successfully');
       setPhaseModalVisible(false);
       phaseForm.resetFields();
@@ -196,7 +196,7 @@ export default function TimelinesPage() {
       setIsPending(true);
       // Phase update logic will be implemented here
       // This is a placeholder for future implementation
-      console.log('Updating phase with values:', values);
+      console.error('Updating phase with values:', values);
       message.success('Phase updated successfully');
       setPhaseModalVisible(false);
       phaseForm.resetFields();

@@ -29,7 +29,7 @@ interface FormValues {
 }
 
 export default function MilestonesPage() {
-  // State Management
+
   const milestoneState = useMilestoneState();
   const milestoneActions = useMilestoneActions();
   const timelineState = useTimelineState();
@@ -40,9 +40,8 @@ export default function MilestonesPage() {
   const { timelines } = timelineState;
   const { getTimelines } = timelineActions;
 
-  // Verify providers are initialized
   useEffect(() => {
-    console.log('Provider state:', {
+    console.error('Provider state:', {
       milestoneState: !!milestoneState,
       milestoneActions: !!milestoneActions,
       timelineState: !!timelineState,
@@ -50,22 +49,20 @@ export default function MilestonesPage() {
     });
   }, [milestoneState, milestoneActions, timelineState, timelineActions]);
 
-  // Local State
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentTimelineFilter, ] = useState<string | undefined>();
   const [currentCompletionFilter, setCurrentCompletionFilter] = useState<boolean | undefined>();
   const [editingMilestone, setEditingMilestone] = useState<IMilestone | null>(null);
   const [form] = Form.useForm();
 
-  // View Modal State
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [viewingMilestone, setViewingMilestone] = useState<IMilestone | null>(null);
 
-  // Load Data
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('Starting to load data...');
+        console.error('Starting to load data...');
         
         if (!getTimelines || !getMilestones) {
           console.error('Required actions not available');
@@ -73,19 +70,17 @@ export default function MilestonesPage() {
           return;
         }
 
-        // Load timelines
-        console.log('Loading timelines...');
+        console.error('Loading timelines...');
         await getTimelines({});
-        console.log('Timelines loaded:', timelineState.timelines);
-        
-        // Load milestones with pagination
-        console.log('Loading milestones...');
+        console.error('Timelines loaded:', timelineState.timelines);
+
+        console.error('Loading milestones...');
         const result = await getMilestones({
           maxResultCount: 10,
           skipCount: 0
         });
         
-        console.log('Loaded milestones:', result);
+        console.error('Loaded milestones:', result);
       } catch (error) {
         console.error('Error loading data:', error);
         if (error instanceof Error) {
@@ -99,7 +94,6 @@ export default function MilestonesPage() {
     loadData();
   }, []);
 
-  // Error Handling
   useEffect(() => {
     if (isError && stateMessage) {
       console.error('Error state detected:', { isError, message: stateMessage });
@@ -107,9 +101,8 @@ export default function MilestonesPage() {
     }
   }, [isError, stateMessage]);
 
-  // Data change monitoring
   useEffect(() => {
-    console.log('State changed:', {
+    console.error('State changed:', {
       isPending,
       isError,
       milestonesCount: milestones?.length,
@@ -120,7 +113,7 @@ export default function MilestonesPage() {
   }, [milestones, isPending, isError, timelines]);
 
   const filteredMilestones = React.useMemo(() => {
-    console.log('Filtering milestones:', {
+    console.error('Filtering milestones:', {
       all: milestones,
       timelineFilter: currentTimelineFilter,
       completionFilter: currentCompletionFilter
@@ -136,7 +129,7 @@ export default function MilestonesPage() {
   }, [milestones, currentTimelineFilter, currentCompletionFilter]);
 
   useEffect(() => {
-    console.log('Filtered milestones updated:', {
+    console.error('Filtered milestones updated:', {
       count: filteredMilestones.length,
       milestones: filteredMilestones
     });
@@ -223,7 +216,7 @@ export default function MilestonesPage() {
 
   const handleCreate = async (values: FormValues) => {
     try {
-      console.log('Creating milestone with values:', values);
+      console.error('Creating milestone with values:', values);
       const newMilestone: ICreateMilestoneDto = {
         title: values.title,
         description: values.description,
@@ -248,13 +241,13 @@ export default function MilestonesPage() {
   };
 
   const handleView = (milestone: IMilestone) => {
-    console.log('Viewing milestone:', milestone);
+    console.error('Viewing milestone:', milestone);
     setViewingMilestone(milestone);
     setIsViewModalVisible(true);
   };
 
   const handleEdit = (milestone: IMilestone) => {
-    console.log('Editing milestone:', milestone);
+    console.error('Editing milestone:', milestone);
     setEditingMilestone(milestone);
     form.setFieldsValue({
       title: milestone.title,
@@ -269,7 +262,7 @@ export default function MilestonesPage() {
   const handleSubmit = async (values: FormValues) => {
     try {
       if (editingMilestone) {
-        console.log('Updating milestone:', { id: editingMilestone.id, ...values });
+        console.error('Updating milestone:', { id: editingMilestone.id, ...values });
         await updateMilestone({
           id: editingMilestone.id,
           ...values,
@@ -296,7 +289,7 @@ export default function MilestonesPage() {
 
   const handleDelete = async (milestone: IMilestone) => {
     try {
-      console.log('Deleting milestone:', milestone.id);
+      console.error('Deleting milestone:', milestone.id);
       await deleteMilestone(milestone.id);
       message.success('Milestone deleted successfully');
       

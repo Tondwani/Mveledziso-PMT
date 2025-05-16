@@ -3,7 +3,6 @@
 import { useState } from "react"
 import SignUp from "@/components/forms/sign-up"
 import Login from "@/components/forms/login"
-// import { Toaster } from 'react-hot-toast'
 import "@/app/login/style.css"
 
 export default function Home() {
