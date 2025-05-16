@@ -1,6 +1,5 @@
 import { createContext } from "react";
 
-// UserDuty Interface
 export interface IUserDuty {
   id: string;
   teamMemberId: string;
@@ -9,7 +8,7 @@ export interface IUserDuty {
   creatorUserId?: number;
 }
 
-// Input DTOs
+
 export interface ICreateUserDutyDto {
   teamMemberId: string; 
   projectDutyId: string; 
@@ -30,7 +29,6 @@ export interface IGetUserDutyInput {
   maxResultCount?: number; 
 }
 
-// State Interface
 export interface IUserDutyStateContext {
   isPending: boolean;
   isSuccess: boolean;

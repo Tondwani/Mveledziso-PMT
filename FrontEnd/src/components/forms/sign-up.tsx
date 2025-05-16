@@ -42,7 +42,7 @@ export default function SignUp() {
         userName: userData.userName,
       }
 
-      console.log('Signup attempt:', { 
+      console.error('Signup attempt:', { 
         isTeamMember, 
         baseData: { ...baseData, password: '[REDACTED]' } 
       });
@@ -56,7 +56,7 @@ export default function SignUp() {
         {
           loading: `Creating ${isTeamMember ? 'Team Member' : 'Project Manager'} account...`,
           success: (result) => {
-            console.log('Signup success:', result);
+            console.error('Signup success:', result);
             setTimeout(() => {
               router.push("/login");
             }, 1500);

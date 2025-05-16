@@ -40,6 +40,7 @@ export default function TaskAnalyzerPage() {
       }
 
       const genAI = new GoogleGenerativeAI(API_CONFIG.GEMINI_API_KEY);
+      // Updated model name from 'gemini-pro-v1' to 'gemini-pro'
       const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
       let prompt = `Task Analysis Request:
@@ -56,8 +57,6 @@ export default function TaskAnalyzerPage() {
             reader.onload = (e) => {
               if (e.target?.result) {
                 const pdfText = e.target.result as string;
-                // For actual PDF text extraction, you would need to implement proper PDF parsing
-                // This is a placeholder that will work with text files
                 resolve(pdfText);
               } else {
                 reject(new Error('Failed to read file'));

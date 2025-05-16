@@ -107,7 +107,7 @@ export default function TeamsPage() {
         
         // Update state with all counts
         setTeamMemberCounts(countsObj);
-        console.log('Team member counts loaded:', countsObj);
+        console.error('Team member counts loaded:', countsObj);
         
         // Force refresh UI
         setRefreshKey(prev => prev + 1);
@@ -124,12 +124,12 @@ export default function TeamsPage() {
     const loadAvailableMembers = async () => {
       if (!isMemberModalVisible) return;
       try {
-        console.log('Loading team members...'); // Debug log
+        console.error('Loading team members...'); // Debug log
         const result = await getTeamMembers({
           maxResultCount: 100,
           skipCount: 0
         });
-        console.log('Loaded team members:', result); // Debug log
+        console.error('Loaded team members:', result); // Debug log
       } catch (error) {
         const axiosError = error as AxiosError;
         console.error('Error loading available members:', axiosError);
@@ -144,7 +144,7 @@ export default function TeamsPage() {
     const loadTeamMembers = async () => {
       if (!currentTeam?.id) return;
       try {
-        console.log('Loading team members for team ID:', currentTeam.id);
+        console.error('Loading team members for team ID:', currentTeam.id);
         
         // Direct API call to get team members by team ID
         const api = getAxiosInstance();
@@ -152,12 +152,12 @@ export default function TeamsPage() {
           params: { teamId: currentTeam.id }
         });
         
-        console.log('Team members response:', response.data);
+        console.error('Team members response:', response.data);
         
         if (response.data && response.data.result && response.data.result.items) {
           // Store the team members in local state
           const teamMembers = response.data.result.items;
-          console.log('Team members loaded for team:', teamMembers.length);
+          console.error('Team members loaded for team:', teamMembers.length);
           
           // Update local state with team members
           setLocalTeamMembers(teamMembers);
@@ -292,7 +292,7 @@ export default function TeamsPage() {
       }
 
       // Log the selected member for debugging
-      console.log('Selected member:', selectedMember);
+      console.error('Selected member:', selectedMember);
 
       const input: IAssignTeamRoleDto = {
         teamMemberId: selectedMember.userId.toString(), // Send the numeric userId as expected by backend
@@ -301,10 +301,10 @@ export default function TeamsPage() {
       };
 
       // Log the input data being sent
-      console.log('Sending data to API:', input);
+      console.error('Sending data to API:', input);
       
       const result = await assignTeamRole(input);
-      console.log('API response:', result);
+      console.error('API response:', result);
       
       // Update local team members with new team member
       if (result) {
@@ -339,7 +339,7 @@ export default function TeamsPage() {
           maxResultCount: 100,
           skipCount: 0
         });
-        console.log('Available team members refreshed:', availableResponse.items.length);
+        console.error('Available team members refreshed:', availableResponse.items.length);
         
         // Force a re-render of the component
         setRefreshKey(prev => prev + 1);
@@ -501,7 +501,7 @@ export default function TeamsPage() {
                   cancelText: 'No',
                   onOk: async () => {
                     try {
-                      console.log('Removing team member with ID:', record.id);
+                      console.error('Removing team member with ID:', record.id);
                       const api = getAxiosInstance();
                       await api.delete(`/api/services/app/UserTeam/Delete?id=${record.id}`);
                       

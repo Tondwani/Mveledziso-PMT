@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import { IProjectManager } from "../CurrentUserProvider/context";
 
-// Team Interfaces
+
 export interface ITeam {
   id: string;
   name: string;
@@ -10,7 +10,7 @@ export interface ITeam {
   projects?: IProjectManager[]; 
 }
 
-// UserTeam Interfaces
+
 export interface IUserTeam {
   id: string;
   teamMemberId: string;
@@ -18,13 +18,12 @@ export interface IUserTeam {
   role: string;
 }
 
-// Team Member Interfaces
 export interface ITeamMember {
   id: string;
   userId: string;
 }
 
-// Input DTOs
+
 export interface ICreateTeamDto {
   name: string;
   description?: string;
@@ -58,7 +57,6 @@ export interface IUserTeamListDto {
   maxResultCount?: number;
 }
 
-// State Interfaces
 export interface ITeamStateContext {
   isPending: boolean;
   isSuccess: boolean;
@@ -71,7 +69,6 @@ export interface ITeamStateContext {
   errorMessage?: string;
 }
 
-// Initial State
 export const INITIAL_STATE: ITeamStateContext = {
   isPending: false,
   isSuccess: false,
@@ -79,7 +76,6 @@ export const INITIAL_STATE: ITeamStateContext = {
   errorMessage: undefined
 };
 
-// Actions Interface
 export interface ITeamActionContext {
   createTeam: (team: ICreateTeamDto) => Promise<ITeam>;
   updateTeam: (team: IUpdateTeamDto) => Promise<ITeam>;
@@ -92,11 +88,11 @@ export interface ITeamActionContext {
   getUserTeams: (input: IUserTeamListDto) => Promise<PagedResultDto<IUserTeam>>;
 }
 
-// Contexts
+
 export const TeamStateContext = createContext<ITeamStateContext>(INITIAL_STATE);
 export const TeamActionContext = createContext<ITeamActionContext | undefined>(undefined);
 
-// Paged Result Interface
+
 export interface PagedResultDto<T> {
   totalCount: number;
   items: T[];

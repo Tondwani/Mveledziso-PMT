@@ -5,7 +5,6 @@ import { Card, Form, Input, Button, Typography, Alert, Space, Divider, Tag, List
 import { WarningOutlined, CheckCircleOutlined, ClockCircleOutlined} from '@ant-design/icons';
 const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
-// Initialize the Google Generative AI with your API key
 const GEMINI_API_KEY = 'AIzaSyAqCcHNoVJWZ3mODBIRs5uiBkedHKVfacY';
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
@@ -26,7 +25,6 @@ export default function ProjectRiskPredictor() {
   const [error, setError] = useState('');
   const [form] = Form.useForm();
 
-  // Function to analyze project risks using Gemini API
   const analyzeProjectRisks = async (values: {
     projectName: string;
     description: string;
@@ -39,12 +37,11 @@ export default function ProjectRiskPredictor() {
     setError('');
     
     try {
-      // Use the newer model directly
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash", // or "gemini-1.5-pro"
+        model: "gemini-1.5-flash", 
       });
       
-      console.log('Using model: gemini-1.5-flash');
+      console.error('Using model: gemini-1.5-flash');
 
       const prompt = `Analyze the following project details and provide risk predictions.
       Be specific and provide actionable insights.
@@ -70,10 +67,7 @@ export default function ProjectRiskPredictor() {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
-      // Clean and parse the response
       try {
-        // Try to extract JSON from markdown code block if present
         const jsonMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/);
         const jsonString = jsonMatch ? jsonMatch[1] : text;
         const parsedResponse = JSON.parse(jsonString);
@@ -143,17 +137,6 @@ export default function ProjectRiskPredictor() {
           challenges: ''
         }}
       >
-        {/* <Form.Item
-          label="API Key Status"
-        >
-          <Alert 
-            message="Using provided Gemini API key" 
-            type="success" 
-            showIcon 
-            icon={<KeyOutlined />}
-            style={{ marginBottom: 16 }}
-          />
-        </Form.Item> */}
 
         <Form.Item
           label="Project Name"

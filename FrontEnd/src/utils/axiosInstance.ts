@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Create a singleton axios instance
 const axiosInstance = axios.create({
   baseURL: 'https://mveledziso-pmt.onrender.com',
   headers: {
@@ -11,13 +10,11 @@ const axiosInstance = axios.create({
   withCredentials: true 
 });
 
-// Initialize auth token from session storage
 const token = typeof window !== 'undefined' ? sessionStorage.getItem("auth_token") : null;
 if (token) {
   axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
-// Add response interceptor for better error handling
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {

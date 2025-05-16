@@ -88,14 +88,12 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
   const getUserDuties = async (input: IGetUserDutyInput): Promise<IUserDuty[]> => {
     dispatch(setPending());
     try {
-      // Format and validate GUIDs if provided
       const formattedInput = {
         ...input,
         teamMemberId: input.teamMemberId ? formatGuid(input.teamMemberId) : undefined,
         projectDutyId: input.projectDutyId ? formatGuid(input.projectDutyId) : undefined
       };
 
-      // Validate GUIDs if provided
       if (formattedInput.teamMemberId && !isValidGuid(formattedInput.teamMemberId)) {
         throw new Error('Invalid GUID format for teamMemberId');
       }
@@ -118,14 +116,12 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
   const updateUserDuty = async (duty: IUpdateUserDutyDto): Promise<IUserDuty> => {
     dispatch(setPending());
     try {
-      // Format and validate GUIDs
       const formattedDuty = {
         id: formatGuid(duty.id),
         teamMemberId: formatGuid(duty.teamMemberId),
         projectDutyId: formatGuid(duty.projectDutyId)
       };
 
-      // Validate GUIDs
       if (!isValidGuid(formattedDuty.id)) {
         throw new Error('Invalid GUID format for id');
       }
@@ -151,7 +147,6 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
   const deleteUserDuty = async (id: string): Promise<void> => {
     dispatch(setPending());
     try {
-      // Format and validate GUID
       const formattedId = formatGuid(id);
       if (!isValidGuid(formattedId)) {
         throw new Error('Invalid GUID format for id');
@@ -169,7 +164,6 @@ export const UserDutyProvider = ({ children }: { children: React.ReactNode }) =>
   const getUserDuty = async (id: string): Promise<IUserDuty> => {
     dispatch(setPending());
     try {
-      // Format and validate GUID
       const formattedId = formatGuid(id);
       if (!isValidGuid(formattedId)) {
         throw new Error('Invalid GUID format for id');

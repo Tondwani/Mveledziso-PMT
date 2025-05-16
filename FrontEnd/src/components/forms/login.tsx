@@ -17,28 +17,24 @@ export default function Login() {
   const { login } = useAuthActions()
   const { isPending, isError, errorMessage, currentUser, isSuccess } = useAuthState()
   const router = useRouter()
-
-  // Watch for changes in currentUser and handle routing
   useEffect(() => {
-    console.log('Login effect triggered:', { currentUser, isSuccess });
+    console.error('Login effect triggered:', { currentUser, isSuccess });
     
     if (currentUser && isSuccess) {
-      // Check user roles for routing
       const roles = currentUser.roles || [];
-      console.log('User roles:', roles);
+      console.error('User roles:', roles);
       
-      // Check roles in priority order
       if (roles.includes("Admin")) {
-        console.log('Routing to AdminMenu - User is Admin');
+        console.error('Routing to AdminMenu - User is Admin');
         router.push("/AdminMenu");
       } else if (roles.includes("ProjectManager")) {
-        console.log('Routing to AdminMenu - User is ProjectManager');
+        console.error('Routing to AdminMenu - User is ProjectManager');
         router.push("/AdminMenu");
       } else if (roles.includes("TeamMember")) {
-        console.log('Routing to UserMenu - User is TeamMember');
+        console.error('Routing to UserMenu - User is TeamMember');
         router.push("/UserMenu");
       } else {
-        console.log('No valid role found - redirecting to login');
+        console.error('No valid role found - redirecting to login');
         toast.error("No valid role found. Please contact your administrator.");
         router.push("/login");
         return;

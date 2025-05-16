@@ -59,27 +59,26 @@ export default function UserTeamsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const { currentUser } = useAuthState();
 
-  // Load the current user's teams
   const loadUserTeams = useCallback(async () => {
     if (!currentUser?.id) {
-      console.log('No current user ID found');
+      console.error('No current user ID found');
       setLoading(false);
       return;
     }
     
     setLoading(true);
-    console.log('Current user ID:', currentUser.id);
+    console.error('Current user ID:', currentUser.id);
     try {
       const api = getAxiosInstance();
       
 
-      console.log('currentUser object:', currentUser);
+      console.error('currentUser object:', currentUser);
     
       let teamMemberId = currentUser.id.toString();
       
       if (currentUser.name === 'NomusaM' || currentUser.userName === 'NomusaM') {
-        teamMemberId = '0196aa12-8a82-7a02-978c-eac7f6e75598';
-        console.log('Using hardcoded teamMemberId for Nomusa:', teamMemberId);
+        teamMemberId = '';
+        console.error('Using hardcoded teamMemberId for Nomusa:', teamMemberId);
       }
       
       if (typeof teamMemberId !== 'string') {
@@ -87,34 +86,34 @@ export default function UserTeamsPage() {
         teamMemberId = String(teamMemberId);
       }
       
-      console.log('Final teamMemberId being used:', teamMemberId);
+      console.error('Final teamMemberId being used:', teamMemberId);
       
-      console.log('Fetching user teams for team member ID:', teamMemberId);
+      console.error('Fetching user teams for team member ID:', teamMemberId);
       const userTeamsResponse = await api.get('/api/services/app/UserTeam/GetList', {
         params: { teamMemberId: teamMemberId }
       });
       
-      console.log('User teams response:', userTeamsResponse.data);
+      console.error('User teams response:', userTeamsResponse.data);
       
       if (!userTeamsResponse.data?.result?.items?.length) {
-        console.log('No teams found for this user');
+        console.error('No teams found for this user');
         setMyTeams([]);
         setLoading(false);
         return;
       }
       
       const userTeams = userTeamsResponse.data.result.items;
-      console.log('User teams found:', userTeams.length);
+      console.error('User teams found:', userTeams.length);
       
       const teams = await Promise.all(
         userTeams.map(async (userTeam: { teamId: string; role: number }) => {
           try {
-            console.log('Fetching details for team ID:', userTeam.teamId);
+            console.error('Fetching details for team ID:', userTeam.teamId);
             const teamResponse = await api.get('/api/services/app/Team/Get', {
               params: { id: userTeam.teamId }
             });
             
-            console.log('Team details response:', teamResponse.data);
+            console.error('Team details response:', teamResponse.data);
             const team = teamResponse.data.result;
             team.userRole = TeamRole[userTeam.role]; 
             return team;
@@ -165,7 +164,7 @@ export default function UserTeamsPage() {
     if (!teamId) return;
     
     try {
-      console.log('Loading team members for team ID:', teamId);
+      console.error('Loading team members for team ID:', teamId);
       
       const api = getAxiosInstance();
       const response = await api.get('/api/services/app/UserTeam/GetList', {

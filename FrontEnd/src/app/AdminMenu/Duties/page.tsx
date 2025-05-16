@@ -53,7 +53,6 @@ const { TabPane } = Tabs;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// Helper function to convert enums to human-readable format
 const formatDutyStatus = (status: DutyStatus): { text: string; color: string } => {
   switch (status) {
     case DutyStatus.ToDo:
@@ -220,12 +219,11 @@ const DutiesContent = () => {
     setExtendedUserDuties(enriched);
   }, [userDuties, projectDuties, teamMembers]);
 
-  // Effect hooks for data loading
   useEffect(() => {
     loadProjects();
     loadTeamMembers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array
+  }, []); 
 
   useEffect(() => {
     if (activeTab === '1') {
@@ -247,9 +245,8 @@ const DutiesContent = () => {
       enrichUserDuties();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userDuties]); // Only depend on userDuties
+  }, [userDuties]); 
 
-  // Project Duty Handlers
   const showProjectDutyModal = (duty?: IProjectDuty) => {
     if (duty) {
       setEditingProjectDuty(duty);
@@ -277,26 +274,22 @@ const DutiesContent = () => {
     try {
       const values = await projectDutyForm.validateFields();
       
-      // Prepare the data
       const dutyData = {
         ...values,
         deadline: values.deadline ? values.deadline.format() : undefined
       };
       
       if (editingProjectDuty) {
-        // Update existing duty
         await updateProjectDuty({
           id: editingProjectDuty.id,
           ...dutyData
         });
         message.success('Project duty updated successfully');
       } else {
-        // Create new duty
         await createProjectDuty(dutyData);
         message.success('Project duty created successfully');
       }
       
-      // Reset and reload
       setIsProjectDutyModalVisible(false);
       projectDutyForm.resetFields();
       loadProjectDuties({
@@ -323,7 +316,6 @@ const DutiesContent = () => {
     }
   };
 
-  // User Duty Handlers
   const showUserDutyModal = (projectDutyId?: string) => {
     userDutyForm.resetFields();
     if (projectDutyId) {
@@ -338,13 +330,13 @@ const DutiesContent = () => {
   };
 
   const handleUserDutySubmit = async () => {
-    console.log('Assignment button clicked');
+    console.error('Assignment button clicked');
     setIsAssigning(true);
     
     try {
-      console.log('Validating form fields...');
+      console.error('Validating form fields...');
       const values = await userDutyForm.validateFields();
-      console.log('Form validation successful:', values);
+      console.error('Form validation successful:', values);
       
       // Make sure we have values
       if (!values.teamMemberId || !values.projectDutyId) {
@@ -353,15 +345,13 @@ const DutiesContent = () => {
         return;
       }
       
-      // Format the values as proper strings
       const submissionData: ICreateUserDutyDto = {
         teamMemberId: String(values.teamMemberId).trim(),
         projectDutyId: String(values.projectDutyId).trim()
       };
       
-      console.log('Submission data:', submissionData);
+      console.error('Submission data:', submissionData);
       
-      // Check if the values are valid GUIDs
       const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
       if (!guidRegex.test(submissionData.teamMemberId)) {
@@ -378,15 +368,14 @@ const DutiesContent = () => {
         return;
       }
       
-      console.log('Calling createUserDuty API...');
+      console.error('Calling createUserDuty API...');
       message.loading({ content: 'Assigning duty...', key: 'assignDuty' });
       
       try {
-        // Get auth token from session storage for direct API call
         const token = sessionStorage.getItem("auth_token");
         
-        // Try direct axios call for debugging
-        console.log('Attempting direct API call...');
+
+        console.error('Attempting direct API call...');
         try {
           const directResponse = await axios.post(
             'https://mveledziso-pmt.onrender.com/api/services/app/UserDuty/Create',
@@ -403,10 +392,9 @@ const DutiesContent = () => {
               withCredentials: true
             }
           );
-          console.log('Direct API call successful:', directResponse);
+          console.error('Direct API call successful:', directResponse);
           message.success({ content: 'Direct API: User duty assigned successfully', key: 'assignDuty' });
           
-          // Reset and reload
           setIsUserDutyModalVisible(false);
           userDutyForm.resetFields();
           if (activeTab === '2') {
@@ -415,15 +403,13 @@ const DutiesContent = () => {
               maxResultCount: pagination.pageSize
             });
           }
-          return; // Skip the normal flow
+          return; 
         } catch (directError) {
           console.error('Direct API call failed:', directError);
-          // Continue with normal flow
         }
         
-        // Normal flow using the context function
         await createUserDuty(submissionData);
-        console.log('API call successful');
+        console.error('API call successful');
         message.success({ content: 'User duty assigned successfully', key: 'assignDuty' });
         
         // Reset and reload
@@ -453,7 +439,7 @@ const DutiesContent = () => {
         message.error('Failed to assign duty');
       }
     } finally {
-      console.log('Assignment process completed');
+      console.error('Assignment process completed');
       setIsAssigning(false);
     }
   };
@@ -669,7 +655,6 @@ const DutiesContent = () => {
     }
   ] as const;
 
-  // Update the Table loading prop to consider all loading states
   const isLoading = isLoadingProjects || isLoadingTeamMembers || projectIsPending || userDutiesIsPending;
 
   return (
@@ -852,7 +837,7 @@ const DutiesContent = () => {
           form={userDutyForm} 
           layout="vertical"
           onValuesChange={(_, values) => {
-            console.log('Form values changed:', values);
+            console.error('Form values changed:', values);
           }}
         >
           <Form.Item
@@ -860,7 +845,6 @@ const DutiesContent = () => {
             label="Duty"
             rules={[{ required: true, message: 'Please select a duty' }]}
             normalize={(value) => {
-              // Ensure value is a properly formatted string
               return value ? String(value).trim() : '';
             }}
           >
@@ -878,7 +862,6 @@ const DutiesContent = () => {
             label="Team Member"
             rules={[{ required: true, message: 'Please select a team member' }]}
             normalize={(value) => {
-              // Ensure value is a properly formatted string
               return value ? String(value).trim() : '';
             }}
           >
@@ -896,7 +879,6 @@ const DutiesContent = () => {
   );
 };
 
-// Main component with Suspense boundary
 const DutiesPage = () => {
   return (
     <Suspense fallback={
