@@ -19,6 +19,17 @@ Mveledziso PMT is a full-stack project management tool designed to streamline pr
 - 🗄️ Entity Framework Core
 - 💾 Postgresql
 
+ ### Database:
+- 💾 Postgresql
+
+## Containerization:
+
+ - Docker
+
+### Domain Modal
+
+
+
 ## 📁 Project Structure
 
 ```
