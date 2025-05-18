@@ -90,17 +90,36 @@ Model gemini-1.5-flash
 
 ### Installation
 
-1. Clone the repository
-2. Install backend dependencies:
-   ```bash
-   cd aspnet-core
-   dotnet restore
-   ```
-3. Install frontend dependencies:
-   ```bash
-   cd FrontEnd
-   npm install
-   ```
+🌐 Frontend Setup
+
+📁 Navigate to the Frontend Folder
+cd frontend
+Or right-click the frontend folder in Visual Studio Code and select "Open in Integrated Terminal".
+
+📦 Install Dependencies
+npm i
+▶️ Run the Frontend
+Make sure the frontend project is opened in Visual Studio Code, then run:
+
+npm run dev
+Open your browser and navigate to the link provided (usually http://localhost:3000).
+
+🔧 Backend Setup
+
+📁 Navigate to Backend Solution
+Open backend/HealthAp/src/HealthAp.Web.Host/Mveledziso.sln in Visual Studio.
+Set Mveledziso.Web.Host as the Startup Project (right-click > Set as Startup Project).
+
+⚙️ Set Up Database
+
+Open Package Manager Console (Tools > NuGet Package Manager > PMC).
+Run the following commands:
+Add-Migration InitialCreate
+
+Update-Database
+▶️ Run the Backend
+Click the Run button (green play icon) or press F5 in Visual Studio to start the backend.
+
 4. Set up environment variables
 5. Run the development servers
 
