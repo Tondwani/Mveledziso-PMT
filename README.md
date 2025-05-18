@@ -23,7 +23,6 @@ Mveledziso PMT is a full-stack project management tool designed to streamline pr
 - 💾 Postgresql
 
 ## Containerization:
-
  - Docker
 
 ### Domain Modal
