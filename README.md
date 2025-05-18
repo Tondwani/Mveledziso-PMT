@@ -25,7 +25,9 @@ Mveledziso PMT is a full-stack project management tool designed to streamline pr
 ### Containerization:
  - Docker
 
-### Domain Modal
+### Domain Model 
+
+https://lucid.app/lucidchart/54ce8af1-4d34-48f8-a9c8-628e6d2a1000/edit?viewport_loc=617%2C946%2C484%2C380%2C0_0&invitationId=inv_53cbc48f-ff39-45ac-ba72-6b76294cc339
 
 
 
