@@ -117,6 +117,7 @@ Run the following commands:
 Add-Migration InitialCreate
 
 Update-Database
+
 ▶️ Run the Backend
 Click the Run button (green play icon) or press F5 in Visual Studio to start the backend.
 
