@@ -62,6 +62,11 @@ Mveledziso PMT/
   - User menu for task management
 - Secure API communication
 
+## AI Tools
+
+Google Gemini API 
+Model gemini-1.5-flash
+
 ## 🚀 Getting Started
 
 ### Prerequisites
