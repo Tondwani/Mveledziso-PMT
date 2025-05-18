@@ -15,7 +15,7 @@ Mveledziso PMT is a full-stack project management tool designed to streamline pr
 - 📝 TypeScript
 - 🎨 Ant Design
 - ⚡ React
-- 💅 Tailwind CSS
+- 💅 CSS
 
 ### Backend
 - 🔷 ASP.NET Core
